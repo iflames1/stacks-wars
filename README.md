@@ -15,8 +15,8 @@ Stacks Wars is a **gaming utility platform** built on the **Stacks blockchain**,
 ## Tech Stack
 
 -   **Frontend:** Next.js, React, Tailwind CSS
--   **Backend:** Axum from rust
--   **Smart Contracts:** Clarity (for on-chain interactions) - [Stacks Wars Pool Contract](https://github.com/your-repo-link)
+-   **Backend:** Axum from rust [Stacks Wars Backend](https://github.com/iflames1/stacks-wars-be)
+-   **Smart Contracts:** Clarity (for on-chain interactions) - [Stacks Wars Pool Contract](https://github.com/iflames1/stacks-wars-contract)
 -   **Hosting:** Vercel
 
 ## Installation & Setup
