@@ -15,11 +15,7 @@ export function ThemeToggle({ className }: { className?: string }) {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button
-					variant="ghost"
-					className={className}
-					suppressHydrationWarning
-				>
+				<Button variant="ghost" className={className}>
 					{theme === "system" || theme === "dark" ? (
 						<Moon className=" h-[1.2rem] w-[1.2rem]" />
 					) : (
