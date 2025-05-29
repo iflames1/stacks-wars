@@ -1,3 +1,5 @@
+import LexiWars from "./_components/lexi-wars";
+
 export default function Page() {
-	return <div>page</div>;
+	return <LexiWars/>;
 }
