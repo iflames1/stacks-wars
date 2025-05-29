@@ -160,8 +160,8 @@ const phases = [
 
 export default function Roadmap() {
 	return (
-		<section className="w-full py-12 md:py-24 lg:py-32 bg-muted/30">
-			<div className="container px-4 md:px-6">
+		<section className="w-full min-h-dvh flex justify-center items-center bg-primary/30 snap-start">
+			<div className="max-w-fit px-4 md:px-6 py-12">
 				<div className="flex flex-col items-center justify-center space-y-4 text-center">
 					<div className="space-y-2">
 						<h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
@@ -173,16 +173,21 @@ export default function Roadmap() {
 					</div>
 				</div>
 
-				<div className="mx-auto max-w-3xl space-y-4 py-12">
-					<Accordion type="single" collapsible className="space-y-4">
-						{phases.map((phase) => (
-							<AccordionItem
-								key={phase.id}
-								value={phase.id}
-								className="border rounded-lg bg-card"
-							>
-								<AccordionTrigger className="px-6 [&>svg]:shrink-0">
-									<div className="flex items-center gap-4 text-left">
+				{/** dunno what's up with its width */}
+				<Accordion
+					type="single"
+					collapsible
+					className="max-w-5xl space-y-4 w-full py-12"
+				>
+					{phases.map((phase) => (
+						<AccordionItem
+							key={phase.id}
+							value={phase.id}
+							className="border rounded-lg bg-card w-full"
+						>
+							<AccordionTrigger className="md:px-6 px-4 gap-0 [&>svg]:shrink-0">
+								<div className="flex items-center justify-between w-full gap-4 text-left">
+									<div className="flex items-center gap-4">
 										<div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
 											{phase.icon}
 										</div>
@@ -194,55 +199,53 @@ export default function Roadmap() {
 												{phase.description}
 											</p>
 										</div>
-										<Badge
-											variant={
-												phase.status === "In Progress"
-													? "default"
-													: "secondary"
-											}
-											className="ml-auto"
-										>
-											{phase.status}
-										</Badge>
 									</div>
-								</AccordionTrigger>
-								<AccordionContent>
-									<div className="px-6 pb-6">
-										<div className="space-y-4">
-											{phase.milestones.map(
-												(milestone, index) => (
-													<Card
-														key={index}
-														className={
-															milestone.highlight
-																? "border-primary/50 bg-primary/5"
-																: ""
-														}
-													>
-														<CardHeader className="pb-2">
-															<CardTitle className="text-base">
-																{
-																	milestone.title
-																}
-															</CardTitle>
-														</CardHeader>
-														<CardContent>
-															<CardDescription>
-																{
-																	milestone.description
-																}
-															</CardDescription>
-														</CardContent>
-													</Card>
-												)
-											)}
-										</div>
+									<Badge
+										variant={
+											phase.status === "In Progress"
+												? "default"
+												: "secondary"
+										}
+										className="ml-auto"
+									>
+										{phase.status}
+									</Badge>
+								</div>
+							</AccordionTrigger>
+							<AccordionContent>
+								<div className="px-6 pb-6">
+									<div className="space-y-4">
+										{phase.milestones.map(
+											(milestone, index) => (
+												<Card
+													key={index}
+													className={
+														milestone.highlight
+															? "border-primary/50 bg-primary/5"
+															: ""
+													}
+												>
+													<CardHeader className="pb-2">
+														<CardTitle className="text-base">
+															{milestone.title}
+														</CardTitle>
+													</CardHeader>
+													<CardContent>
+														<CardDescription>
+															{
+																milestone.description
+															}
+														</CardDescription>
+													</CardContent>
+												</Card>
+											)
+										)}
 									</div>
-								</AccordionContent>
-							</AccordionItem>
-						))}
-					</Accordion>
-				</div>
+								</div>
+							</AccordionContent>
+						</AccordionItem>
+					))}
+				</Accordion>
 			</div>
 		</section>
 	);

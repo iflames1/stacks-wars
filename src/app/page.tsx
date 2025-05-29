@@ -5,16 +5,14 @@ import Roadmap from "./_components/roadmap";
 
 export default function LandingPage() {
 	return (
-		<div className="flex min-h-screen flex-col mx-auto">
-			<main className="flex-1">
-				<HeroSection />
+		<div className="snap-y snap-mandatory overflow-y-auto ">
+			<HeroSection />
 
-				<Description />
+			<Description />
 
-				<Roadmap />
+			<Roadmap />
 
-				<Community />
-			</main>
+			<Community />
 		</div>
 	);
 }

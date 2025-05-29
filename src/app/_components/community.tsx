@@ -7,7 +7,7 @@ import { RxDiscordLogo } from "react-icons/rx";
 
 export default function Community() {
 	return (
-		<section className="w-full py-12 text-center">
+		<section className="w-full py-12 text-center bg-primary/10 snap-start">
 			<h2 className="text-2xl font-bold">Join the Community</h2>
 			<div className="mt-6 flex flex-wrap justify-center gap-4">
 				<Button asChild size="lg">
