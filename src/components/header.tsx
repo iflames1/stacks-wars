@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import Image from "next/image";
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { FiMenu } from "react-icons/fi";
 import { ThemeToggle } from "./theme/theme-toggle";
 //import ConnectWallet from "./connect-wallet";
 
@@ -23,7 +23,7 @@ export default function Header() {
 
 	return (
 		<header className="sticky top-0 z-50 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-primary/30">
-			<div className="container flex h-16 items-center justify-between">
+			<div className="max-w-8xl mx-auto flex h-16 items-center justify-between px-6">
 				<Link href={"/"}>
 					<div className="flex items-center gap-2">
 						<Image
@@ -57,15 +57,18 @@ export default function Header() {
 					<Sheet>
 						<SheetTrigger asChild className="md:hidden">
 							<Button variant="ghost" size="icon">
-								<Menu className="h-5 w-5" />
+								<FiMenu className="size-8" />
 								<span className="sr-only">Toggle menu</span>
 							</Button>
 						</SheetTrigger>
-						<SheetContent side="right">
+						<SheetContent
+							side="right"
+							className="backdrop-blur supports-[backdrop-filter]:bg-primary/30"
+						>
 							<SheetHeader>
 								<SheetTitle>Stacks Wars</SheetTitle>
 							</SheetHeader>
-							<nav className="flex flex-col gap-4 mt-6">
+							<nav className="flex flex-col gap-4 px-4 mt-6">
 								{navLinks.map((link) => (
 									<Link
 										key={link.href}
@@ -75,9 +78,9 @@ export default function Header() {
 										{link.label}
 									</Link>
 								))}
-								<ThemeToggle />
 								{/*<ConnectWallet />*/}
 							</nav>
+							<ThemeToggle className="w-fit" />
 						</SheetContent>
 					</Sheet>
 				</div>

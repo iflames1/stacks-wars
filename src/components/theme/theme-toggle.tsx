@@ -9,13 +9,17 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
 	const { setTheme, theme } = useTheme();
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="ghost" suppressHydrationWarning>
+				<Button
+					variant="ghost"
+					className={className}
+					suppressHydrationWarning
+				>
 					{theme === "system" || theme === "dark" ? (
 						<Moon className=" h-[1.2rem] w-[1.2rem]" />
 					) : (
