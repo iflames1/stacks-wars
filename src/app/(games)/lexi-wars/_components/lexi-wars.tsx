@@ -38,7 +38,7 @@ const GameOverModalProps = {
 	onPlayAgain: () => {},
 };
 
-const isMobile = true;
+const isMobile = false;
 const isPlaying = true;
 
 const handleKeyboardInput = (input: string) => {
@@ -57,7 +57,7 @@ const handleKeyboardInput = (input: string) => {
 export default function LexiWars() {
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
-			<div className="max-w-5xl mx-auto px-4 py-4 sm:px-6 sm:py-6">
+			<div className="max-w-5xl mx-auto p-4 sm:p-6">
 				<BackToGames />
 
 				<div className="space-y-4">
