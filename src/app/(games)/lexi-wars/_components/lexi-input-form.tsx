@@ -6,7 +6,7 @@ interface LexiInputFormProps {
 	isPlaying: boolean;
 	word: string;
 	setWord: (word: string) => void;
-	handleSubmit: (e?: React.FormEvent) => void;
+	handleSubmit?: (e?: React.FormEvent) => void;
 	timeLeft: number;
 	isMobile: boolean;
 	startGame: () => void;
@@ -70,7 +70,7 @@ export default function LexiInputForm({
 						if (!isPlaying) {
 							handleStartGame();
 						} else {
-							handleSubmit();
+							//handleSubmit() ;
 						}
 					}}
 					type="button"
