@@ -11,7 +11,7 @@ export default function TurnIndicator({
 }: TurnIndicatorProps) {
 	return (
 		<div
-			className={`p-4 rounded-lg border-2
+			className={`p-3 rounded-xl border-2
 			${
 				isCurrentPlayer
 					? "bg-green-500/10 border-green-500/20"
@@ -22,18 +22,20 @@ export default function TurnIndicator({
 			`}
 		>
 			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-2">
-					<User
-						className={`h-5 w-5
-						${
-							isCurrentPlayer
-								? "text-green-500"
-								: !isCurrentPlayer && currentPlayer
-									? "text-yellow-500"
-									: "text-green-500"
-						}
-						`}
-					/>
+				<div className="flex items-center gap-3">
+					<div className="bg-green-500/10 size-8 rounded-full flex items-center justify-center">
+						<User
+							className={`size-4
+							${
+								isCurrentPlayer
+									? "text-green-500"
+									: !isCurrentPlayer && currentPlayer
+										? "text-yellow-500"
+										: "text-green-500"
+							}
+							`}
+						/>
+					</div>
 					<h3
 						className={`text-base font-semibold text-green-500
 						${

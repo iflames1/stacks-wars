@@ -3,7 +3,6 @@ import BackToGames from "@/components/back-to-games";
 import GameHeader from "./game-header";
 import GameRule from "./game-rule";
 import GameTimer from "./game-timer";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import TurnIndicator from "./turn-indicator";
 import LexiInputForm from "./lexi-input-form";
 import KeyboardComp from "./keyboard-comp";
@@ -75,22 +74,18 @@ export default function LexiWars() {
 						<GameTimer timeLeft={30} />
 					</div>
 
-					<Card className="border-2 border-primary/10">
-						<CardHeader className="p-4">
-							<TurnIndicator />
-						</CardHeader>
-						<CardContent className="p-4">
-							<LexiInputForm
-								isPlaying={LexiInputFormProps.isPlaying}
-								word={LexiInputFormProps.word}
-								setWord={() => {}}
-								timeLeft={LexiInputFormProps.timeLeft}
-								isMobile={LexiInputFormProps.isMobile}
-								startGame={LexiInputFormProps.startGame}
-								inputRef={LexiInputFormProps.inputRef}
-							/>
-						</CardContent>
-					</Card>
+					<div className="border border-primary/10 p-3 bg-primary/10 rounded-xl shadow-sm space-y-4">
+						<TurnIndicator />
+						<LexiInputForm
+							isPlaying={LexiInputFormProps.isPlaying}
+							word={LexiInputFormProps.word}
+							setWord={() => {}}
+							timeLeft={LexiInputFormProps.timeLeft}
+							isMobile={LexiInputFormProps.isMobile}
+							startGame={LexiInputFormProps.startGame}
+							inputRef={LexiInputFormProps.inputRef}
+						/>
+					</div>
 				</div>
 
 				{isMobile && isPlaying && (
