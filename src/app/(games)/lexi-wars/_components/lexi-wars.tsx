@@ -5,8 +5,8 @@ import GameRule from "./game-rule";
 import GameTimer from "./game-timer";
 import TurnIndicator from "./turn-indicator";
 import LexiInputForm from "./lexi-input-form";
-import KeyboardComp from "./keyboard-comp";
 import GameOverModal from "./game-over-modal";
+import Keyboard from "./keyboard";
 
 const GameHeaderProps = {
 	score: 0,
@@ -37,26 +37,26 @@ const GameOverModalProps = {
 	onPlayAgain: () => {},
 };
 
-const isMobile = false;
-const isPlaying = true;
+//const isMobile = false;
+//const isPlaying = true;
 
-const handleKeyboardInput = (input: string) => {
-	if (input === "{enter}") {
-		//handleSubmit();
-	} else if (input === "{bksp}") {
-		//setWord((prev) => prev.slice(0, -1));
-	} else if (input === "{space}") {
-		// Ignore space
-		return;
-	} else {
-		//setWord((prev) => (prev + input).toLowerCase());
-	}
-};
+//const handleKeyboardInput = (input: string) => {
+//	if (input === "{enter}") {
+//		//handleSubmit();
+//	} else if (input === "{bksp}") {
+//		//setWord((prev) => prev.slice(0, -1));
+//	} else if (input === "{space}") {
+//		// Ignore space
+//		return;
+//	} else {
+//		//setWord((prev) => (prev + input).toLowerCase());
+//	}
+//};
 
 export default function LexiWars() {
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
-			<div className="max-w-3xl mx-auto p-4 sm:p-6">
+			<div className="max-w-3xl mx-auto p-4 sm:p-6 ">
 				<BackToGames />
 
 				<div className="space-y-3 sm:space-y-4">
@@ -87,9 +87,12 @@ export default function LexiWars() {
 					</div>
 				</div>
 
-				{isMobile && isPlaying && (
+				<Keyboard />
+
+				{/*<Keyboard2 />*/}
+				{/*{isMobile && isPlaying && (
 					<KeyboardComp handleKeyboardInput={handleKeyboardInput} />
-				)}
+				)}*/}
 
 				<GameOverModal
 					isOpen={GameOverModalProps.isOpen}
