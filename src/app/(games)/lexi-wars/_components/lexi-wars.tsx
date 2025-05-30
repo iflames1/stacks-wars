@@ -60,13 +60,13 @@ export default function LexiWars() {
 			<div className="max-w-5xl mx-auto p-4 sm:p-6">
 				<BackToGames />
 
-				<div className="space-y-4">
+				<div className="space-y-3">
 					<GameHeader
 						score={GameHeaderProps.score}
 						highScore={GameHeaderProps.highScore}
 					/>
 
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<GameRule
 							currentRule={GameRuleProps.currentRule}
 							repeatCount={GameRuleProps.repeatCount}

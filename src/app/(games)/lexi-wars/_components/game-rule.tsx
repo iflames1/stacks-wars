@@ -1,4 +1,3 @@
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "lucide-react";
 
 interface GameRuleProps {
@@ -9,23 +8,21 @@ interface GameRuleProps {
 
 export default function GameRule({ currentRule }: GameRuleProps) {
 	return (
-		<Card className="bg-primary/5 border-primary/10">
-			<CardHeader className="pb-3">
-				<div className="flex items-center gap-2">
-					<div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-						<User className="h-4 w-4 text-primary" />
-					</div>
-					<div>
-						<CardTitle className="text-sm text-primary">
-							Current Rule
-							{/*({repeatCount}/{requiredRepeats})*/}
-						</CardTitle>
-						<p className="text-sm font-medium mt-1">
-							{currentRule}
-						</p>
-					</div>
+		<div className="bg-primary/10 border rounded-xl">
+			<div className="flex items-center gap-2 p-3">
+				<div className="size-12 rounded-full bg-primary/10 flex items-center justify-center">
+					<User className="size-6 text-primary" />
 				</div>
-			</CardHeader>
-		</Card>
+				<div>
+					<p className="text-base text-primary font-medium">
+						Current Rule
+						{/*({repeatCount}/{requiredRepeats})*/}
+					</p>
+					<p className="text-sm font-light">
+						{currentRule}
+					</p>
+				</div>
+			</div>
+		</div>
 	);
 }

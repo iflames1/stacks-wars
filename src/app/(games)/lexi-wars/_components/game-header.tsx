@@ -12,7 +12,7 @@ export default function GameHeader({ score, highScore }: GameHeaderProps) {
 			<div className="flex items-center justify-between gap-2 p-3">
 				<div className="flex items-center gap-2">
 					<div className="size-12 rounded-full bg-primary/10 flex items-center justify-center">
-						<Brain className="h-6 w-6 text-primary" />
+						<Brain className="size-6 text-primary" />
 					</div>
 					<div>
 						<p className="font-medium text-xl">Lexi War</p>
@@ -23,14 +23,14 @@ export default function GameHeader({ score, highScore }: GameHeaderProps) {
 				</div>
 				<div className="flex items-center gap-2">
 					<Badge variant="outline" className="text-lg px-3 py-1">
-						<Target className="size-4 mr-1" />
+						<Target className="mr-1" />
 						{score}
 					</Badge>
 					<Badge
 						variant="outline"
 						className="text-lg px-3 py-1 bg-primary/10"
 					>
-						<Trophy className="size-4 mr-1" />
+						<Trophy className="mr-1" />
 						{highScore}
 					</Badge>
 				</div>
