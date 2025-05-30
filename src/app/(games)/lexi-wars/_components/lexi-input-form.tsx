@@ -37,7 +37,11 @@ export default function LexiInputForm({
 	};
 
 	return (
-		<form onSubmit={handleSubmit} autoComplete="off" className="space-y-3">
+		<form
+			onSubmit={handleSubmit}
+			autoComplete="off"
+			className="space-y-3 sm:space-y-4"
+		>
 			<Input
 				ref={inputRef}
 				type="text"
@@ -52,7 +56,7 @@ export default function LexiInputForm({
 				onCopy={handleCopy}
 				onCut={handleCopy}
 				disabled={!isPlaying || timeLeft === 0}
-				className="text-lg h-12"
+				className="text-lg sm:text-xl sm:px-4 h-12"
 				tabIndex={-1}
 				autoFocus={!isMobile}
 				autoComplete="off"
@@ -75,7 +79,7 @@ export default function LexiInputForm({
 					}}
 					type="button"
 					size="lg"
-					className="w-full md:w-auto"
+					className="w-full md:w-fit"
 					aria-hidden="true"
 					tabIndex={-1}
 				>

@@ -11,13 +11,13 @@ export default function TurnIndicator({
 }: TurnIndicatorProps) {
 	return (
 		<div
-			className={`p-3 rounded-xl border-2
+			className={`p-3 sm:p-4 rounded-xl border-2
 			${
 				isCurrentPlayer
 					? "bg-green-500/10 border-green-500/20"
 					: !isCurrentPlayer && currentPlayer
-						? "bg-yellow-500/10"
-						: "bg-green-500/10 border-green-500/20"
+					? "bg-yellow-500/10"
+					: "bg-green-500/10 border-green-500/20"
 			}
 			`}
 		>
@@ -30,8 +30,8 @@ export default function TurnIndicator({
 								isCurrentPlayer
 									? "text-green-500"
 									: !isCurrentPlayer && currentPlayer
-										? "text-yellow-500"
-										: "text-green-500"
+									? "text-yellow-500"
+									: "text-green-500"
 							}
 							`}
 						/>
@@ -42,16 +42,16 @@ export default function TurnIndicator({
 							isCurrentPlayer
 								? "text-green-500"
 								: !isCurrentPlayer && currentPlayer
-									? "text-yellow-500"
-									: "text-green-500"
+								? "text-yellow-500"
+								: "text-green-500"
 						}
 						`}
 					>
 						{isCurrentPlayer
 							? "It's Your Turn!"
 							: !isCurrentPlayer && currentPlayer
-								? `Waiting for ${currentPlayer}`
-								: "Your Turn!"}
+							? `Waiting for ${currentPlayer}`
+							: "Your Turn!"}
 					</h3>
 				</div>
 			</div>

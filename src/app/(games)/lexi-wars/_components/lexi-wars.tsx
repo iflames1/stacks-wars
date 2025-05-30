@@ -73,7 +73,7 @@ export default function LexiWars() {
 						requiredRepeats={GameRuleProps.requiredRepeats}
 					/>
 
-					<div className="border border-primary/10 p-3 bg-primary/10 rounded-xl shadow-sm space-y-4">
+					<div className="border border-primary/10 p-3 sm:p-4 bg-primary/10 rounded-xl shadow-sm space-y-4 sm:space-y-5">
 						<TurnIndicator />
 						<LexiInputForm
 							isPlaying={LexiInputFormProps.isPlaying}
