@@ -9,8 +9,8 @@ interface GameHeaderProps {
 export default function GameHeader({ score, highScore }: GameHeaderProps) {
 	return (
 		<div className="w-full border rounded-xl shadow-sm bg-primary/30">
-			<div className="flex items-center justify-between gap-2 p-3">
-				<div className="flex items-center gap-2">
+			<div className="flex items-center justify-between gap-2 p-3 sm:p-4">
+				<div className="flex items-center gap-2 sm:gap-3">
 					<div className="size-12 rounded-full bg-primary/10 flex items-center justify-center">
 						<Brain className="size-6 text-primary" />
 					</div>
@@ -21,14 +21,17 @@ export default function GameHeader({ score, highScore }: GameHeaderProps) {
 						</p>
 					</div>
 				</div>
-				<div className="flex items-center gap-2">
-					<Badge variant="outline" className="text-lg px-3 py-1">
+				<div className="flex items-center gap-2 sm:gap-3">
+					<Badge
+						variant="outline"
+						className="text-lg px-3 sm:px-4 py-1 sm:py-2"
+					>
 						<Target className="mr-1" />
 						{score}
 					</Badge>
 					<Badge
 						variant="outline"
-						className="text-lg px-3 py-1 bg-primary/10"
+						className="text-lg px-3 sm:px-4 py-1 sm:py-2 bg-primary/10"
 					>
 						<Trophy className="mr-1" />
 						{highScore}

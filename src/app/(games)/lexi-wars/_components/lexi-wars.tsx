@@ -56,23 +56,21 @@ const handleKeyboardInput = (input: string) => {
 export default function LexiWars() {
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
-			<div className="max-w-5xl mx-auto p-4 sm:p-6">
+			<div className="max-w-3xl mx-auto p-4 sm:p-6">
 				<BackToGames />
 
-				<div className="space-y-3">
+				<div className="space-y-3 sm:space-y-4">
 					<GameHeader
 						score={GameHeaderProps.score}
 						highScore={GameHeaderProps.highScore}
 					/>
+					<GameTimer timeLeft={30} />
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-						<GameRule
-							currentRule={GameRuleProps.currentRule}
-							repeatCount={GameRuleProps.repeatCount}
-							requiredRepeats={GameRuleProps.requiredRepeats}
-						/>
-						<GameTimer timeLeft={30} />
-					</div>
+					<GameRule
+						currentRule={GameRuleProps.currentRule}
+						repeatCount={GameRuleProps.repeatCount}
+						requiredRepeats={GameRuleProps.requiredRepeats}
+					/>
 
 					<div className="border border-primary/10 p-3 bg-primary/10 rounded-xl shadow-sm space-y-4">
 						<TurnIndicator />
