@@ -64,6 +64,7 @@ export default function LexiWars() {
 						score={GameHeaderProps.score}
 						highScore={GameHeaderProps.highScore}
 					/>
+
 					<GameTimer timeLeft={30} />
 
 					<GameRule
