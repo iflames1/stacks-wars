@@ -1,16 +1,17 @@
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { RefObject } from "react";
 
 interface LexiInputFormProps {
 	isPlaying: boolean;
 	word: string;
 	setWord: (word: string) => void;
-	handleSubmit?: (e?: React.FormEvent) => void;
+	handleSubmit: (e?: React.FormEvent) => void;
 	timeLeft: number;
-	isMobile: boolean;
+	isTouchDevice: boolean;
 	startGame: () => void;
-	inputRef: React.RefObject<HTMLInputElement | null>;
+	inputRef: RefObject<HTMLInputElement | null>;
 }
 
 export default function LexiInputForm({
@@ -19,22 +20,30 @@ export default function LexiInputForm({
 	word,
 	setWord,
 	timeLeft,
-	isMobile,
+	isTouchDevice,
 	startGame,
 	inputRef,
 }: LexiInputFormProps) {
 	const handlePaste = (e: React.ClipboardEvent) => {
 		e.preventDefault();
-		toast.error("Pasting is not allowed!", { position: "top-center" });
+		toast.error("Pasting is not permited!", { position: "top-center" });
 	};
 
 	const handleCopy = (e: React.ClipboardEvent) => {
 		e.preventDefault();
+		toast.error("Copying is not permited!", { position: "top-center" });
+	};
+
+	const handleCut = (e: React.ClipboardEvent) => {
+		e.preventDefault();
+		toast.error("Cutting is not permited!", { position: "top-center" });
 	};
 
 	const handleStartGame = () => {
 		startGame();
 	};
+
+	//console.log("isTouchDevice", isTouchDevice);
 
 	return (
 		<form
@@ -50,40 +59,42 @@ export default function LexiInputForm({
 						? "Type your word here..."
 						: "Press Start Game to begin"
 				}
+				onClick={() => inputRef.current?.focus()}
 				value={word}
-				onChange={(e) => setWord(e.target.value.toLowerCase())}
+				onChange={
+					!isTouchDevice ? (e) => setWord(e.target.value) : undefined
+				}
 				onPaste={handlePaste}
 				onCopy={handleCopy}
-				onCut={handleCopy}
+				onCut={handleCut}
 				disabled={!isPlaying || timeLeft === 0}
 				className="text-lg sm:text-xl sm:px-4 h-12"
-				tabIndex={-1}
-				autoFocus={!isMobile}
+				//className="absolute opacity-0 pointer-events-none h-0 w-0"
 				autoComplete="off"
-				aria-hidden="true"
+				aria-hidden={isTouchDevice}
+				aria-autocomplete="none"
 				autoCorrect="off"
+				inputMode="none"
 				spellCheck="false"
 				autoCapitalize="off"
-				inputMode="none"
-				aria-autocomplete="none"
-				readOnly={isMobile}
+				readOnly={isTouchDevice}
+				autoFocus={!isTouchDevice}
 			/>
+
 			<div className="flex justify-end">
 				<Button
 					onClick={() => {
 						if (!isPlaying) {
 							handleStartGame();
 						} else {
-							//handleSubmit() ;
+							handleSubmit();
 						}
 					}}
 					type="button"
 					size="lg"
 					className="w-full md:w-fit"
-					aria-hidden="true"
-					tabIndex={-1}
 				>
-					{!isPlaying ? "Start Game" : "Enter"}
+					{!isPlaying ? "Start Game" : "Submit"}
 				</Button>
 			</div>
 		</form>

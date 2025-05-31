@@ -7,6 +7,7 @@ import TurnIndicator from "./turn-indicator";
 import LexiInputForm from "./lexi-input-form";
 import GameOverModal from "./game-over-modal";
 import Keyboard from "./keyboard";
+import { FormEvent, useRef, useState } from "react";
 
 const GameHeaderProps = {
 	score: 0,
@@ -20,7 +21,7 @@ const GameRuleProps = {
 };
 
 const LexiInputFormProps = {
-	isPlaying: false,
+	isPlaying: true,
 	word: "word",
 	timeLeft: 30,
 	isMobile: false,
@@ -37,23 +38,36 @@ const GameOverModalProps = {
 	onPlayAgain: () => {},
 };
 
-//const isMobile = false;
-//const isPlaying = true;
-
-//const handleKeyboardInput = (input: string) => {
-//	if (input === "{enter}") {
-//		//handleSubmit();
-//	} else if (input === "{bksp}") {
-//		//setWord((prev) => prev.slice(0, -1));
-//	} else if (input === "{space}") {
-//		// Ignore space
-//		return;
-//	} else {
-//		//setWord((prev) => (prev + input).toLowerCase());
-//	}
-//};
-
 export default function LexiWars() {
+	const [word, setWord] = useState<string>("");
+	const [layoutName, setLayoutName] = useState<string>("default");
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	const handleSubmit = (e?: FormEvent) => {
+		e?.preventDefault();
+		console.log(word);
+	};
+
+	const handleShift = () => {
+		const newLayoutName = layoutName === "default" ? "shift" : "default";
+		setLayoutName(newLayoutName);
+	};
+
+	const handleKeyboardInput = (key: string) => {
+		if (key === "{bksp}") {
+			setWord((prev) => prev.slice(0, -1));
+		} else if (key === "{shift}") {
+			handleShift();
+		} else if (key === "{enter}") {
+			handleSubmit();
+		} else {
+			setWord((prev) => prev + key);
+		}
+	};
+
+	const isTouchDevice =
+		typeof window !== "undefined" && "ontouchstart" in window;
+
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
 			<div className="max-w-3xl mx-auto p-4 sm:p-6 ">
@@ -77,22 +91,23 @@ export default function LexiWars() {
 						<TurnIndicator />
 						<LexiInputForm
 							isPlaying={LexiInputFormProps.isPlaying}
-							word={LexiInputFormProps.word}
-							setWord={() => {}}
+							word={word}
+							setWord={setWord}
 							timeLeft={LexiInputFormProps.timeLeft}
-							isMobile={LexiInputFormProps.isMobile}
+							isTouchDevice={isTouchDevice}
 							startGame={LexiInputFormProps.startGame}
-							inputRef={LexiInputFormProps.inputRef}
+							inputRef={inputRef}
+							handleSubmit={handleSubmit}
 						/>
 					</div>
 				</div>
 
-				<Keyboard />
-
-				{/*<Keyboard2 />*/}
-				{/*{isMobile && isPlaying && (
-					<KeyboardComp handleKeyboardInput={handleKeyboardInput} />
-				)}*/}
+				{isTouchDevice && (
+					<Keyboard
+						onKeyPress={handleKeyboardInput}
+						layoutName={layoutName}
+					/>
+				)}
 
 				<GameOverModal
 					isOpen={GameOverModalProps.isOpen}
