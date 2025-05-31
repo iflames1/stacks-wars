@@ -40,6 +40,7 @@ const GameOverModalProps = {
 
 export default function LexiWars() {
 	const [word, setWord] = useState<string>("");
+	const [layoutName, setLayoutName] = useState<string>("default");
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const handleSubmit = (e?: FormEvent) => {
@@ -47,11 +48,16 @@ export default function LexiWars() {
 		console.log(word);
 	};
 
+	const handleShift = () => {
+		const newLayoutName = layoutName === "default" ? "shift" : "default";
+		setLayoutName(newLayoutName);
+	};
+
 	const handleKeyboardInput = (key: string) => {
 		if (key === "{bksp}") {
 			setWord((prev) => prev.slice(0, -1));
 		} else if (key === "{shift}") {
-			// handleShftToggle();
+			handleShift();
 		} else if (key === "{enter}") {
 			handleSubmit();
 		} else {
@@ -96,7 +102,12 @@ export default function LexiWars() {
 					</div>
 				</div>
 
-				{isTouchDevice && <Keyboard onKeyPress={handleKeyboardInput} />}
+				{isTouchDevice && (
+					<Keyboard
+						onKeyPress={handleKeyboardInput}
+						layoutName={layoutName}
+					/>
+				)}
 
 				<GameOverModal
 					isOpen={GameOverModalProps.isOpen}

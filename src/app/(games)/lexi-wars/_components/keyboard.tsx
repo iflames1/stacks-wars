@@ -25,14 +25,16 @@ const display = {
 
 interface KeyboardProps {
 	onKeyPress: (key: string) => void;
+	layoutName: string;
 }
 
-export default function Keyboard({ onKeyPress }: KeyboardProps) {
+export default function Keyboard({ onKeyPress, layoutName }: KeyboardProps) {
 	return (
 		<div className="fixed bottom-0 left-0 right-0 z-50">
 			<div className="max-w-3xl mx-auto hg-theme-default">
 				<KeyboardReact
 					layout={layout}
+					layoutName={layoutName}
 					display={display}
 					mergeDisplay={true}
 					onKeyPress={onKeyPress}
