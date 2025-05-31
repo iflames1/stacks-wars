@@ -29,7 +29,7 @@ interface KeyboardProps {
 
 export default function Keyboard({ onKeyPress }: KeyboardProps) {
 	return (
-		<div className="fixed bottom-0 left-0 right-0 z-50 ">
+		<div className="fixed bottom-0 left-0 right-0 z-50">
 			<div className="max-w-3xl mx-auto hg-theme-default">
 				<KeyboardReact
 					layout={layout}
