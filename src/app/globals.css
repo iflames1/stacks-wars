@@ -122,33 +122,20 @@
 	}
 }
 
-.keyboard {
-	@apply fixed bottom-0 left-0 right-0 w-full bg-background/80 backdrop-blur-lg border-t border-border;
-	z-index: 50;
+@keyframes blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0;
+	}
 }
 
-.keyboard .hg-theme-default {
-	@apply bg-transparent border-none;
-}
-
-.keyboard .hg-button {
-	@apply bg-primary text-primary-foreground border border-border/50 rounded-md active:bg-primary active:text-accent-foreground transition-colors;
-	height: 50px !important;
-	margin: 3px !important;
-}
-
-.keyboard .hg-button.hg-standardBtn[data-skbtn="{enter}"] {
-	@apply bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors;
-}
-
-.keyboard .hg-button.hg-standardBtn[data-skbtn="{bksp}"] {
-	@apply bg-destructive text-primary-foreground shadow-sm hover:bg-destructive/90;
-}
-
-.keyboard .hg-row {
-	@apply gap-0.5 mb-0.5;
-}
-
-.keyboard .hg-row:last-child .hg-button {
-	@apply w-full max-w-full;
+.animate-blink {
+	display: inline-block;
+	width: 1px;
+	background-color: currentColor;
+	margin-left: 1px;
+	animation: blink 1s step-end infinite;
 }
