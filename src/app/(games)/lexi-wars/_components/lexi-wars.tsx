@@ -9,6 +9,7 @@ import GameOverModal from "./game-over-modal";
 import Keyboard from "./keyboard";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { getWalletAddress } from "@/lib/wallet";
 
 const GameHeaderProps = {
 	score: 0,
@@ -50,7 +51,7 @@ export default function LexiWars() {
 	const [layoutName, setLayoutName] = useState<string>("default");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const { sendMessage, lastMessage, readyState, error } = useWebSocket(
-		"ws://localhost:3001/ws/67e55044-10b1-426f-9247-bb680e5fe0c8?username=Flames"
+		`ws://localhost:3001/ws/67e55044-10b1-426f-9247-bb680e5fe0c8?username=${getWalletAddress()}`
 	);
 	const [messages, setMessage] = useState<string>(lastMessage);
 
