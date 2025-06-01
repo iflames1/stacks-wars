@@ -8,6 +8,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HiMiniComputerDesktop } from "react-icons/hi2";
 
 export function ThemeToggle({ className }: { className?: string }) {
 	const { setTheme, theme } = useTheme();
@@ -16,10 +17,12 @@ export function ThemeToggle({ className }: { className?: string }) {
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button variant="ghost" className={className}>
-					{theme === "system" || theme === "dark" ? (
-						<Moon className=" h-[1.2rem] w-[1.2rem]" />
+					{theme === "system" ? (
+						<HiMiniComputerDesktop className="size-[1.2rem]" />
+					) : theme === "dark" ? (
+						<Moon className="size-[1.2rem]" />
 					) : (
-						<Sun className="h-[1.2rem] w-[1.2rem]" />
+						<Sun className="size-[1.2rem]" />
 					)}
 					<span className="capitalize">{theme}</span>
 					<span className="sr-only">Toggle theme</span>
