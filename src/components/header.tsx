@@ -11,6 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FiMenu } from "react-icons/fi";
 import { ThemeToggle } from "./theme/theme-toggle";
+import ConnectWallet from "./connect-wallet";
 //import ConnectWallet from "./connect-wallet";
 
 export default function Header() {
@@ -78,14 +79,14 @@ export default function Header() {
 										{link.label}
 									</Link>
 								))}
-								{/*<ConnectWallet />*/}
+								<ConnectWallet />
 							</nav>
 							<ThemeToggle className="w-fit" />
 						</SheetContent>
 					</Sheet>
 				</div>
 				<div className="hidden md:flex">
-					{/*<ConnectWallet />*/}
+					<ConnectWallet />
 					<ThemeToggle />
 				</div>
 			</div>
