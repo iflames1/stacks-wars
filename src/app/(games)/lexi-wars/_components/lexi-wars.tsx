@@ -58,6 +58,7 @@ export default function LexiWars() {
 		countdown,
 		rank,
 		finalStanding,
+		currentTurn,
 	} = useWebSocket(
 		`ws://localhost:3001/ws/67e55044-10b1-426f-9247-bb680e5fe0c8?username=${getWalletAddress()}`
 	);
@@ -146,7 +147,7 @@ export default function LexiWars() {
 					/>
 
 					<div className="border border-primary/10 p-3 sm:p-4 bg-primary/10 rounded-xl shadow-sm space-y-4 sm:space-y-5">
-						<TurnIndicator />
+						<TurnIndicator currentPlayer={currentTurn} />
 						<LexiInputForm
 							isPlaying={LexiInputFormProps.isPlaying}
 							word={word}

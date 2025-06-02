@@ -14,6 +14,7 @@ interface UseWebSocketReturn {
 	disconnect: () => void;
 	reconnect: () => void;
 	rule: string;
+	currentTurn: string;
 	countdown: number;
 	rank: string | null;
 	finalStanding: [Standing] | null;
@@ -30,6 +31,7 @@ export function useWebSocket(url: string): UseWebSocketReturn {
 	const [rule, setRule] = useState<string>(
 		"Word must be at least 4 characters!"
 	);
+	const [currentTurn, setCurrentTurn] = useState<string>("loading...");
 	const [countdown, setCountdown] = useState<number>(10);
 	const [rank, setRank] = useState<string | null>(null);
 	const [finalStanding, setFinalStanding] = useState<[Standing] | null>(null);
@@ -56,6 +58,9 @@ export function useWebSocket(url: string): UseWebSocketReturn {
 			try {
 				const message = JSON.parse(event.data);
 				switch (message.type) {
+					case "current_turn":
+						setCurrentTurn(message.data);
+						break;
 					case "rule":
 						setRule(message.data);
 						break;
@@ -151,6 +156,7 @@ export function useWebSocket(url: string): UseWebSocketReturn {
 		error,
 		disconnect,
 		reconnect: connect,
+		currentTurn,
 		countdown,
 		rank,
 		rule,
