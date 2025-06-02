@@ -1,12 +1,21 @@
+import { getWalletAddress } from "@/lib/wallet";
 import { useEffect, useState, useRef, useCallback } from "react";
+import { toast } from "sonner";
+
+interface Standing {
+	username: string;
+	rank: number;
+}
 
 interface UseWebSocketReturn {
 	sendMessage: (message: string | object) => boolean;
-	lastMessage: string;
 	readyState: number;
 	error: Event | Error | null;
 	disconnect: () => void;
 	reconnect: () => void;
+	countdown: number;
+	rank: string | null;
+	finalStanding: [Standing] | null;
 }
 
 export function useWebSocket(url: string): UseWebSocketReturn {
@@ -15,9 +24,11 @@ export function useWebSocket(url: string): UseWebSocketReturn {
 	const reconnectAttempts = useRef<number>(0);
 	const maxReconnectAttempts = 5;
 
-	const [lastMessage, setLastMessage] = useState<string>("");
 	const [readyState, setReadyState] = useState<number>(WebSocket.CONNECTING);
 	const [error, setError] = useState<Event | Error | null>(null);
+	const [countdown, setCountdown] = useState<number>(10);
+	const [rank, setRank] = useState<string | null>(null);
+	const [finalStanding, setFinalStanding] = useState<[Standing] | null>(null);
 
 	const connect = useCallback(() => {
 		console.log("connect attempt");
@@ -39,10 +50,35 @@ export function useWebSocket(url: string): UseWebSocketReturn {
 
 		ws.onmessage = (event: MessageEvent) => {
 			try {
-				const data = JSON.parse(event.data);
-				setLastMessage(data);
+				const message = JSON.parse(event.data);
+				switch (message.type) {
+					case "countdown":
+						setCountdown(Number(message.data));
+						break;
+					case "rank":
+						setRank(message.data);
+						break;
+					case "validation_msg":
+						toast.info(`${message.data}`);
+						break;
+					case "word_entry":
+						toast.info(
+							`${
+								getWalletAddress() === message.sender
+									? "You"
+									: message.sender
+							} entered: ${message.data}`
+						);
+						break;
+					case "game_over":
+						toast.info(`🏁 Game Over!`);
+						break;
+					case "final_standing":
+						setFinalStanding(message.data);
+					default:
+						toast.info("Uncaugth message:", message);
+				}
 			} catch (err) {
-				setLastMessage(event.data);
 				console.error("Error parsing message:", err);
 			}
 		};
@@ -100,10 +136,12 @@ export function useWebSocket(url: string): UseWebSocketReturn {
 
 	return {
 		sendMessage,
-		lastMessage,
 		readyState,
 		error,
 		disconnect,
 		reconnect: connect,
+		countdown,
+		rank,
+		finalStanding,
 	};
 }
