@@ -13,6 +13,7 @@ interface UseWebSocketReturn {
 	error: Event | Error | null;
 	disconnect: () => void;
 	reconnect: () => void;
+	rule: string;
 	countdown: number;
 	rank: string | null;
 	finalStanding: [Standing] | null;
@@ -26,6 +27,9 @@ export function useWebSocket(url: string): UseWebSocketReturn {
 
 	const [readyState, setReadyState] = useState<number>(WebSocket.CONNECTING);
 	const [error, setError] = useState<Event | Error | null>(null);
+	const [rule, setRule] = useState<string>(
+		"Word must be at least 4 characters!"
+	);
 	const [countdown, setCountdown] = useState<number>(10);
 	const [rank, setRank] = useState<string | null>(null);
 	const [finalStanding, setFinalStanding] = useState<[Standing] | null>(null);
@@ -52,6 +56,9 @@ export function useWebSocket(url: string): UseWebSocketReturn {
 			try {
 				const message = JSON.parse(event.data);
 				switch (message.type) {
+					case "rule":
+						setRule(message.data);
+						break;
 					case "countdown":
 						setCountdown(Number(message.data));
 						break;
@@ -70,11 +77,15 @@ export function useWebSocket(url: string): UseWebSocketReturn {
 							} entered: ${message.data}`
 						);
 						break;
+					case "used_word":
+						toast.info(`${message.data} has already been used!`);
+						break;
 					case "game_over":
 						toast.info(`🏁 Game Over!`);
 						break;
 					case "final_standing":
 						setFinalStanding(message.data);
+						break;
 					default:
 						toast.info("Uncaugth message:", message);
 				}
@@ -142,6 +153,7 @@ export function useWebSocket(url: string): UseWebSocketReturn {
 		reconnect: connect,
 		countdown,
 		rank,
+		rule,
 		finalStanding,
 	};
 }

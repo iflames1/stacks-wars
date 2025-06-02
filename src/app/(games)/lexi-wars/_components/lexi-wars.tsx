@@ -50,10 +50,17 @@ export default function LexiWars() {
 	const [word, setWord] = useState<string>("");
 	const [layoutName, setLayoutName] = useState<string>("default");
 	const inputRef = useRef<HTMLInputElement>(null);
-	const { sendMessage, readyState, error, countdown, rank, finalStanding } =
-		useWebSocket(
-			`ws://localhost:3001/ws/67e55044-10b1-426f-9247-bb680e5fe0c8?username=${getWalletAddress()}`
-		);
+	const {
+		sendMessage,
+		readyState,
+		error,
+		rule,
+		countdown,
+		rank,
+		finalStanding,
+	} = useWebSocket(
+		`ws://localhost:3001/ws/67e55044-10b1-426f-9247-bb680e5fe0c8?username=${getWalletAddress()}`
+	);
 
 	console.log("rank:", rank);
 	console.log("finalStanding:", finalStanding);
@@ -133,7 +140,7 @@ export default function LexiWars() {
 					<GameTimer timeLeft={countdown} />
 
 					<GameRule
-						currentRule={GameRuleProps.currentRule}
+						currentRule={rule}
 						repeatCount={GameRuleProps.repeatCount}
 						requiredRepeats={GameRuleProps.requiredRepeats}
 					/>
