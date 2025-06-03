@@ -16,7 +16,7 @@ import ConnectWallet from "./connect-wallet";
 
 export default function Header() {
 	const navLinks = [
-		{ href: "/", label: "Home" },
+		//{ href: "/", label: "Home" },
 		{ href: "/games", label: "Games" },
 		{ href: "/lobby", label: "Lobby" },
 		{ href: "/leaderboard", label: "Leaderboard" },
