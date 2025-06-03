@@ -6,7 +6,7 @@ export default async function GamesPage() {
 	const games: GameType[] = gamesData;
 
 	return (
-		<section className="w-full py-12 md:py-24 lg:py-32 bg-primary/10">
+		<section className="w-full min-h-full py-12 md:py-24 lg:py-32">
 			<div className="px-4 md:px-6">
 				<div className="flex flex-col items-center justify-center space-y-4 text-center">
 					<div className="space-y-2">
