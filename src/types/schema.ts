@@ -7,3 +7,10 @@ export interface GameType {
 	totalPrize: number;
 	activeLobbies: number;
 }
+
+export interface Lobby {
+	id: string;
+	name: string;
+	creatorId: string;
+	status: "open" | "full";
+}
