@@ -1,5 +1,5 @@
 import { isConnected } from "@stacks/connect";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import {
 	connectWallet,
 	disconnectWallet,

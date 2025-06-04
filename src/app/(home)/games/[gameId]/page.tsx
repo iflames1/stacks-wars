@@ -1,7 +1,6 @@
-import React from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import ActiveLobbies from "./_components/active-lobbies";
+import ActiveLobbies from "@/components/home/active-lobbies";
 import CreatePoolForm from "./_components/create-lobby-form";
 import GameDetails from "./_components/game-details";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
