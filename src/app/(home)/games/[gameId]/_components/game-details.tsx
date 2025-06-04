@@ -7,7 +7,7 @@ import { GameType } from "@/types/schema";
 export default function GameDetails({ game }: { game: GameType | null }) {
 	if (!game) return null;
 	return (
-		<Card>
+		<Card className="bg-primary/30">
 			<CardHeader>
 				<div className="flex items-center gap-3">
 					<div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">

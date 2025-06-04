@@ -18,7 +18,7 @@ export default async function ActiveLobbies({ lobbies }: { lobbies: Lobby[] }) {
 	return (
 		<>
 			{lobbies.map((lobby) => (
-				<Card key={lobby.id} className="overflow-hidden">
+				<Card key={lobby.id} className="overflow-hidden bg-primary/30">
 					<CardHeader className="pb-3">
 						<div className="flex justify-between items-start">
 							<CardTitle>{lobby.name}</CardTitle>

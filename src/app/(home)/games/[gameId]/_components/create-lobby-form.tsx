@@ -170,7 +170,7 @@ export default function CreateLobbyForm({ gameId }: { gameId: string }) {
 	};
 
 	return (
-		<Card>
+		<Card className="bg-primary/30">
 			<CardHeader>
 				<CardTitle className="text-2xl">Create a Lobby</CardTitle>
 				<CardDescription>
@@ -178,7 +178,10 @@ export default function CreateLobbyForm({ gameId }: { gameId: string }) {
 				</CardDescription>
 			</CardHeader>
 			<Form {...form}>
-				<form onSubmit={form.handleSubmit(onSubmit)}>
+				<form
+					onSubmit={form.handleSubmit(onSubmit)}
+					className="space-y-4"
+				>
 					<CardContent className="space-y-4">
 						<FormField
 							control={form.control}

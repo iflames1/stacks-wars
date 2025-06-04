@@ -15,7 +15,7 @@ import { GameType } from "@/types/schema";
 export default function SinglePlayer({ game }: { game: GameType | null }) {
 	if (!game) return null;
 	return (
-		<Card>
+		<Card className="bg-primary/30">
 			<CardHeader>
 				<CardTitle className="text-2xl">Singleplayer Mode</CardTitle>
 				<CardDescription>
@@ -36,7 +36,7 @@ export default function SinglePlayer({ game }: { game: GameType | null }) {
 			</CardContent>
 			<CardFooter className="flex justify-end">
 				<Button asChild>
-					<Link href={`/lexi-wars/single`}>
+					<Link href={`/lexi-wars`}>
 						<PlayCircle className="mr-2 h-5 w-5" />
 						Play Now
 					</Link>

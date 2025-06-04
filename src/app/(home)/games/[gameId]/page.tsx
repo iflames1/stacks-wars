@@ -33,7 +33,7 @@ export default async function CreateGame({
 				<GameDetails game={game} />
 
 				<Tabs defaultValue="multiplayer" className="w-full">
-					<TabsList className="grid w-full grid-cols-2">
+					<TabsList className="bg-primary/30 grid w-full grid-cols-2">
 						<TabsTrigger value="multiplayer">
 							Multiplayer
 						</TabsTrigger>
