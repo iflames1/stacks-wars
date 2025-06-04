@@ -9,7 +9,7 @@ export default function Layout({
 	return (
 		<>
 			<Header />
-			<main className="flex-1">{children}</main>
+			<main className="flex-1 bg-primary/10">{children}</main>
 			<Footer />
 		</>
 	);
