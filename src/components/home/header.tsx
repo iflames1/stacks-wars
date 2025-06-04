@@ -10,7 +10,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { FiMenu } from "react-icons/fi";
-import { ThemeToggle } from "./theme/theme-toggle";
+import { ThemeToggle } from "../theme/theme-toggle";
 import ConnectWallet from "./connect-wallet";
 //import ConnectWallet from "./connect-wallet";
 
