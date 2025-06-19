@@ -12,44 +12,34 @@ import {
 import { LobbyExtended } from "@/types/schema";
 import { Loader } from "lucide-react";
 import { isConnected } from "@stacks/connect";
+import { apiRequest, ApiRequestProps } from "@/lib/api";
+import { toast } from "sonner";
 
 interface JoinPoolFormProps {
 	lobby: LobbyExtended;
+	lobbyId: string;
 }
 
-export default function JoinLobbyForm({ lobby }: JoinPoolFormProps) {
+export default function JoinLobbyForm({ lobby, lobbyId }: JoinPoolFormProps) {
 	const isLoading = false;
 	const isFull = lobby.participants.length >= lobby.game.maxPlayers;
 
 	const handleSubmit = async () => {
-		console.log("lobby", lobby);
-		//if (!user) {
-		//	toast.info("you need to be logged in");
-		//	return;
-		//}
-		//const isUserJoined = lobby.participants.some(
-		//	(p) => p.userId === user.id
-		//);
-
-		//if (isUserJoined) {
-		//	toast.info("you have already joined this lobby");
-		//	return;
-		//}
-
-		//if (lobby.pool && lobby.pool.contract) {
-		//	const response = await joinGamePool(
-		//		lobby.pool.contract,
-		//		user.stxAddress,
-		//		Number(lobby.pool.entryAmount)
-		//	);
-		//	console.log("response", response.txid);
-		//}
-		//await joinLobby({
-		//	userId: user.id,
-		//	lobbyId: lobby.id,
-		//	stxAddress: user?.stxAddress,
-		//	username: user.stxAddress,
-		//});
+		try {
+			const apiParams: ApiRequestProps = {
+				path: `room/${lobbyId}/join`,
+				method: "PUT",
+				revalidatePath: `/lobby/${lobbyId}`,
+				revalidateTag: "lobby",
+			};
+			await apiRequest(apiParams);
+			toast.success("Joined lobby successfully!");
+		} catch (error) {
+			toast.error("Failed to join lobby", {
+				description: "Please try again later.",
+			});
+			console.error("Join lobby error:", error);
+		}
 	};
 
 	return (
