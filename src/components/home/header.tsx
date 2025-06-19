@@ -10,13 +10,13 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { FiMenu } from "react-icons/fi";
-import { ThemeToggle } from "./theme/theme-toggle";
+import { ThemeToggle } from "../theme/theme-toggle";
 import ConnectWallet from "./connect-wallet";
 //import ConnectWallet from "./connect-wallet";
 
 export default function Header() {
 	const navLinks = [
-		{ href: "/", label: "Home" },
+		//{ href: "/", label: "Home" },
 		{ href: "/games", label: "Games" },
 		{ href: "/lobby", label: "Lobby" },
 		{ href: "/leaderboard", label: "Leaderboard" },
