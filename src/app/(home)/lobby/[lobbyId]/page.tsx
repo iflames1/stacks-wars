@@ -10,12 +10,12 @@ import GamePreview from "./_components/game-preview";
 import { LobbyExtended } from "@/types/schema";
 import { lobbiesDataExtended } from "@/lib/gamePlaceholder";
 
-export default async function PoolDetailPage({
+export default async function LobbyDetailPage({
 	params,
 }: {
-	params: Promise<{ id: string }>;
+	params: Promise<{ lobbyId: string }>;
 }) {
-	const id = (await params).id;
+	const id = (await params).lobbyId;
 	console.log("Lobby ID:", id);
 
 	const lobby: LobbyExtended = lobbiesDataExtended[0];
@@ -62,7 +62,7 @@ export default async function PoolDetailPage({
 									</div>
 								}
 							>
-								<JoinLobbyForm lobby={lobby} />
+								<JoinLobbyForm lobby={lobby} lobbyId={id} />
 							</Suspense>
 							<GamePreview lobby={lobby} />
 						</div>

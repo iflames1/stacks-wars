@@ -33,6 +33,9 @@ export const apiRequest = async <T = JSON>({
 	const cookieStore = await cookies();
 	const jwt = cookieStore.get("jwt");
 
+	console.log("path", path);
+	console.log("revalidatepath", pathToRevalidate);
+
 	if (!jwt) {
 		throw new Error("You must be logged in to perform this action");
 	}
@@ -54,6 +57,8 @@ export const apiRequest = async <T = JSON>({
 			next: tag ? { tags: Array.isArray(tag) ? tag : [tag] } : undefined,
 		}
 	);
+
+	console.log("response", res);
 
 	if (!res.ok) {
 		if (res.status === 401) {

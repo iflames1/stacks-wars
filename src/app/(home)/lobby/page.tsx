@@ -26,7 +26,7 @@ export default function PoolsPage() {
 								: "There are no active lobbies"}
 						</h1>
 						<p className="mt-2 text-muted-foreground">
-							Join a lobby to Bettle
+							Join a lobby to Battle
 						</p>
 					</div>
 					<Link href="/games">

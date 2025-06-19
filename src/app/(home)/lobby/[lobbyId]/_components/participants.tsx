@@ -78,7 +78,7 @@ export default function Participants({ lobby }: { lobby: LobbyExtended }) {
 											href={`${EXPLORER_BASE_URL}txid/${participant.txId}?chain=testnet`}
 											target="_blank"
 										>
-											Veiw in explorer
+											View in explorer
 										</Link>
 									</Button>
 								</div>
