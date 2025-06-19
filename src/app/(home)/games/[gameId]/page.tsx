@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import ActiveLobbies from "@/components/home/active-lobbies";
-import CreatePoolForm from "./_components/create-lobby-form";
+import CreateLobbyForm from "./_components/create-lobby-form";
 import GameDetails from "./_components/game-details";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SinglePlayer from "./_components/single-player";
@@ -42,7 +42,7 @@ export default async function CreateGame({
 					</TabsList>
 
 					<TabsContent value="multiplayer" className="space-y-6">
-						<CreatePoolForm gameId={id} />
+						<CreateLobbyForm gameId={id} />
 
 						<div className="space-y-4">
 							<h2 className="text-2xl font-bold tracking-tighter sm:text-3xl">
