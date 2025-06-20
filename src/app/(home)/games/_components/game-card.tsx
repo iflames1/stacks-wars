@@ -11,9 +11,9 @@ import { Trophy, Users, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { GameType } from "@/types/schema";
+import { NewGameType } from "@/types/schema";
 
-export default function GameCard({ game }: { game: GameType }) {
+export default function GameCard({ game }: { game: NewGameType }) {
 	return (
 		<Card className="bg-primary/30">
 			<div className="sm:grid sm:grid-cols-[1fr_300px]">
@@ -43,9 +43,9 @@ export default function GameCard({ game }: { game: GameType }) {
 									<p className="text-sm font-medium">
 										Total Volume
 									</p>
-									<p className="text-lg font-bold">
+									{/*<p className="text-lg font-bold">
 										{game.totalPrize} STX
-									</p>
+									</p>*/}
 								</div>
 							</div>
 							<div className="flex items-center gap-2">

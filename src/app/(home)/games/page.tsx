@@ -1,9 +1,16 @@
-import { GameType } from "@/types/schema";
+import { JsonGameType, NewGameType, transGameType } from "@/types/schema";
 import GameCard from "./_components/game-card";
-import { gamesData } from "@/lib/gamePlaceholder";
+import { apiRequest } from "@/lib/api";
 
 export default async function GamesPage() {
-	const games: GameType[] = gamesData;
+	const jsonGames = await apiRequest<JsonGameType[]>({
+		path: "/game",
+		auth: false,
+		cache: "force-cache",
+	});
+	const games: NewGameType[] = await Promise.all(
+		jsonGames.map(transGameType)
+	);
 
 	return (
 		<section className="w-full min-h-dvh py-12 md:py-24 lg:py-32 bg-primary/10">
