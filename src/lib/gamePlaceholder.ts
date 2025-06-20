@@ -10,18 +10,7 @@ export const gamesData: GameType[] = [
 		tags: ["word", "strategy", "multiplayer"],
 		totalPrize: 1000,
 		activeLobbies: 5,
-		maxPlayers: 10,
 	},
-	//{
-	//	id: "puzzle-challenge",
-	//	name: "Puzzle Challenge",
-	//	description:
-	//		"Solve puzzles faster than your opponents to win STX rewards.",
-	//	image: "/lexi-wars.webp",
-	//	tags: ["puzzle", "strategy", "multiplayer"],
-	//	totalPrize: 1500,
-	//	activeLobbies: 3,
-	//},
 ];
 
 export const lobbiesData: Lobby[] = [
@@ -33,7 +22,7 @@ export const lobbiesData: Lobby[] = [
 		//gameId: "lexi-wars",
 		//amount: 100,
 		//participants: ["user1", "user2"],
-		//maxPlayers: 10,
+		maxPlayers: 10,
 		//description: "Join this lobby to compete in Lexi Wars!",
 		//createdAt: new Date().toISOString(),
 		//updatedAt: new Date().toISOString(),
@@ -49,7 +38,7 @@ export const lobbiesDataExtended: LobbyExtended[] = [
 		//gameId: "lexi-wars",
 		//amount: 100,
 		//participants: ["user1", "user2"],
-		//maxPlayers: 10,
+		maxPlayers: 10,
 		description: "Join this lobby to compete in Lexi Wars!",
 		//createdAt: new Date().toISOString(),
 		//updatedAt: new Date().toISOString(),
@@ -62,7 +51,6 @@ export const lobbiesDataExtended: LobbyExtended[] = [
 			tags: ["word", "strategy", "multiplayer"],
 			totalPrize: 1000,
 			activeLobbies: 5,
-			maxPlayers: 10,
 		},
 		participants: [
 			{

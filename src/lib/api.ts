@@ -13,12 +13,13 @@ type JSON = JSONValue;
 
 export interface ApiRequestProps {
 	path: string;
-	method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+	method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 	body?: JSONObject;
 	tag?: string | string[];
 	revalidateTag?: string;
 	revalidatePath?: string;
 	cache?: "no-store" | "force-cache";
+	auth?: boolean;
 }
 
 export const apiRequest = async <T = JSON>({
@@ -28,22 +29,31 @@ export const apiRequest = async <T = JSON>({
 	tag,
 	revalidateTag: tagToRevalidate,
 	revalidatePath: pathToRevalidate,
-	cache = "no-store",
+	cache,
+	auth = true,
 }: ApiRequestProps): Promise<T> => {
-	const cookieStore = await cookies();
-	const jwt = cookieStore.get("jwt");
+	let headers: HeadersInit;
 
 	console.log("path", path);
 	console.log("revalidatepath", pathToRevalidate);
 
-	if (!jwt) {
-		throw new Error("You must be logged in to perform this action");
-	}
+	if (auth) {
+		const cookieStore = await cookies();
+		const jwt = cookieStore.get("jwt");
 
-	const headers: HeadersInit = {
-		"Content-Type": "application/json",
-		Authorization: `Bearer ${jwt.value}`,
-	};
+		if (!jwt) {
+			throw new Error("You must be logged in to perform this action");
+		}
+
+		headers = {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${jwt.value}`,
+		};
+	} else {
+		headers = {
+			"Content-Type": "application/json",
+		};
+	}
 
 	const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
@@ -53,31 +63,22 @@ export const apiRequest = async <T = JSON>({
 			method,
 			headers,
 			body: body ? JSON.stringify(body) : undefined,
-			cache,
+			...(cache && { cache }),
 			next: tag ? { tags: Array.isArray(tag) ? tag : [tag] } : undefined,
 		}
 	);
 
-	console.log("response", res);
-
 	if (!res.ok) {
-		if (res.status === 401) {
-			throw new Error("Unauthorized – maybe you need to log in again?");
-		}
-		if (res.status === 403) {
-			throw new Error("Forbidden – you don’t have access.");
-		}
 		const text = await res.text();
+		if (res.status === 401)
+			throw new Error("Unauthorized – maybe you need to log in again?");
+		if (res.status === 403)
+			throw new Error("Forbidden – you don’t have access.");
 		throw new Error(text || "Request failed");
 	}
 
-	if (tagToRevalidate) {
-		revalidateTag(tagToRevalidate);
-	}
-
-	if (pathToRevalidate) {
-		revalidatePath(pathToRevalidate);
-	}
+	if (tagToRevalidate) revalidateTag(tagToRevalidate);
+	if (pathToRevalidate) revalidatePath(pathToRevalidate);
 
 	return res.json() as Promise<T>;
 };

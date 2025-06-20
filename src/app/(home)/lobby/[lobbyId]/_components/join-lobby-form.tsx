@@ -22,7 +22,7 @@ interface JoinPoolFormProps {
 
 export default function JoinLobbyForm({ lobby, lobbyId }: JoinPoolFormProps) {
 	const isLoading = false;
-	const isFull = lobby.participants.length >= lobby.game.maxPlayers;
+	const isFull = lobby.participants.length >= lobby.maxPlayers;
 
 	const handleSubmit = async () => {
 		try {
