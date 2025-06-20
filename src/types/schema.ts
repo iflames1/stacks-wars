@@ -23,6 +23,7 @@ export async function transGameType(game: JsonGameType): Promise<NewGameType> {
 	const jsonLobbies = await apiRequest<JsonLobby[]>({
 		path: `/rooms/${game.id}?state=waiting`,
 		auth: false,
+		tag: "lobby",
 	});
 	return {
 		id: game.id,
@@ -51,15 +52,30 @@ export interface JsonLobby {
 	creator_id: string;
 	max_participants: number;
 	state: "waiting" | "inprogress" | "finished";
-	//game_id: string;
+	game_id: string;
+	game_name: string;
+}
+
+export function transLobby(lobby: JsonLobby): Lobby {
+	return {
+		id: lobby.id,
+		name: lobby.name,
+		creatorId: lobby.creator_id,
+		maxPlayers: lobby.max_participants,
+		status: lobby.state,
+		gameId: lobby.game_id,
+		gameName: lobby.game_name,
+	};
 }
 
 export interface Lobby {
 	id: string;
 	name: string;
 	creatorId: string;
-	status: "open" | "full";
 	maxPlayers: number;
+	status: "waiting" | "inprogress" | "finished";
+	gameId: string;
+	gameName: string;
 }
 
 interface Participant {

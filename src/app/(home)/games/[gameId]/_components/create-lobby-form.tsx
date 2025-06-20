@@ -52,7 +52,15 @@ interface FormData {
 	amount?: number;
 }
 
-export default function CreateLobbyForm({ gameId }: { gameId: string }) {
+interface CreateLobbyFormProps {
+	gameId: string;
+	gameName: string;
+}
+
+export default function CreateLobbyForm({
+	gameId,
+	gameName,
+}: CreateLobbyFormProps) {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -81,7 +89,13 @@ export default function CreateLobbyForm({ gameId }: { gameId: string }) {
 			const apiParams: ApiRequestProps = {
 				path: "room",
 				method: "POST",
-				body: { name: values.name, max_participants: 4 },
+				body: {
+					name: values.name,
+					description: values.description,
+					max_participants: 4,
+					game_id: gameId,
+					game_name: gameName,
+				},
 				tag: "lobby",
 				revalidateTag: "lobby",
 				revalidatePath: "/lobby",

@@ -34,9 +34,6 @@ export const apiRequest = async <T = JSON>({
 }: ApiRequestProps): Promise<T> => {
 	let headers: HeadersInit;
 
-	console.log("path", path);
-	console.log("revalidatepath", pathToRevalidate);
-
 	if (auth) {
 		const cookieStore = await cookies();
 		const jwt = cookieStore.get("jwt");
