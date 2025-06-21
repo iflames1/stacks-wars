@@ -20,12 +20,14 @@ export default async function ActiveLobbyHeader({ lobby }: LobbyProps) {
 				<CardTitle>{lobby.name}</CardTitle>
 				<Badge
 					variant={
-						lobby.status === "waiting" ? "default" : "secondary"
+						lobby.lobbyStatus === "waiting"
+							? "default"
+							: "secondary"
 					}
 				>
-					{lobby.status === "waiting"
+					{lobby.lobbyStatus === "waiting"
 						? "Open"
-						: lobby.status === "inprogress"
+						: lobby.lobbyStatus === "inprogress"
 						? "In Progress"
 						: "Closed"}
 				</Badge>

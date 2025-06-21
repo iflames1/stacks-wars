@@ -9,9 +9,17 @@ import {
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
-import { LobbyExtended } from "@/types/schema";
+import { GameType, JsonGameType, Lobby, transGameType } from "@/types/schema";
+import { apiRequest } from "@/lib/api";
 
-export default function GamePreview({ lobby }: { lobby: LobbyExtended }) {
+export default async function GamePreview({ lobby }: { lobby: Lobby }) {
+	const jsonGame = await apiRequest<JsonGameType>({
+		path: `/game/${lobby.gameId}`,
+		auth: false,
+		cache: "force-cache",
+	});
+	const game: GameType = await transGameType(jsonGame);
+
 	return (
 		<Card className="overflow-hidden bg-primary/10">
 			<CardHeader className="p-4 pb-2 sm:p-6 sm:pb-3">
@@ -21,10 +29,7 @@ export default function GamePreview({ lobby }: { lobby: LobbyExtended }) {
 			</CardHeader>
 			<CardContent className="p-0">
 				<Image
-					src={
-						lobby.game.image ||
-						"/lexi-wars.webp?height=300&width=500"
-					}
+					src={game.image || "/lexi-wars.webp?height=300&width=500"}
 					width={500}
 					height={300}
 					alt="Game preview"
@@ -32,9 +37,7 @@ export default function GamePreview({ lobby }: { lobby: LobbyExtended }) {
 				/>
 			</CardContent>
 			<CardFooter className="flex justify-between p-3 sm:p-4 bg-muted/30">
-				<p className="text-xs sm:text-sm font-medium">
-					{lobby.game.name}
-				</p>
+				<p className="text-xs sm:text-sm font-medium">{game.name}</p>
 				<Button
 					variant="ghost"
 					size="sm"

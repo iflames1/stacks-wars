@@ -7,8 +7,12 @@ import LobbyStats from "./_components/lobby-stats";
 import LobbyDetails from "./_components/lobby-details";
 import Participants from "./_components/participants";
 import GamePreview from "./_components/game-preview";
-import { LobbyExtended } from "@/types/schema";
-import { lobbiesDataExtended } from "@/lib/gamePlaceholder";
+import {
+	JsonLobbyExtended,
+	NewLobbyExtended,
+	transLobbyExtended,
+} from "@/types/schema";
+import { apiRequest } from "@/lib/api";
 
 export default async function LobbyDetailPage({
 	params,
@@ -18,7 +22,12 @@ export default async function LobbyDetailPage({
 	const id = (await params).lobbyId;
 	console.log("Lobby ID:", id);
 
-	const lobby: LobbyExtended = lobbiesDataExtended[0];
+	const jsonLobby = await apiRequest<JsonLobbyExtended>({
+		path: `/room/${id}/extended`,
+		auth: false,
+	});
+	const lobby: NewLobbyExtended = transLobbyExtended(jsonLobby);
+
 	if (!lobby) {
 		notFound();
 	}
@@ -37,21 +46,30 @@ export default async function LobbyDetailPage({
 				<div className="mb-6 sm:mb-8 space-y-2 sm:space-y-3">
 					<div className="flex flex-wrap items-start justify-between gap-2">
 						<h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight break-words">
-							{lobby.name}
+							{lobby.lobby.name}
 						</h1>
 					</div>
 					<p className="text-sm sm:text-base text-muted-foreground max-w-3xl break-words">
-						{lobby.description}
+						{lobby.lobby.description}
 					</p>
 				</div>
 				<div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
 					{/* Main Content */}
 					<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
 						{/* Stats Cards */}
-						<LobbyStats lobby={lobby} />
+						<LobbyStats
+							lobby={lobby.lobby}
+							players={lobby.players}
+						/>
 						{/* Lobby Details */}
-						<LobbyDetails lobby={lobby} />
-						<Participants lobby={lobby} />
+						<LobbyDetails
+							lobby={lobby.lobby}
+							players={lobby.players}
+						/>
+						<Participants
+							lobby={lobby.lobby}
+							players={lobby.players}
+						/>
 					</div>
 					<div className="space-y-4 sm:space-y-6">
 						<div className="lg:sticky lg:top-6 flex flex-col gap-4">
@@ -62,9 +80,13 @@ export default async function LobbyDetailPage({
 									</div>
 								}
 							>
-								<JoinLobbyForm lobby={lobby} lobbyId={id} />
+								<JoinLobbyForm
+									lobby={lobby.lobby}
+									players={lobby.players}
+									lobbyId={id}
+								/>
 							</Suspense>
-							<GamePreview lobby={lobby} />
+							<GamePreview lobby={lobby.lobby} />
 						</div>
 					</div>
 				</div>

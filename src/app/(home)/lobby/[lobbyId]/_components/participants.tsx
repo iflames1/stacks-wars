@@ -3,11 +3,16 @@ import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { LobbyExtended } from "@/types/schema";
+import { Lobby, Participant } from "@/types/schema";
+import { truncateAddress } from "@/lib/utils";
 
 const EXPLORER_BASE_URL = "https://explorer.hiro.so/";
 
-export default function Participants({ lobby }: { lobby: LobbyExtended }) {
+interface ParticipantProps {
+	lobby: Lobby;
+	players: Participant[];
+}
+export default function Participants({ lobby, players }: ParticipantProps) {
 	return (
 		<Card className="overflow-hidden bg-primary/10">
 			<CardHeader className="bg-muted/30 p-4 pb-3 sm:p-6 sm:pb-4">
@@ -26,9 +31,9 @@ export default function Participants({ lobby }: { lobby: LobbyExtended }) {
 				</p>
 			</CardHeader>
 			<CardContent className="p-4 sm:p-6">
-				{lobby.participants.length > 0 ? (
+				{players.length > 0 ? (
 					<div className="space-y-2 sm:space-y-3">
-						{lobby.participants.map((participant, index) => (
+						{players.map((player, index) => (
 							<div
 								key={index}
 								className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
@@ -40,7 +45,10 @@ export default function Participants({ lobby }: { lobby: LobbyExtended }) {
 									<div className="overflow-hidden">
 										<div className="flex items-center gap-2">
 											<p className="text-sm sm:text-base font-medium truncate max-w-[120px] xs:max-w-[160px] sm:max-w-[200px] md:max-w-[300px]">
-												{participant.username}
+												{player.username ||
+													truncateAddress(
+														player.walletAddress
+													)}
 											</p>
 											{/*<span
 												className={`text-xs px-2 py-0.5 rounded-full ${
@@ -67,7 +75,8 @@ export default function Participants({ lobby }: { lobby: LobbyExtended }) {
 								</div>
 								<div className="text-right flex flex-col">
 									<span className="text-sm sm:text-base font-bold">
-										{participant.amount} STX
+										{/*{player.amount}*/}
+										STX
 									</span>
 									<Button
 										variant={"link"}
@@ -75,7 +84,7 @@ export default function Participants({ lobby }: { lobby: LobbyExtended }) {
 										className="!p-0 text-right"
 									>
 										<Link
-											href={`${EXPLORER_BASE_URL}txid/${participant.txId}?chain=testnet`}
+											href={`${EXPLORER_BASE_URL}txid/${player.walletAddress}?chain=testnet`}
 											target="_blank"
 										>
 											View in explorer

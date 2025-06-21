@@ -3,26 +3,31 @@
 import { Button } from "@/components/ui/button";
 import {
 	Card,
-	CardContent,
+	//CardContent,
 	CardDescription,
 	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { LobbyExtended } from "@/types/schema";
+import { Lobby, Participant } from "@/types/schema";
 import { Loader } from "lucide-react";
 import { isConnected } from "@stacks/connect";
 import { apiRequest, ApiRequestProps } from "@/lib/api";
 import { toast } from "sonner";
 
 interface JoinPoolFormProps {
-	lobby: LobbyExtended;
+	lobby: Lobby;
+	players: Participant[];
 	lobbyId: string;
 }
 
-export default function JoinLobbyForm({ lobby, lobbyId }: JoinPoolFormProps) {
+export default function JoinLobbyForm({
+	lobby,
+	players,
+	lobbyId,
+}: JoinPoolFormProps) {
 	const isLoading = false;
-	const isFull = lobby.participants.length >= lobby.maxPlayers;
+	const isFull = players.length >= lobby.maxPlayers;
 
 	const handleSubmit = async () => {
 		try {
@@ -50,7 +55,7 @@ export default function JoinLobbyForm({ lobby, lobbyId }: JoinPoolFormProps) {
 					Join this lobby to participate in the game
 				</CardDescription>
 			</CardHeader>
-			{lobby.pool && (
+			{/*{lobby.pool && (
 				<CardContent>
 					<div className="space-y-4">
 						<p className="text-sm font-medium mb-1">Entry Fee</p>
@@ -59,7 +64,7 @@ export default function JoinLobbyForm({ lobby, lobbyId }: JoinPoolFormProps) {
 						</p>
 					</div>
 				</CardContent>
-			)}
+			)}*/}
 			<CardFooter>
 				<Button
 					className="w-full"

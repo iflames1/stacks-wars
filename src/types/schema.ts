@@ -59,6 +59,7 @@ export interface GameType {
 export interface JsonLobby {
 	id: string;
 	name: string;
+	description: string | null;
 	creator_id: string;
 	max_participants: number;
 	state: "waiting" | "inprogress" | "finished";
@@ -71,9 +72,10 @@ export function transLobby(lobby: JsonLobby): Lobby {
 	return {
 		id: lobby.id,
 		name: lobby.name,
+		description: lobby.description,
 		creatorId: lobby.creator_id,
 		maxPlayers: lobby.max_participants,
-		status: lobby.state,
+		lobbyStatus: lobby.state,
 		gameId: lobby.game_id,
 		gameName: lobby.game_name,
 		players: lobby.participants,
@@ -83,18 +85,28 @@ export function transLobby(lobby: JsonLobby): Lobby {
 export interface Lobby {
 	id: string;
 	name: string;
+	description: string | null;
 	creatorId: string;
 	maxPlayers: number;
-	status: "waiting" | "inprogress" | "finished";
+	lobbyStatus: "waiting" | "inprogress" | "finished";
 	gameId: string;
 	gameName: string;
 	players: number;
 }
 
-interface Participant {
-	username: string;
-	amount: number;
-	txId: string;
+export interface JsonParticipant {
+	id: string;
+	wallet_address: string;
+	display_name: string | null;
+	state: "ready" | "not_ready";
+	rank: number | null;
+	used_words: string[];
+}
+
+export interface Participant extends User {
+	playerStatus: "ready" | "not_ready";
+	rank: number | null;
+	usedWords: string[];
 }
 
 interface Pool {
@@ -107,10 +119,39 @@ export interface LobbyExtended {
 	id: string;
 	name: string;
 	creatorId: string;
-	status: "open" | "full";
+	lobbyStatus: "open" | "full";
 	description: string;
 	game: GameType;
 	participants: Participant[];
 	pool: Pool;
 	maxPlayers: number;
+}
+
+export interface JsonLobbyExtended {
+	info: JsonLobby;
+	players: JsonParticipant[];
+}
+
+export interface NewLobbyExtended {
+	lobby: Lobby;
+	players: Participant[];
+}
+
+export function transLobbyExtended(
+	jsonLobby: JsonLobbyExtended
+): NewLobbyExtended {
+	const lobby: Lobby = transLobby(jsonLobby.info);
+
+	const players: Participant[] = jsonLobby.players.map((p) => ({
+		...transUser({
+			id: p.id,
+			wallet_address: p.wallet_address,
+			display_name: p.display_name,
+		}),
+		playerStatus: p.state,
+		rank: p.rank,
+		usedWords: p.used_words,
+	}));
+
+	return { lobby, players };
 }
