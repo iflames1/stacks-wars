@@ -3,13 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import ActiveLobbies from "@/components/home/active-lobbies";
 //import { getAvailableLobbies, getLobbies } from "@/lib/services/lobby";
-import { Lobby } from "@/types/schema";
-import { lobbiesData } from "@/lib/gamePlaceholder";
+import { JsonLobby, Lobby, transLobby } from "@/types/schema";
+import { apiRequest } from "@/lib/api";
 
-export default function PoolsPage() {
-	//const lobbies = await getAvailableLobbies();
-	//console.log(JSON.stringify(lobbies, null, 2));
-	const lobbies: Lobby[] = lobbiesData;
+export default async function PoolsPage() {
+	const jsonLobbies = await apiRequest<JsonLobby[]>({
+		path: "/rooms",
+		auth: false,
+	});
+
+	const lobbies: Lobby[] = jsonLobbies.map(transLobby);
 
 	if (!lobbies) {
 		return <div>No lobbies found</div>;

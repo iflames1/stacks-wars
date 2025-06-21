@@ -24,12 +24,12 @@ export default async function ActiveLobbies({ lobbies }: { lobbies: Lobby[] }) {
 							<CardTitle>{lobby.name}</CardTitle>
 							<Badge
 								variant={
-									lobby.status === "open"
+									lobby.status === "waiting"
 										? "default"
 										: "secondary"
 								}
 							>
-								{lobby.status === "open" ? "Open" : "Full"}
+								{lobby.status === "waiting" ? "Open" : "Full"}
 							</Badge>
 						</div>
 						<CardDescription>
@@ -80,10 +80,12 @@ export default async function ActiveLobbies({ lobbies }: { lobbies: Lobby[] }) {
 						<Button
 							asChild
 							variant={
-								lobby.status === "open" ? "default" : "outline"
+								lobby.status === "waiting"
+									? "default"
+									: "outline"
 							}
 							className="w-full gap-1.5 cursor cursor-not-allowed"
-							disabled={lobby.status !== "open"}
+							disabled={lobby.status !== "waiting"}
 						>
 							<Link
 								// href={`${lobby.status === "open" ? `/lobby/${lobby.id}` : ""}`}

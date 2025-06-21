@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { toast } from "sonner";
 import { revalidateTag } from "next/cache";
+import { disconnect } from "@stacks/connect";
 
 export async function connectOrCreateUser(walletAddress: string) {
 	const cookieStore = await cookies();
@@ -44,7 +45,10 @@ export async function connectOrCreateUser(walletAddress: string) {
 export async function logoutUser() {
 	const cookieStore = await cookies();
 
+	console.log("disconnect called");
+
 	try {
+		disconnect();
 		cookieStore.delete("jwt");
 		revalidateTag("user");
 
@@ -52,4 +56,18 @@ export async function logoutUser() {
 	} catch {
 		return { success: false, message: "Logout failed." };
 	}
+}
+
+export async function isLoggedIn(walletIsConnected: boolean): Promise<boolean> {
+	const cookieStore = await cookies();
+	const jwt = cookieStore.get("jwt");
+
+	if (!jwt) {
+		if (walletIsConnected) {
+			await logoutUser();
+		}
+		return false;
+	}
+
+	return true;
 }

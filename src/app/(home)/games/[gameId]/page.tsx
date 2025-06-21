@@ -5,18 +5,36 @@ import CreateLobbyForm from "./_components/create-lobby-form";
 import GameDetails from "./_components/game-details";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SinglePlayer from "./_components/single-player";
-import { GameType, Lobby } from "@/types/schema";
-import { gamesData, lobbiesData } from "@/lib/gamePlaceholder";
+import {
+	JsonGameType,
+	JsonLobby,
+	Lobby,
+	NewGameType,
+	transGameType,
+	transLobby,
+} from "@/types/schema";
+import { apiRequest } from "@/lib/api";
 
 export default async function CreateGame({
 	params,
 }: {
-	params: Promise<{ id: string }>;
+	params: Promise<{ gameId: string }>;
 }) {
-	const { id } = await params;
+	const { gameId } = await params;
 
-	const game: GameType = gamesData[0];
-	const lobbies: Lobby[] = lobbiesData;
+	const jsonGame = await apiRequest<JsonGameType>({
+		path: `/game/${gameId}`,
+		auth: false,
+		cache: "force-cache",
+	});
+	const game: NewGameType = await transGameType(jsonGame);
+
+	const jsonLobbies = await apiRequest<JsonLobby[]>({
+		path: "/rooms",
+		auth: false,
+	});
+
+	const lobbies: Lobby[] = jsonLobbies.map(transLobby);
 
 	return (
 		<div className="mx-auto max-w-3xl px-4 py-4 sm:px-6 sm:py-6">
@@ -42,7 +60,7 @@ export default async function CreateGame({
 					</TabsList>
 
 					<TabsContent value="multiplayer" className="space-y-6">
-						<CreateLobbyForm gameId={id} />
+						<CreateLobbyForm gameId={gameId} gameName={game.name} />
 
 						<div className="space-y-4">
 							<h2 className="text-2xl font-bold tracking-tighter sm:text-3xl">
