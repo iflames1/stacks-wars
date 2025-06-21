@@ -11,9 +11,9 @@ import { Trophy, Users, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { NewGameType } from "@/types/schema";
+import { GameType } from "@/types/schema";
 
-export default function GameCard({ game }: { game: NewGameType }) {
+export default function GameCard({ game }: { game: GameType }) {
 	return (
 		<Card className="bg-primary/30">
 			<div className="sm:grid sm:grid-cols-[1fr_300px]">

@@ -1,13 +1,23 @@
 import { apiRequest } from "@/lib/api";
 
-export interface GameType {
+export interface JsonUser {
 	id: string;
-	name: string;
-	description: string;
-	image?: string;
-	tags: string[];
-	totalPrize: number; // not added yet
-	activeLobbies: number; // not added yet
+	wallet_address: string;
+	display_name: string | null;
+}
+
+export function transUser(user: JsonUser): User {
+	return {
+		id: user.id,
+		walletAddress: user.wallet_address,
+		username: user.display_name,
+	};
+}
+
+export interface User {
+	id: string;
+	walletAddress: string;
+	username: string | null;
 }
 
 export interface JsonGameType {
@@ -19,7 +29,7 @@ export interface JsonGameType {
 	min_players: number;
 }
 
-export async function transGameType(game: JsonGameType): Promise<NewGameType> {
+export async function transGameType(game: JsonGameType): Promise<GameType> {
 	const jsonLobbies = await apiRequest<JsonLobby[]>({
 		path: `/rooms/${game.id}?state=waiting`,
 		auth: false,
@@ -36,7 +46,7 @@ export async function transGameType(game: JsonGameType): Promise<NewGameType> {
 	};
 }
 
-export interface NewGameType {
+export interface GameType {
 	id: string;
 	name: string;
 	description: string;
@@ -54,6 +64,7 @@ export interface JsonLobby {
 	state: "waiting" | "inprogress" | "finished";
 	game_id: string;
 	game_name: string;
+	participants: number;
 }
 
 export function transLobby(lobby: JsonLobby): Lobby {
@@ -65,6 +76,7 @@ export function transLobby(lobby: JsonLobby): Lobby {
 		status: lobby.state,
 		gameId: lobby.game_id,
 		gameName: lobby.game_name,
+		players: lobby.participants,
 	};
 }
 
@@ -76,6 +88,7 @@ export interface Lobby {
 	status: "waiting" | "inprogress" | "finished";
 	gameId: string;
 	gameName: string;
+	players: number;
 }
 
 interface Participant {
