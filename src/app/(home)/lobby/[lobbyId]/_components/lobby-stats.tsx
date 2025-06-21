@@ -1,12 +1,21 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Gamepad2, Trophy, Users } from "lucide-react";
-import { LobbyExtended } from "@/types/schema";
+import {
+	Gamepad2,
+	//Trophy,
+	Users,
+} from "lucide-react";
+import { Lobby, Participant } from "@/types/schema";
 
-export default function LobbyStats({ lobby }: { lobby: LobbyExtended }) {
+interface LobbyStatsProps {
+	lobby: Lobby;
+	players: Participant[];
+}
+
+export default function LobbyStats({ lobby, players }: LobbyStatsProps) {
 	return (
 		<div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-			{lobby.pool && (
+			{/*{lobby.pool && (
 				<Card className="bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/20 transition-colors">
 					<CardContent className="p-3 sm:p-4 md:p-6">
 						<div className="flex items-center gap-2 sm:gap-3 md:gap-4">
@@ -24,7 +33,7 @@ export default function LobbyStats({ lobby }: { lobby: LobbyExtended }) {
 						</div>
 					</CardContent>
 				</Card>
-			)}
+			)}*/}
 
 			<Card className="bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/20 transition-colors">
 				<CardContent className="p-3 sm:p-4 md:p-6">
@@ -37,8 +46,7 @@ export default function LobbyStats({ lobby }: { lobby: LobbyExtended }) {
 								Players
 							</p>
 							<p className="text-base sm:text-xl md:text-2xl font-bold">
-								{lobby.participants.length}/
-								{lobby.game.maxPlayers}
+								{players.length}/{lobby.maxPlayers}
 							</p>
 						</div>
 					</div>
@@ -56,7 +64,7 @@ export default function LobbyStats({ lobby }: { lobby: LobbyExtended }) {
 								Game
 							</p>
 							<p className="text-base sm:text-xl md:text-2xl font-bold">
-								{lobby.game.name}
+								{lobby.name}
 							</p>
 						</div>
 					</div>

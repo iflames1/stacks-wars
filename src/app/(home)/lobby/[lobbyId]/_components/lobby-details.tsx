@@ -2,12 +2,16 @@ import React from "react";
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Info } from "lucide-react";
-import { LobbyExtended } from "@/types/schema";
+import { Lobby, Participant } from "@/types/schema";
 
-export default function LobbyDetails({ lobby }: { lobby: LobbyExtended }) {
+interface LobbyDetailsProps {
+	lobby: Lobby;
+	players: Participant[];
+}
+
+export default function LobbyDetails({ lobby, players }: LobbyDetailsProps) {
 	// Calculate participation percentage
-	const participationPercentage =
-		(lobby.participants.length / lobby.game.maxPlayers) * 100;
+	const participationPercentage = (players.length / lobby.maxPlayers) * 100;
 
 	return (
 		<Card className="overflow-hidden bg-primary/10">
@@ -25,8 +29,8 @@ export default function LobbyDetails({ lobby }: { lobby: LobbyExtended }) {
 						</h3>
 						<div className="space-y-2">
 							<div className="flex justify-between text-xs sm:text-sm">
-								<span>{lobby.participants.length} joined</span>
-								<span>{lobby.game.maxPlayers} max</span>
+								<span>{players.length} joined</span>
+								<span>{lobby.maxPlayers} max</span>
 							</div>
 							<Progress
 								value={participationPercentage}
