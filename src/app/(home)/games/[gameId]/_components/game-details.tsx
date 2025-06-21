@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gamepad2, Users, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { NewGameType } from "@/types/schema";
+import { GameType } from "@/types/schema";
 
-export default function GameDetails({ game }: { game: NewGameType | null }) {
+export default function GameDetails({ game }: { game: GameType | null }) {
 	if (!game) return null;
 	return (
 		<Card className="bg-primary/30">

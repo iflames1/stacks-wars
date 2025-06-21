@@ -9,7 +9,7 @@ import {
 	JsonGameType,
 	JsonLobby,
 	Lobby,
-	NewGameType,
+	GameType,
 	transGameType,
 	transLobby,
 } from "@/types/schema";
@@ -27,7 +27,7 @@ export default async function CreateGame({
 		auth: false,
 		cache: "force-cache",
 	});
-	const game: NewGameType = await transGameType(jsonGame);
+	const game: GameType = await transGameType(jsonGame);
 
 	const jsonLobbies = await apiRequest<JsonLobby[]>({
 		path: "/rooms",

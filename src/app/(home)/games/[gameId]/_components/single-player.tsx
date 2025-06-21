@@ -9,9 +9,9 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { PlayCircle } from "lucide-react";
-import { NewGameType } from "@/types/schema";
+import { GameType } from "@/types/schema";
 
-export default function SinglePlayer({ game }: { game: NewGameType | null }) {
+export default function SinglePlayer({ game }: { game: GameType | null }) {
 	if (!game) return null;
 	return (
 		<Card className="bg-primary/30">

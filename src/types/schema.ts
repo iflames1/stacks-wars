@@ -20,16 +20,6 @@ export interface User {
 	username: string | null;
 }
 
-export interface GameType {
-	id: string;
-	name: string;
-	description: string;
-	image?: string;
-	tags: string[];
-	totalPrize: number; // not added yet
-	activeLobbies: number; // not added yet
-}
-
 export interface JsonGameType {
 	id: string;
 	name: string;
@@ -39,7 +29,7 @@ export interface JsonGameType {
 	min_players: number;
 }
 
-export async function transGameType(game: JsonGameType): Promise<NewGameType> {
+export async function transGameType(game: JsonGameType): Promise<GameType> {
 	const jsonLobbies = await apiRequest<JsonLobby[]>({
 		path: `/rooms/${game.id}?state=waiting`,
 		auth: false,
@@ -56,7 +46,7 @@ export async function transGameType(game: JsonGameType): Promise<NewGameType> {
 	};
 }
 
-export interface NewGameType {
+export interface GameType {
 	id: string;
 	name: string;
 	description: string;
