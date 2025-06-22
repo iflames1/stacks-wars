@@ -13,6 +13,7 @@ import {
 	transLobbyExtended,
 } from "@/types/schema";
 import { apiRequest } from "@/lib/api";
+import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 
 export default async function LobbyDetailPage({
 	params,
@@ -25,11 +26,19 @@ export default async function LobbyDetailPage({
 	const jsonLobby = await apiRequest<JsonLobbyExtended>({
 		path: `/room/${id}/extended`,
 		auth: false,
+		tag: "lobbyExtended",
 	});
 	const lobby: NewLobbyExtended = transLobbyExtended(jsonLobby);
 
 	if (!lobby) {
 		notFound();
+	}
+
+	const userId = await getClaimFromJwt<string>("sub");
+
+	if (!userId) {
+		console.error("User ID not found in JWT claims");
+		return notFound();
 	}
 
 	return (
@@ -69,6 +78,7 @@ export default async function LobbyDetailPage({
 						<Participants
 							lobby={lobby.lobby}
 							players={lobby.players}
+							userId={userId}
 						/>
 					</div>
 					<div className="space-y-4 sm:space-y-6">

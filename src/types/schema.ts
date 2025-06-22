@@ -98,13 +98,13 @@ export interface JsonParticipant {
 	id: string;
 	wallet_address: string;
 	display_name: string | null;
-	state: "ready" | "not_ready";
+	state: "ready" | "notready";
 	rank: number | null;
 	used_words: string[];
 }
 
 export interface Participant extends User {
-	playerStatus: "ready" | "not_ready";
+	playerStatus: "ready" | "notready";
 	rank: number | null;
 	usedWords: string[];
 }
