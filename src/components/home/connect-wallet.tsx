@@ -4,22 +4,30 @@ import { connectWallet, getWalletAddress } from "@/lib/wallet";
 import { Loader, Wallet2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { truncateAddress } from "@/lib/utils";
-import {
-	connectOrCreateUser,
-	isLoggedIn,
-	logoutUser,
-} from "@/lib/actions/user";
+import { connectOrCreateUser, logoutUser } from "@/lib/actions/user";
 import { toast } from "sonner";
-import { isConnected } from "@stacks/connect";
+import { disconnect } from "@stacks/connect";
+import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 
 export default function ConnectWallet() {
 	const [loading, setLoading] = useState<boolean>(false);
 	const [loggedIn, setLoggedIn] = useState(false);
+	const [walletAddress, setWalletAddress] = useState<string>("");
 
 	useEffect(() => {
 		const checkLoginStatus = async () => {
-			const status = await isLoggedIn(isConnected());
-			setLoggedIn(status);
+			const walletAddress = await getClaimFromJwt<string>("wallet");
+			if (walletAddress) {
+				if (getWalletAddress() !== walletAddress) {
+					console.log("Wallet address does not match JWT claim");
+					disconnect();
+					setLoggedIn(false);
+					throw new Error("Wallet address does not match JWT claim");
+				} else {
+					setWalletAddress(walletAddress);
+					setLoggedIn(true);
+				}
+			}
 		};
 
 		checkLoginStatus();
@@ -62,7 +70,7 @@ export default function ConnectWallet() {
 					onClick={handleDisconnect}
 					disabled={loading}
 				>
-					<span>{truncateAddress(getWalletAddress())}</span>
+					<span>{truncateAddress(walletAddress)}</span>
 					Disconnect
 				</Button>
 			) : (

@@ -23,19 +23,43 @@ export default function Participants({
 	players,
 	userId,
 }: ParticipantProps) {
-	const handleKickPlayer = async (playerId: string) => {
+	const currentPlayer = players.find((p) => p.id === userId);
+	const isReady = currentPlayer?.playerStatus === "ready";
+
+	const handleKickPlayer = async (
+		playerId: string,
+		walletAddress: string
+	) => {
 		try {
 			await apiRequest({
 				path: `/room/${lobby.id}/kick`,
-				method: "POST",
+				method: "PUT",
 				body: { player_id: playerId },
-				revalidatePath: `/lexi-wars/${lobby.id}`,
+				revalidatePath: `/lobby`,
 				revalidateTag: "lobbyExtended",
 			});
-			toast.success("Player kicked.");
+			toast.success(`Player ${truncateAddress(walletAddress)} kicked.`);
 		} catch (error) {
 			toast.error("Failed to kick player.");
 			console.error("Kick player error:", error);
+		}
+	};
+
+	type PlayerStatus = "ready" | "notready";
+
+	const handleUpdatePlayerStatus = async (status: PlayerStatus) => {
+		try {
+			await apiRequest({
+				path: `/room/${lobby.id}/player-state`,
+				method: "PUT",
+				body: { new_state: status },
+				revalidatePath: `/lobby/${lobby.id}`,
+				revalidateTag: "lobbyExtended",
+			});
+			toast.success(`Status updated.`);
+		} catch (error) {
+			toast.error("Failed to update status.");
+			console.error("Update player status error:", error);
 		}
 	};
 
@@ -47,8 +71,21 @@ export default function Participants({
 						<Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
 						Current Participants
 					</CardTitle>
-					<Button size="sm" asChild>
-						<Link href={`/lexi-wars/${lobby.id}`}>Ready</Link>
+					<Button
+						size="sm"
+						variant={isReady ? "destructive" : "default"}
+						//className={
+						//	isReady
+						//		? "bg-green-500/10 text-green-600 hover:bg-green-500/20"
+						//		: "bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20"
+						//}
+						onClick={() =>
+							handleUpdatePlayerStatus(
+								isReady ? "notready" : "ready"
+							)
+						}
+					>
+						{isReady ? "Unready" : "Ready"}
 					</Button>
 				</div>
 				<p className="text-xs text-muted-foreground mt-2">
@@ -134,7 +171,10 @@ export default function Participants({
 												size="sm"
 												className="text-xs px-2 py-1"
 												onClick={() =>
-													handleKickPlayer(player.id)
+													handleKickPlayer(
+														player.id,
+														player.walletAddress
+													)
 												}
 											>
 												Kick

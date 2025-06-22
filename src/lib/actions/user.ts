@@ -57,17 +57,3 @@ export async function logoutUser() {
 		return { success: false, message: "Logout failed." };
 	}
 }
-
-export async function isLoggedIn(walletIsConnected: boolean): Promise<boolean> {
-	const cookieStore = await cookies();
-	const jwt = cookieStore.get("jwt");
-
-	if (!jwt) {
-		if (walletIsConnected) {
-			await logoutUser();
-		}
-		return false;
-	}
-
-	return true;
-}

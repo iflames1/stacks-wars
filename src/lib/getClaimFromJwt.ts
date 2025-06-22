@@ -1,3 +1,6 @@
+"use server";
+
+import { disconnect, isConnected } from "@stacks/connect";
 import { cookies } from "next/headers";
 
 interface JwtPayload {
@@ -14,7 +17,12 @@ export const getClaimFromJwt = async <T = number | string>(
 	try {
 		const cookieStore = await cookies();
 		const jwt = cookieStore.get("jwt")?.value;
-		if (!jwt) return null;
+		if (!jwt) {
+			if (isConnected()) {
+				disconnect();
+			}
+			return null;
+		}
 
 		const payload = jwt.split(".")[1];
 		if (!payload) return null;
