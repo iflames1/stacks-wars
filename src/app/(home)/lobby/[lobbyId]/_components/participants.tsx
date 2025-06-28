@@ -24,10 +24,16 @@ export default function Participants({
 	const currentPlayer = players.find((p) => p.id === userId);
 	const isReady = currentPlayer?.playerStatus === "ready";
 
-	const handleKickPlayer = (playerId: string) => {
+	const handleKickPlayer = (
+		playerId: string,
+		wallet_address: string,
+		display_name: string | null
+	) => {
 		sendMessage({
 			type: "kickplayer",
 			player_id: playerId,
+			wallet_address: wallet_address,
+			display_name: display_name,
 		});
 	};
 
@@ -143,7 +149,11 @@ export default function Participants({
 												size="sm"
 												className="text-xs px-2 py-1"
 												onClick={() =>
-													handleKickPlayer(player.id)
+													handleKickPlayer(
+														player.id,
+														player.walletAddress,
+														player.username
+													)
 												}
 											>
 												Kick

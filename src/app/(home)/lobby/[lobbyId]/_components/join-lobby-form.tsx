@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/api";
 import { toast } from "sonner";
 import { isConnected } from "@stacks/connect";
 import { LobbyClientMessage } from "@/hooks/useLobbySocket";
+import { useRouter } from "next/navigation";
 
 interface JoinLobbyFormProps {
 	lobby: Lobby;
@@ -33,6 +34,7 @@ export default function JoinLobbyForm({
 }: JoinLobbyFormProps) {
 	const [joined, setJoined] = useState(false);
 	const [loading, setLoading] = useState(false);
+	const router = useRouter();
 
 	const isFull = players.length >= lobby.maxPlayers;
 	const isParticipant = players.some((p) => p.id === userId);
@@ -52,6 +54,7 @@ export default function JoinLobbyForm({
 			});
 			setJoined(true);
 			toast.success("Joined lobby successfully!");
+			router.refresh();
 		} catch (err) {
 			toast.error("Failed to join lobby");
 			console.error(err);

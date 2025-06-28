@@ -14,6 +14,8 @@ import {
 } from "@/types/schema";
 import { LobbyServerMessage, useLobbySocket } from "@/hooks/useLobbySocket";
 import { toast } from "sonner";
+import { truncateAddress } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface LobbyProps {
 	lobby: LobbyType;
@@ -33,14 +35,15 @@ export default function Lobby({
 	const [participantList, setParticipantList] =
 		useState<Participant[]>(players);
 	const [countdown, setCountdown] = useState<number>(30);
+	const router = useRouter();
 
 	const isParticipant = participantList.some((p) => p.id === userId);
 
-	const handleKick = useCallback(() => {
-		toast.error("You were kicked from the lobby.");
-		setJoined(false);
-		disconnectRef.current?.();
-	}, []);
+	//const handleKick = useCallback(() => {
+	//	toast.error("You were kicked from the lobby.");
+	//	setJoined(false);
+	//	disconnectRef.current?.();
+	//}, []);
 
 	const handleMessage = useCallback(
 		(message: LobbyServerMessage) => {
@@ -48,15 +51,25 @@ export default function Lobby({
 
 			switch (message.type) {
 				case "playerjoined":
+					setParticipantList(message.players.map(transParticipant));
+					break;
 				case "playerleft":
+					setParticipantList(message.players.map(transParticipant));
+					break;
 				case "playerupdated":
 					setParticipantList(message.players.map(transParticipant));
 					break;
 				case "playerkicked":
-					console.log("Someone was kicked:", message.player_id);
+					toast.info(
+						`${
+							message.display_name ||
+							truncateAddress(message.wallet_address)
+						} was kicked from the lobby.`
+					);
+					router.refresh();
 					break;
 				case "notifykicked":
-					handleKick();
+					toast.info("You were kicked from the lobby.");
 					break;
 				case "countdown":
 					setCountdown(message.time);
@@ -68,7 +81,7 @@ export default function Lobby({
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[handleKick]
+		[router]
 	);
 
 	const disconnectRef = useRef<(() => void) | null>(null);

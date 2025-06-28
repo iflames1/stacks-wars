@@ -15,16 +15,26 @@ export type LobbyClientMessage =
 	| { type: "updateplayerstate"; new_state: PlayerStatus }
 	| { type: "updategamestate"; new_state: GameState }
 	| { type: "leaveroom" }
-	| { type: "kickplayer"; player_id: string };
+	| {
+			type: "kickplayer";
+			player_id: string;
+			wallet_address: string;
+			display_name: string | null;
+	  };
 
 export type LobbyServerMessage =
 	| { type: "playerjoined"; players: JsonParticipant[] }
 	| { type: "playerleft"; players: JsonParticipant[] }
 	| { type: "playerupdated"; players: JsonParticipant[] }
-	| { type: "playerkicked"; player_id: string; reason: string }
-	| { type: "notifykicked"; reason: string }
+	| {
+			type: "playerkicked";
+			player_id: string;
+			wallet_address: string;
+			display_name: string | null;
+	  }
+	| { type: "notifykicked" }
 	| { type: "countdown"; time: number }
-	| { type: "gamestarting" };
+	| { type: "gamestarting"; state: "waiting" | "inprogress" | "finished" };
 
 export function useLobbySocket({
 	roomId,
@@ -32,12 +42,6 @@ export function useLobbySocket({
 	userId,
 	onMessage,
 }: UseLobbySocketProps) {
-	console.log("💡 WS useEffect triggered with:", {
-		enabled,
-		roomId,
-		userId,
-		onMessage,
-	});
 	const socketRef = useRef<WebSocket | null>(null);
 	const messageHandlerRef = useRef<typeof onMessage | null>(null);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
