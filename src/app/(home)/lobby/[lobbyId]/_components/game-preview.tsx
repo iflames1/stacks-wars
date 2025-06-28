@@ -1,4 +1,3 @@
-import React from "react";
 import {
 	Card,
 	CardContent,
@@ -9,17 +8,9 @@ import {
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
-import { GameType, JsonGameType, Lobby, transGameType } from "@/types/schema";
-import { apiRequest } from "@/lib/api";
+import { GameType } from "@/types/schema";
 
-export default async function GamePreview({ lobby }: { lobby: Lobby }) {
-	const jsonGame = await apiRequest<JsonGameType>({
-		path: `/game/${lobby.gameId}`,
-		auth: false,
-		cache: "force-cache",
-	});
-	const game: GameType = await transGameType(jsonGame);
-
+export default function GamePreview({ game }: { game: GameType }) {
 	return (
 		<Card className="overflow-hidden bg-primary/10">
 			<CardHeader className="p-4 pb-2 sm:p-6 sm:pb-3">
@@ -34,6 +25,7 @@ export default async function GamePreview({ lobby }: { lobby: Lobby }) {
 					height={300}
 					alt="Game preview"
 					className="w-full h-auto object-cover"
+					priority={false}
 				/>
 			</CardContent>
 			<CardFooter className="flex justify-between p-3 sm:p-4 bg-muted/30">

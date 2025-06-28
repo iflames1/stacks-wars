@@ -109,6 +109,21 @@ export interface Participant extends User {
 	usedWords: string[];
 }
 
+export function transParticipant(
+	jsonParticipant: JsonParticipant
+): Participant {
+	return {
+		...transUser({
+			id: jsonParticipant.id,
+			wallet_address: jsonParticipant.wallet_address,
+			display_name: jsonParticipant.display_name,
+		}),
+		playerStatus: jsonParticipant.state,
+		rank: jsonParticipant.rank,
+		usedWords: jsonParticipant.used_words,
+	};
+}
+
 interface Pool {
 	id: string;
 	currentAmount: number;

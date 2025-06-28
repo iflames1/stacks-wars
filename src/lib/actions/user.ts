@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { toast } from "sonner";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { disconnect } from "@stacks/connect";
 
 export async function connectOrCreateUser(walletAddress: string) {
@@ -22,7 +22,7 @@ export async function connectOrCreateUser(walletAddress: string) {
 		}
 
 		const token = await apiRes.json();
-		console.log(token);
+		console.log("token", token);
 
 		cookieStore.set("jwt", token, {
 			httpOnly: true,
@@ -32,6 +32,7 @@ export async function connectOrCreateUser(walletAddress: string) {
 		});
 
 		revalidateTag("user");
+		revalidatePath("/");
 
 		toast.success("Wallet connected successfully!");
 
@@ -51,6 +52,7 @@ export async function logoutUser() {
 		disconnect();
 		cookieStore.delete("jwt");
 		revalidateTag("user");
+		revalidatePath("/");
 
 		return { success: true };
 	} catch {

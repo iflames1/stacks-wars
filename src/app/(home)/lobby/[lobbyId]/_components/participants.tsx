@@ -1,14 +1,10 @@
-"use client";
-
-import React from "react";
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Lobby, Participant } from "@/types/schema";
 import { truncateAddress } from "@/lib/utils";
-import { apiRequest } from "@/lib/api";
-import { toast } from "sonner";
+import { LobbyClientMessage } from "@/hooks/useLobbySocket";
 
 const EXPLORER_BASE_URL = "https://explorer.hiro.so/";
 
@@ -16,51 +12,32 @@ interface ParticipantProps {
 	lobby: Lobby;
 	players: Participant[];
 	userId: string;
+	sendMessage: (msg: LobbyClientMessage) => void;
 }
 
 export default function Participants({
 	lobby,
 	players,
 	userId,
+	sendMessage,
 }: ParticipantProps) {
 	const currentPlayer = players.find((p) => p.id === userId);
 	const isReady = currentPlayer?.playerStatus === "ready";
 
-	const handleKickPlayer = async (
-		playerId: string,
-		walletAddress: string
-	) => {
-		try {
-			await apiRequest({
-				path: `/room/${lobby.id}/kick`,
-				method: "PUT",
-				body: { player_id: playerId },
-				revalidatePath: `/lobby`,
-				revalidateTag: "lobbyExtended",
-			});
-			toast.success(`Player ${truncateAddress(walletAddress)} kicked.`);
-		} catch (error) {
-			toast.error("Failed to kick player.");
-			console.error("Kick player error:", error);
-		}
+	const handleKickPlayer = (playerId: string) => {
+		sendMessage({
+			type: "kickplayer",
+			player_id: playerId,
+		});
 	};
 
 	type PlayerStatus = "ready" | "notready";
 
-	const handleUpdatePlayerStatus = async (status: PlayerStatus) => {
-		try {
-			await apiRequest({
-				path: `/room/${lobby.id}/player-state`,
-				method: "PUT",
-				body: { new_state: status },
-				revalidatePath: `/lobby/${lobby.id}`,
-				revalidateTag: "lobbyExtended",
-			});
-			toast.success(`Status updated.`);
-		} catch (error) {
-			toast.error("Failed to update status.");
-			console.error("Update player status error:", error);
-		}
+	const handleUpdatePlayerStatus = (status: PlayerStatus) => {
+		sendMessage({
+			type: "updateplayerstate",
+			new_state: status,
+		});
 	};
 
 	return (
@@ -74,11 +51,6 @@ export default function Participants({
 					<Button
 						size="sm"
 						variant={isReady ? "destructive" : "default"}
-						//className={
-						//	isReady
-						//		? "bg-green-500/10 text-green-600 hover:bg-green-500/20"
-						//		: "bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20"
-						//}
 						onClick={() =>
 							handleUpdatePlayerStatus(
 								isReady ? "notready" : "ready"
@@ -171,10 +143,7 @@ export default function Participants({
 												size="sm"
 												className="text-xs px-2 py-1"
 												onClick={() =>
-													handleKickPlayer(
-														player.id,
-														player.walletAddress
-													)
+													handleKickPlayer(player.id)
 												}
 											>
 												Kick

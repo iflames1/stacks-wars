@@ -1,17 +1,21 @@
-import React from "react";
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Info } from "lucide-react";
+import { Info, Timer } from "lucide-react";
 import { Lobby, Participant } from "@/types/schema";
 
 interface LobbyDetailsProps {
 	lobby: Lobby;
 	players: Participant[];
+	countdown?: number;
 }
 
-export default function LobbyDetails({ lobby, players }: LobbyDetailsProps) {
-	// Calculate participation percentage
+export default function LobbyDetails({
+	lobby,
+	players,
+	countdown,
+}: LobbyDetailsProps) {
 	const participationPercentage = (players.length / lobby.maxPlayers) * 100;
+	const timeLeft = countdown ?? 30;
 
 	return (
 		<Card className="overflow-hidden bg-primary/10">
@@ -22,25 +26,24 @@ export default function LobbyDetails({ lobby, players }: LobbyDetailsProps) {
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="sm:p-6">
-				<div className="">
-					<div>
-						<h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">
-							Pool Progress
-						</h3>
-						<div className="space-y-2">
-							<div className="flex justify-between text-xs sm:text-sm">
-								<span>{players.length} joined</span>
-								<span>{lobby.maxPlayers} max</span>
-							</div>
-							<Progress
-								value={participationPercentage}
-								className="h-2"
-							/>
+				<div>
+					<h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">
+						Pool Progress
+					</h3>
+					<div className="space-y-2">
+						<div className="flex justify-between text-xs sm:text-sm">
+							<span>{players.length} joined</span>
+							<span>{lobby.maxPlayers} max</span>
 						</div>
+						<Progress
+							value={participationPercentage}
+							className="h-2"
+						/>
 					</div>
+				</div>
 
-					<>
-						{/*<div className="mt-3">
+				<>
+					{/*<div className="mt-3">
 						<h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2 sm:mb-3">
 							Created by
 						</h3>
@@ -90,7 +93,14 @@ export default function LobbyDetails({ lobby, players }: LobbyDetailsProps) {
 							</div>
 						</div>
 					</div>*/}
-					</>
+				</>
+
+				{/* Countdown Timer */}
+				<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted space-x-2 flex items-center justify-center">
+					<Timer className="h-5 w-5 text-muted-foreground" />
+					<span className="text-lg sm:text-xl font-semibold text-primary">
+						Game starting in {timeLeft} seconds
+					</span>
 				</div>
 			</CardContent>
 		</Card>
