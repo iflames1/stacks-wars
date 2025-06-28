@@ -5,14 +5,14 @@ import LobbyStats from "./lobby-stats";
 import Participants from "./participants";
 import JoinLobbyForm from "./join-lobby-form";
 import GamePreview from "./game-preview";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
 	GameType,
 	Lobby as LobbyType,
 	Participant,
 	transParticipant,
 } from "@/types/schema";
-import { useLobbySocket } from "@/hooks/useLobbySocket";
+import { LobbyServerMessage, useLobbySocket } from "@/hooks/useLobbySocket";
 import { toast } from "sonner";
 
 interface LobbyProps {
@@ -36,11 +36,14 @@ export default function Lobby({
 
 	const isParticipant = participantList.some((p) => p.id === userId);
 
-	const { disconnect, sendMessage } = useLobbySocket({
-		roomId: lobbyId,
-		enabled: joined,
-		userId,
-		onMessage: (message) => {
+	const handleKick = useCallback(() => {
+		toast.error("You were kicked from the lobby.");
+		setJoined(false);
+		disconnectRef.current?.();
+	}, []);
+
+	const handleMessage = useCallback(
+		(message: LobbyServerMessage) => {
 			console.log("WS message received:", message);
 
 			switch (message.type) {
@@ -53,9 +56,7 @@ export default function Lobby({
 					console.log("Someone was kicked:", message.player_id);
 					break;
 				case "notifykicked":
-					toast.error("You were kicked from the lobby.");
-					setJoined(false);
-					disconnect();
+					handleKick();
 					break;
 				case "countdown":
 					setCountdown(message.time);
@@ -67,13 +68,29 @@ export default function Lobby({
 					console.warn("Unknown WS message type", message);
 			}
 		},
+		[handleKick]
+	);
+
+	const disconnectRef = useRef<(() => void) | null>(null);
+
+	const { disconnect, sendMessage } = useLobbySocket({
+		roomId: lobbyId,
+		enabled: joined,
+		userId,
+		onMessage: handleMessage,
 	});
 
 	useEffect(() => {
-		if (isParticipant) {
+		disconnectRef.current = disconnect;
+	}, [disconnect]);
+
+	useEffect(() => {
+		if (isParticipant && !joined) {
 			setJoined(true);
+		} else if (!isParticipant && joined) {
+			setJoined(false);
 		}
-	}, [isParticipant]);
+	}, [isParticipant, joined]);
 
 	return (
 		<div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
