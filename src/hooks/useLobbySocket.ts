@@ -64,7 +64,7 @@ export function useLobbySocket({
 
 		let mounted = true;
 
-		function startConnection() {
+		const startConnection = () => {
 			if (!roomId || !userId) return;
 
 			console.log("🟢 Connecting WebSocket...");
@@ -119,7 +119,7 @@ export function useLobbySocket({
 				setError(err);
 				setReadyState(WebSocket.CLOSED);
 			};
-		}
+		};
 
 		startConnection();
 
@@ -136,6 +136,8 @@ export function useLobbySocket({
 		const socket = socketRef.current;
 		if (socket && socket.readyState === WebSocket.OPEN) {
 			socket.send(JSON.stringify(data));
+		} else {
+			console.warn("LexiWars WebSocket not ready to send");
 		}
 	}, []);
 
