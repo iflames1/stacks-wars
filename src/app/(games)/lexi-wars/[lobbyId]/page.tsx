@@ -1,5 +1,6 @@
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { notFound } from "next/navigation";
+import LexiWars from "../_components/lexi-wars";
 
 export default async function LexiWarsPage({
 	params,
@@ -16,5 +17,5 @@ export default async function LexiWarsPage({
 		return notFound();
 	}
 
-	return <div>page</div>;
+	return <LexiWars lobbyId={lobbyId} userId={userId} />;
 }
