@@ -1,51 +1,41 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { JsonParticipant, lobbyStatus } from "@/types/schema";
+// types/lexiwars.ts
+import { JsonParticipant } from "@/types/schema";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-interface UseLobbySocketProps {
-	roomId: string;
-	enabled: boolean;
-	onMessage?: (data: LobbyServerMessage) => void;
-	userId: string;
+export interface PlayerStanding {
+	player: JsonParticipant;
+	rank: number;
 }
 
-export type PlayerStatus = "ready" | "notready";
-
-export type LobbyClientMessage =
-	| { type: "updateplayerstate"; new_state: PlayerStatus }
-	| { type: "updategamestate"; new_state: lobbyStatus }
-	| { type: "leaveroom" }
-	| {
-			type: "kickplayer";
-			player_id: string;
-			wallet_address: string;
-			display_name: string | null;
-	  };
-
-export type LobbyServerMessage =
-	| { type: "playerjoined"; players: JsonParticipant[] }
-	| { type: "playerleft"; players: JsonParticipant[] }
-	| { type: "playerupdated"; players: JsonParticipant[] }
-	| {
-			type: "playerkicked";
-			player_id: string;
-			wallet_address: string;
-			display_name: string | null;
-	  }
-	| { type: "notifykicked" }
+export type LexiWarsServerMessage =
+	| { type: "turn"; current_turn: JsonParticipant }
+	| { type: "rule"; rule: string }
 	| { type: "countdown"; time: number }
-	| { type: "gamestate"; state: lobbyStatus; ready_players: string[] | null };
+	| { type: "rank"; rank: string }
+	| { type: "validate"; msg: string }
+	| { type: "wordentry"; word: string; sender: JsonParticipant }
+	| { type: "usedword"; word: string }
+	| { type: "gameover" }
+	| { type: "finalstanding"; standing: PlayerStanding[] };
 
-export function useLobbySocket({
-	roomId,
-	enabled,
+export type LexiWarsClientMessage = { type: "wordentry"; word: string };
+
+interface UseLexiWarsSocketProps {
+	lobbyId: string;
+	userId: string;
+	onMessage?: (msg: LexiWarsServerMessage) => void;
+}
+
+export function useLexiWarsSocket({
+	lobbyId,
 	userId,
 	onMessage,
-}: UseLobbySocketProps) {
+}: UseLexiWarsSocketProps) {
 	const socketRef = useRef<WebSocket | null>(null);
-	const messageHandlerRef = useRef<typeof onMessage | null>(null);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const reconnectAttempts = useRef<number>(0);
 	const manuallyDisconnectedRef = useRef(false);
+	const messageHandlerRef = useRef<typeof onMessage | null>(null);
 	const maxReconnectAttempts = 5;
 
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
@@ -59,43 +49,47 @@ export function useLobbySocket({
 	}, [onMessage]);
 
 	useEffect(() => {
-		if (!enabled || socketRef.current || manuallyDisconnectedRef.current)
-			return;
+		if (socketRef.current || manuallyDisconnectedRef.current) return;
 
 		let mounted = true;
 
 		const startConnection = () => {
-			if (!roomId || !userId) return;
+			if (!lobbyId || !userId) return;
 
 			console.log("🟢 Connecting WebSocket...");
 
 			const ws = new WebSocket(
-				`${process.env.NEXT_PUBLIC_WS_URL}/ws/room/${roomId}?user_id=${userId}`
+				`${process.env.NEXT_PUBLIC_WS_URL}/ws/lexiwars/${lobbyId}?user_id=${userId}`
 			);
 			socketRef.current = ws;
 
 			ws.onopen = () => {
 				if (!mounted) return;
-				console.log("✅ WebSocket connected");
+				console.log("✅ LexiWars WebSocket connected");
 				setReadyState(ws.readyState);
 				setError(null);
 				setReconnecting(false);
 				reconnectAttempts.current = 0;
 			};
 
-			ws.onmessage = (event: MessageEvent<LobbyServerMessage>) => {
+			ws.onmessage = (event: MessageEvent<LexiWarsServerMessage>) => {
 				try {
 					const raw =
 						typeof event.data === "string" ? event.data : "";
-					const data = JSON.parse(raw) as LobbyServerMessage;
+					const data = JSON.parse(raw) as LexiWarsServerMessage;
+					console.log("[LexiWars WS] →", data);
 					messageHandlerRef.current?.(data);
 				} catch (err) {
-					console.error("❌ Failed to parse WS message", err);
+					console.error("❌ Failed to parse LexiWars message", err);
 				}
 			};
 
 			ws.onclose = (event: CloseEvent) => {
-				console.warn("🛑 WebSocket closed:", event.code, event.reason);
+				console.warn(
+					"🛑 LexiWars WebSocket closed:",
+					event.code,
+					event.reason
+				);
 				setReadyState(WebSocket.CLOSED);
 				socketRef.current = null;
 
@@ -115,7 +109,7 @@ export function useLobbySocket({
 			};
 
 			ws.onerror = (err: Event) => {
-				console.error("⚠️ WebSocket error", err);
+				console.error("⚠️ LexiWars WebSocket error", err);
 				setError(err);
 				setReadyState(WebSocket.CLOSED);
 			};
@@ -130,12 +124,12 @@ export function useLobbySocket({
 			if (socketRef.current) socketRef.current.close();
 			socketRef.current = null;
 		};
-	}, [enabled, roomId, userId]);
+	}, [lobbyId, userId]);
 
-	const sendMessage = useCallback((data: LobbyClientMessage) => {
+	const sendMessage = useCallback((msg: LexiWarsClientMessage) => {
 		const socket = socketRef.current;
 		if (socket && socket.readyState === WebSocket.OPEN) {
-			socket.send(JSON.stringify(data));
+			socket.send(JSON.stringify(msg));
 		} else {
 			console.warn("LexiWars WebSocket not ready to send");
 		}

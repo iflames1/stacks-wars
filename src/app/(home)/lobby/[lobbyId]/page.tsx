@@ -1,12 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
-//import JoinLobbyForm from "./_components/join-lobby-form";
-//import { Suspense } from "react";
-//import LobbyStats from "./_components/lobby-stats";
-//import LobbyDetails from "./_components/lobby-details";
-//import Participants from "./_components/participants";
-//import GamePreview from "./_components/game-preview";
 import {
 	GameType,
 	JsonGameType,

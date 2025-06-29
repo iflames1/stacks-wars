@@ -1,23 +1,29 @@
+import { truncateAddress } from "@/lib/utils";
 import { getWalletAddress } from "@/lib/wallet";
+import { Participant } from "@/types/schema";
 import { User } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface TurnIndicatorProps {
-	currentPlayer: string;
+	currentPlayer: Participant | null;
+	userId: string;
 }
 
-export default function TurnIndicator({ currentPlayer }: TurnIndicatorProps) {
+export default function TurnIndicator({
+	currentPlayer,
+	userId,
+}: TurnIndicatorProps) {
 	const [isCurrentPlayer, setIsCurrentPlayer] = useState<boolean>(false);
 	const walletAddress = getWalletAddress();
 	console.log("walletAddress:", walletAddress);
 
 	useEffect(() => {
-		if (currentPlayer && currentPlayer === walletAddress) {
+		if (currentPlayer && currentPlayer.id === userId) {
 			setIsCurrentPlayer(true);
 		} else {
 			setIsCurrentPlayer(false);
 		}
-	}, [currentPlayer, walletAddress]);
+	}, [currentPlayer, userId]);
 
 	console.log("currentPlayer:", currentPlayer);
 
@@ -43,7 +49,12 @@ export default function TurnIndicator({ currentPlayer }: TurnIndicatorProps) {
 					>
 						{isCurrentPlayer
 							? "It's Your Turn!"
-							: `Waiting for ${currentPlayer}`}
+							: `Waiting for ${
+									currentPlayer?.username ||
+									truncateAddress(
+										currentPlayer?.walletAddress
+									)
+							  }`}
 					</h3>
 				</div>
 			</div>
