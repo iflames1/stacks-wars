@@ -82,13 +82,15 @@ export function transLobby(lobby: JsonLobby): Lobby {
 	};
 }
 
+export type lobbyStatus = "waiting" | "inprogress" | "finished";
+
 export interface Lobby {
 	id: string;
 	name: string;
 	description: string | null;
 	creatorId: string;
 	maxPlayers: number;
-	lobbyStatus: "waiting" | "inprogress" | "finished";
+	lobbyStatus: lobbyStatus;
 	gameId: string;
 	gameName: string;
 	players: number;

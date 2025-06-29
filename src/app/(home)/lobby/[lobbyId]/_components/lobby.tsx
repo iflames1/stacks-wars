@@ -8,6 +8,7 @@ import GamePreview from "./game-preview";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
 	GameType,
+	lobbyStatus,
 	Lobby as LobbyType,
 	Participant,
 	transParticipant,
@@ -35,15 +36,12 @@ export default function Lobby({
 	const [participantList, setParticipantList] =
 		useState<Participant[]>(players);
 	const [countdown, setCountdown] = useState<number>(30);
+	const [lobbyState, setLobbyState] = useState<lobbyStatus>(
+		lobby.lobbyStatus
+	);
 	const router = useRouter();
 
 	const isParticipant = participantList.some((p) => p.id === userId);
-
-	//const handleKick = useCallback(() => {
-	//	toast.error("You were kicked from the lobby.");
-	//	setJoined(false);
-	//	disconnectRef.current?.();
-	//}, []);
 
 	const handleMessage = useCallback(
 		(message: LobbyServerMessage) => {
@@ -74,14 +72,22 @@ export default function Lobby({
 				case "countdown":
 					setCountdown(message.time);
 					break;
-				case "gamestarting":
-					// todo: trigger game start
+				case "gamestate":
+					setLobbyState(message.state);
+
+					if (message.ready_players) {
+						if (message.ready_players.includes(userId)) {
+							router.push(`/lexi-wars/${lobbyId}`);
+						} else {
+							router.push(`/lobby`);
+						}
+					}
 					break;
 				default:
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[router]
+		[router, lobbyId, userId]
 	);
 
 	const disconnectRef = useRef<(() => void) | null>(null);
@@ -116,6 +122,9 @@ export default function Lobby({
 					lobby={lobby}
 					players={participantList}
 					countdown={countdown}
+					lobbyState={lobbyState}
+					sendMessage={sendMessage}
+					userId={userId}
 				/>
 				<Participants
 					lobby={lobby}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { JsonParticipant } from "@/types/schema";
+import { JsonParticipant, lobbyStatus } from "@/types/schema";
 
 interface UseLobbySocketProps {
 	roomId: string;
@@ -9,11 +9,10 @@ interface UseLobbySocketProps {
 }
 
 export type PlayerStatus = "ready" | "notready";
-export type GameState = "waiting" | "inprogress" | "finished";
 
 export type LobbyClientMessage =
 	| { type: "updateplayerstate"; new_state: PlayerStatus }
-	| { type: "updategamestate"; new_state: GameState }
+	| { type: "updategamestate"; new_state: lobbyStatus }
 	| { type: "leaveroom" }
 	| {
 			type: "kickplayer";
@@ -34,7 +33,7 @@ export type LobbyServerMessage =
 	  }
 	| { type: "notifykicked" }
 	| { type: "countdown"; time: number }
-	| { type: "gamestarting"; state: "waiting" | "inprogress" | "finished" };
+	| { type: "gamestate"; state: lobbyStatus; ready_players: string[] | null };
 
 export function useLobbySocket({
 	roomId,
