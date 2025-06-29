@@ -1,86 +1,114 @@
-"use client";
-
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
-	//CardContent,
-	CardDescription,
-	CardFooter,
 	CardHeader,
 	CardTitle,
+	CardDescription,
+	CardFooter,
 } from "@/components/ui/card";
 import { Lobby, Participant } from "@/types/schema";
 import { Loader } from "lucide-react";
-import { isConnected } from "@stacks/connect";
-import { apiRequest, ApiRequestProps } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import { toast } from "sonner";
+import { isConnected } from "@stacks/connect";
+import { LobbyClientMessage } from "@/hooks/useLobbySocket";
+import { useRouter } from "next/navigation";
 
-interface JoinPoolFormProps {
+interface JoinLobbyFormProps {
 	lobby: Lobby;
 	players: Participant[];
 	lobbyId: string;
+	userId: string;
+	sendMessage: (msg: LobbyClientMessage) => void;
+	disconnect: () => void;
 }
 
 export default function JoinLobbyForm({
 	lobby,
 	players,
 	lobbyId,
-}: JoinPoolFormProps) {
-	const isLoading = false;
-	const isFull = players.length >= lobby.maxPlayers;
+	userId,
+	sendMessage,
+	disconnect,
+}: JoinLobbyFormProps) {
+	const [joined, setJoined] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const router = useRouter();
 
-	const handleSubmit = async () => {
+	const isFull = players.length >= lobby.maxPlayers;
+	const isParticipant = players.some((p) => p.id === userId);
+
+	useEffect(() => {
+		if (isParticipant) setJoined(true);
+	}, [isParticipant]);
+
+	const handleJoin = async () => {
+		setLoading(true);
 		try {
-			const apiParams: ApiRequestProps = {
+			await apiRequest({
 				path: `room/${lobbyId}/join`,
 				method: "PUT",
 				revalidatePath: `/lobby/${lobbyId}`,
 				revalidateTag: "lobby",
-			};
-			await apiRequest(apiParams);
-			toast.success("Joined lobby successfully!");
-		} catch (error) {
-			toast.error("Failed to join lobby", {
-				description: "Please try again later.",
 			});
-			console.error("Join lobby error:", error);
+			setJoined(true);
+			toast.success("Joined lobby successfully!");
+			router.refresh();
+		} catch (err) {
+			toast.error("Failed to join lobby");
+			console.error(err);
+		}
+		setLoading(false);
+	};
+
+	const handleLeave = () => {
+		setLoading(true);
+		sendMessage({ type: "leaveroom" });
+		disconnect();
+		setJoined(false);
+		toast.info("You left the lobby");
+		setLoading(false);
+	};
+
+	const handleClick = () => {
+		if (loading) return;
+		if (joined) {
+			handleLeave();
+		} else {
+			handleJoin();
 		}
 	};
 
 	return (
 		<Card className="bg-primary/10">
 			<CardHeader>
-				<CardTitle>Join Lobby</CardTitle>
+				<CardTitle>{joined ? "Leave Lobby" : "Join Lobby"}</CardTitle>
 				<CardDescription>
-					Join this lobby to participate in the game
+					{joined
+						? "You're currently in this lobby"
+						: "Join this lobby to participate in the game"}
 				</CardDescription>
 			</CardHeader>
-			{/*{lobby.pool && (
-				<CardContent>
-					<div className="space-y-4">
-						<p className="text-sm font-medium mb-1">Entry Fee</p>
-						<p className="text-2xl font-bold">
-							{lobby.pool.entryAmount} STX
-						</p>
-					</div>
-				</CardContent>
-			)}*/}
 			<CardFooter>
 				<Button
 					className="w-full"
 					size="lg"
-					disabled={isLoading || isFull || !isConnected()}
-					onClick={handleSubmit}
+					variant={joined ? "destructive" : "default"}
+					onClick={handleClick}
+					disabled={
+						loading || (!joined && (!isConnected() || isFull))
+					}
 				>
-					{isLoading ? (
+					{loading ? (
 						<>
 							<Loader className="mr-2 h-4 w-4 animate-spin" />
-							Joining...
+							{joined ? "Leaving..." : "Joining..."}
 						</>
-					) : !isConnected() ? (
-						"Connect Wallet to Join"
+					) : joined ? (
+						"Leave Lobby"
 					) : isFull ? (
-						"Pool is Full"
+						"Lobby is Full"
 					) : (
 						"Join Lobby"
 					)}

@@ -82,13 +82,15 @@ export function transLobby(lobby: JsonLobby): Lobby {
 	};
 }
 
+export type lobbyStatus = "waiting" | "inprogress" | "finished";
+
 export interface Lobby {
 	id: string;
 	name: string;
 	description: string | null;
 	creatorId: string;
 	maxPlayers: number;
-	lobbyStatus: "waiting" | "inprogress" | "finished";
+	lobbyStatus: lobbyStatus;
 	gameId: string;
 	gameName: string;
 	players: number;
@@ -98,15 +100,30 @@ export interface JsonParticipant {
 	id: string;
 	wallet_address: string;
 	display_name: string | null;
-	state: "ready" | "not_ready";
+	state: "ready" | "notready";
 	rank: number | null;
 	used_words: string[];
 }
 
 export interface Participant extends User {
-	playerStatus: "ready" | "not_ready";
+	playerStatus: "ready" | "notready";
 	rank: number | null;
 	usedWords: string[];
+}
+
+export function transParticipant(
+	jsonParticipant: JsonParticipant
+): Participant {
+	return {
+		...transUser({
+			id: jsonParticipant.id,
+			wallet_address: jsonParticipant.wallet_address,
+			display_name: jsonParticipant.display_name,
+		}),
+		playerStatus: jsonParticipant.state,
+		rank: jsonParticipant.rank,
+		usedWords: jsonParticipant.used_words,
+	};
 }
 
 interface Pool {

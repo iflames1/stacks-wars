@@ -1,35 +1,55 @@
 import Link from "next/link";
-import { ArrowLeft, Loader } from "lucide-react";
-import JoinLobbyForm from "./_components/join-lobby-form";
+import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
-import LobbyStats from "./_components/lobby-stats";
-import LobbyDetails from "./_components/lobby-details";
-import Participants from "./_components/participants";
-import GamePreview from "./_components/game-preview";
+//import JoinLobbyForm from "./_components/join-lobby-form";
+//import { Suspense } from "react";
+//import LobbyStats from "./_components/lobby-stats";
+//import LobbyDetails from "./_components/lobby-details";
+//import Participants from "./_components/participants";
+//import GamePreview from "./_components/game-preview";
 import {
+	GameType,
+	JsonGameType,
 	JsonLobbyExtended,
 	NewLobbyExtended,
+	transGameType,
 	transLobbyExtended,
 } from "@/types/schema";
 import { apiRequest } from "@/lib/api";
+import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
+import Lobby from "./_components/lobby";
 
 export default async function LobbyDetailPage({
 	params,
 }: {
 	params: Promise<{ lobbyId: string }>;
 }) {
-	const id = (await params).lobbyId;
-	console.log("Lobby ID:", id);
+	const lobbyId = (await params).lobbyId;
+	console.log("Lobby ID:", lobbyId);
 
 	const jsonLobby = await apiRequest<JsonLobbyExtended>({
-		path: `/room/${id}/extended`,
+		path: `/room/${lobbyId}/extended`,
 		auth: false,
+		tag: "lobbyExtended",
 	});
 	const lobby: NewLobbyExtended = transLobbyExtended(jsonLobby);
 
 	if (!lobby) {
 		notFound();
+	}
+
+	const jsonGame = await apiRequest<JsonGameType>({
+		path: `/game/${lobby.lobby.gameId}`,
+		auth: false,
+		cache: "force-cache",
+	});
+	const game: GameType = await transGameType(jsonGame);
+
+	const userId = await getClaimFromJwt<string>("sub");
+
+	if (!userId) {
+		console.error("User ID not found in JWT claims");
+		return notFound();
 	}
 
 	return (
@@ -53,43 +73,13 @@ export default async function LobbyDetailPage({
 						{lobby.lobby.description}
 					</p>
 				</div>
-				<div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
-					{/* Main Content */}
-					<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
-						{/* Stats Cards */}
-						<LobbyStats
-							lobby={lobby.lobby}
-							players={lobby.players}
-						/>
-						{/* Lobby Details */}
-						<LobbyDetails
-							lobby={lobby.lobby}
-							players={lobby.players}
-						/>
-						<Participants
-							lobby={lobby.lobby}
-							players={lobby.players}
-						/>
-					</div>
-					<div className="space-y-4 sm:space-y-6">
-						<div className="lg:sticky lg:top-6 flex flex-col gap-4">
-							<Suspense
-								fallback={
-									<div className="flex justify-center items-center py-6 sm:py-8">
-										<Loader className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
-									</div>
-								}
-							>
-								<JoinLobbyForm
-									lobby={lobby.lobby}
-									players={lobby.players}
-									lobbyId={id}
-								/>
-							</Suspense>
-							<GamePreview lobby={lobby.lobby} />
-						</div>
-					</div>
-				</div>
+				<Lobby
+					lobby={lobby.lobby}
+					players={lobby.players}
+					userId={userId}
+					lobbyId={lobbyId}
+					game={game}
+				/>
 			</div>
 		</section>
 	);

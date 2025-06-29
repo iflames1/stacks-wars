@@ -1,17 +1,55 @@
-import React from "react";
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Info } from "lucide-react";
-import { Lobby, Participant } from "@/types/schema";
+import { Info, Timer } from "lucide-react";
+import { Lobby, lobbyStatus, Participant } from "@/types/schema";
+import { Button } from "@/components/ui/button";
+import { LobbyClientMessage } from "@/hooks/useLobbySocket";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface LobbyDetailsProps {
 	lobby: Lobby;
 	players: Participant[];
+	countdown?: number;
+	lobbyState: lobbyStatus;
+	sendMessage: (msg: LobbyClientMessage) => void;
+	userId: string;
 }
 
-export default function LobbyDetails({ lobby, players }: LobbyDetailsProps) {
-	// Calculate participation percentage
+export default function LobbyDetails({
+	lobby,
+	players,
+	countdown,
+	lobbyState,
+	sendMessage,
+	userId,
+}: LobbyDetailsProps) {
 	const participationPercentage = (players.length / lobby.maxPlayers) * 100;
+	const timeLeft = countdown ?? 30;
+	const [loading, setLoading] = useState<boolean>(false);
+
+	const handleLobbyState = (state: lobbyStatus) => {
+		setLoading(true);
+		sendMessage({
+			type: "updategamestate",
+			new_state: state,
+		});
+		setTimeout(() => setLoading(false), 300);
+	};
+
+	const readyPlayers = players.filter((p) => p.playerStatus === "ready");
+
+	const buttonLabel =
+		lobbyState === "waiting"
+			? "Start Game"
+			: lobbyState === "inprogress" && timeLeft > 0
+			? "Wait"
+			: "Ended";
+
+	const isDisabled =
+		loading ||
+		lobbyState === "finished" ||
+		(lobbyState === "inprogress" && timeLeft === 0);
 
 	return (
 		<Card className="overflow-hidden bg-primary/10">
@@ -22,25 +60,24 @@ export default function LobbyDetails({ lobby, players }: LobbyDetailsProps) {
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="sm:p-6">
-				<div className="">
-					<div>
-						<h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">
-							Pool Progress
-						</h3>
-						<div className="space-y-2">
-							<div className="flex justify-between text-xs sm:text-sm">
-								<span>{players.length} joined</span>
-								<span>{lobby.maxPlayers} max</span>
-							</div>
-							<Progress
-								value={participationPercentage}
-								className="h-2"
-							/>
+				<div>
+					<h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">
+						Pool Progress
+					</h3>
+					<div className="space-y-2">
+						<div className="flex justify-between text-xs sm:text-sm">
+							<span>{players.length} joined</span>
+							<span>{lobby.maxPlayers} max</span>
 						</div>
+						<Progress
+							value={participationPercentage}
+							className="h-2"
+						/>
 					</div>
+				</div>
 
-					<>
-						{/*<div className="mt-3">
+				<>
+					{/*<div className="mt-3">
 						<h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2 sm:mb-3">
 							Created by
 						</h3>
@@ -90,8 +127,40 @@ export default function LobbyDetails({ lobby, players }: LobbyDetailsProps) {
 							</div>
 						</div>
 					</div>*/}
-					</>
+				</>
+
+				{/* Countdown Timer */}
+				<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted space-x-2 flex items-center justify-center">
+					<Timer className="h-5 w-5 text-muted-foreground" />
+					<span className="text-lg sm:text-xl font-semibold text-primary">
+						Game starting in {timeLeft} seconds
+					</span>
 				</div>
+
+				{userId === lobby.creatorId && (
+					<Button
+						variant={
+							lobbyState === "waiting" ? "default" : "destructive"
+						}
+						disabled={isDisabled}
+						className="w-full mt-6"
+						onClick={() => {
+							if (
+								lobbyState === "waiting" &&
+								readyPlayers.length < 2
+							) {
+								toast.info(
+									"At least 2 players are required to start the game."
+								);
+							} else if (lobbyState === "waiting")
+								handleLobbyState("inprogress");
+							else if (lobbyState === "inprogress")
+								handleLobbyState("waiting");
+						}}
+					>
+						{buttonLabel}
+					</Button>
+				)}
 			</CardContent>
 		</Card>
 	);
