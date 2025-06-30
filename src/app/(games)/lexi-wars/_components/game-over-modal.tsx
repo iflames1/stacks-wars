@@ -122,7 +122,7 @@ export default function GameOverModal({
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogContent className="sm:max-w-md bg-primary">
+			<DialogContent className="sm:max-w-md bg-primary/70">
 				<DialogHeader>
 					<DialogTitle>🏁 Game Over!</DialogTitle>
 					<DialogDescription>
