@@ -9,15 +9,14 @@ import {
 } from "@/components/ui/card";
 import { Lobby, Participant } from "@/types/schema";
 import { Loader } from "lucide-react";
-import { apiRequest } from "@/lib/api";
 import { toast } from "sonner";
 import { isConnected } from "@stacks/connect";
-import { LobbyClientMessage } from "@/hooks/useLobbySocket";
-import { useRouter } from "next/navigation";
+import { LobbyClientMessage, PendingJoin } from "@/hooks/useLobbySocket";
 
 interface JoinLobbyFormProps {
 	lobby: Lobby;
 	players: Participant[];
+	pendingPlayers: PendingJoin[];
 	lobbyId: string;
 	userId: string;
 	sendMessage: (msg: LobbyClientMessage) => void;
@@ -27,57 +26,46 @@ interface JoinLobbyFormProps {
 export default function JoinLobbyForm({
 	lobby,
 	players,
-	lobbyId,
+	pendingPlayers,
 	userId,
 	sendMessage,
 	disconnect,
 }: JoinLobbyFormProps) {
 	const [joined, setJoined] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const router = useRouter();
 
 	const isFull = players.length >= lobby.maxPlayers;
 	const isParticipant = players.some((p) => p.id === userId);
+
+	const userRequest = pendingPlayers.find((p) => p.user.id === userId);
+	const userJoinState = userRequest?.state || "idle";
 
 	useEffect(() => {
 		if (isParticipant) setJoined(true);
 	}, [isParticipant]);
 
-	const handleJoin = async () => {
-		setLoading(true);
-		try {
-			await apiRequest({
-				path: `room/${lobbyId}/join`,
-				method: "PUT",
-				revalidatePath: `/lobby/${lobbyId}`,
-				revalidateTag: "lobby",
-			});
-			setJoined(true);
-			toast.success("Joined lobby successfully!");
-			router.refresh();
-		} catch (err) {
-			toast.error("Failed to join lobby");
-			console.error(err);
-		}
-		setLoading(false);
-	};
-
-	const handleLeave = () => {
-		setLoading(true);
-		sendMessage({ type: "leaveroom" });
-		disconnect();
-		setJoined(false);
-		toast.info("You left the lobby");
-		setLoading(false);
-	};
-
 	const handleClick = () => {
-		if (loading) return;
+		setLoading(true);
+
 		if (joined) {
-			handleLeave();
-		} else {
-			handleJoin();
+			sendMessage({ type: "leaveroom" });
+			disconnect();
+			setJoined(false);
+			toast.info("You left the lobby");
+			return;
 		}
+
+		if (userJoinState === "idle" || userJoinState === "rejected") {
+			sendMessage({ type: "requestjoin" });
+			toast.info("Join request sent");
+			return;
+		}
+
+		if (userJoinState === "allowed") {
+			sendMessage({ type: "joinlobby" });
+			return;
+		}
+		setLoading(false);
 	};
 
 	return (
@@ -97,20 +85,28 @@ export default function JoinLobbyForm({
 					variant={joined ? "destructive" : "default"}
 					onClick={handleClick}
 					disabled={
-						loading || (!joined && (!isConnected() || isFull))
+						loading ||
+						(!joined &&
+							(!isConnected() ||
+								isFull ||
+								userJoinState === "pending"))
 					}
 				>
 					{loading ? (
 						<>
 							<Loader className="mr-2 h-4 w-4 animate-spin" />
-							{joined ? "Leaving..." : "Joining..."}
+							{joined ? "Leaving..." : "Processing..."}
 						</>
 					) : joined ? (
 						"Leave Lobby"
 					) : isFull ? (
 						"Lobby is Full"
-					) : (
+					) : userJoinState === "pending" ? (
+						"Request Sent"
+					) : userJoinState === "allowed" ? (
 						"Join Lobby"
+					) : (
+						"Request to Join"
 					)}
 				</Button>
 			</CardFooter>

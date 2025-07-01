@@ -3,12 +3,16 @@ import { JsonParticipant, JsonUser, lobbyStatus } from "@/types/schema";
 
 interface UseLobbySocketProps {
 	roomId: string;
-	enabled: boolean;
 	onMessage?: (data: LobbyServerMessage) => void;
 	userId: string;
 }
 
 export type PlayerStatus = "ready" | "notready";
+
+export type PendingJoin = {
+	user: JsonUser;
+	state: "idle" | "pending" | "allowed" | "rejected";
+};
 
 export type LobbyClientMessage =
 	| { type: "updateplayerstate"; new_state: PlayerStatus }
@@ -47,7 +51,7 @@ export type LobbyServerMessage =
 	  }
 	| {
 			type: "pendingplayers";
-			users: JsonUser[];
+			pending_players: PendingJoin[];
 	  }
 	| {
 			type: "error";
