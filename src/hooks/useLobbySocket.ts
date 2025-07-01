@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { JsonParticipant, lobbyStatus } from "@/types/schema";
+import { JsonParticipant, JsonUser, lobbyStatus } from "@/types/schema";
 
 interface UseLobbySocketProps {
 	roomId: string;
-	enabled: boolean;
 	onMessage?: (data: LobbyServerMessage) => void;
 	userId: string;
 }
 
 export type PlayerStatus = "ready" | "notready";
+
+export type PendingJoin = {
+	user: JsonUser;
+	state: "idle" | "pending" | "allowed" | "rejected";
+};
 
 export type LobbyClientMessage =
 	| { type: "updateplayerstate"; new_state: PlayerStatus }
@@ -19,7 +23,14 @@ export type LobbyClientMessage =
 			player_id: string;
 			wallet_address: string;
 			display_name: string | null;
-	  };
+	  }
+	| { type: "requestjoin" }
+	| {
+			type: "permitjoin";
+			user_id: string;
+			allow: boolean;
+	  }
+	| { type: "joinlobby" };
 
 export type LobbyServerMessage =
 	| { type: "playerjoined"; players: JsonParticipant[] }
@@ -33,11 +44,22 @@ export type LobbyServerMessage =
 	  }
 	| { type: "notifykicked" }
 	| { type: "countdown"; time: number }
-	| { type: "gamestate"; state: lobbyStatus; ready_players: string[] | null };
+	| {
+			type: "gamestate";
+			state: lobbyStatus;
+			ready_players: string[] | null;
+	  }
+	| {
+			type: "pendingplayers";
+			pending_players: PendingJoin[];
+	  }
+	| {
+			type: "error";
+			message: string;
+	  };
 
 export function useLobbySocket({
 	roomId,
-	enabled,
 	userId,
 	onMessage,
 }: UseLobbySocketProps) {
@@ -59,8 +81,7 @@ export function useLobbySocket({
 	}, [onMessage]);
 
 	useEffect(() => {
-		if (!enabled || socketRef.current || manuallyDisconnectedRef.current)
-			return;
+		if (socketRef.current || manuallyDisconnectedRef.current) return;
 
 		let mounted = true;
 
@@ -130,7 +151,7 @@ export function useLobbySocket({
 			if (socketRef.current) socketRef.current.close();
 			socketRef.current = null;
 		};
-	}, [enabled, roomId, userId]);
+	}, [roomId, userId]);
 
 	const sendMessage = useCallback((data: LobbyClientMessage) => {
 		const socket = socketRef.current;

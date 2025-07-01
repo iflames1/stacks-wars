@@ -13,7 +13,11 @@ import {
 	Participant,
 	transParticipant,
 } from "@/types/schema";
-import { LobbyServerMessage, useLobbySocket } from "@/hooks/useLobbySocket";
+import {
+	LobbyServerMessage,
+	PendingJoin,
+	useLobbySocket,
+} from "@/hooks/useLobbySocket";
 import { toast } from "sonner";
 import { truncateAddress } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -39,6 +43,7 @@ export default function Lobby({
 	const [lobbyState, setLobbyState] = useState<lobbyStatus>(
 		lobby.lobbyStatus
 	);
+	const [pendingPlayers, setPendingPlayers] = useState<PendingJoin[]>([]);
 	const router = useRouter();
 
 	const isParticipant = participantList.some((p) => p.id === userId);
@@ -83,6 +88,12 @@ export default function Lobby({
 						}
 					}
 					break;
+				case "pendingplayers":
+					setPendingPlayers(message.pending_players);
+					break;
+				case "error":
+					toast.error(`Error: ${message.message}`);
+					break;
 				default:
 					console.warn("Unknown WS message type", message);
 			}
@@ -94,7 +105,6 @@ export default function Lobby({
 
 	const { disconnect, sendMessage } = useLobbySocket({
 		roomId: lobbyId,
-		enabled: joined,
 		userId,
 		onMessage: handleMessage,
 	});
@@ -129,6 +139,7 @@ export default function Lobby({
 				<Participants
 					lobby={lobby}
 					players={participantList}
+					pendingPlayers={pendingPlayers}
 					userId={userId}
 					sendMessage={sendMessage}
 				/>
@@ -145,6 +156,7 @@ export default function Lobby({
 						<JoinLobbyForm
 							lobby={lobby}
 							players={participantList}
+							pendingPlayers={pendingPlayers}
 							lobbyId={lobbyId}
 							userId={userId}
 							sendMessage={sendMessage}
