@@ -36,6 +36,7 @@ export default function JoinLobbyForm({
 
 	const isFull = players.length >= lobby.maxPlayers;
 	const isParticipant = players.some((p) => p.id === userId);
+	const isCreator = userId === lobby.creatorId;
 
 	const userRequest = pendingPlayers.find((p) => p.user.id === userId);
 	const userJoinState = userRequest?.state || "idle";
@@ -48,6 +49,12 @@ export default function JoinLobbyForm({
 		setLoading(true);
 
 		if (joined) {
+			if (isCreator) {
+				toast.error("You can't leave the lobby as the creator");
+				setLoading(false);
+				return;
+			}
+
 			sendMessage({ type: "leaveroom" });
 			disconnect();
 			setJoined(false);
@@ -65,6 +72,7 @@ export default function JoinLobbyForm({
 			sendMessage({ type: "joinlobby" });
 			return;
 		}
+
 		setLoading(false);
 	};
 
@@ -98,7 +106,11 @@ export default function JoinLobbyForm({
 							{joined ? "Leaving..." : "Processing..."}
 						</>
 					) : joined ? (
-						"Leave Lobby"
+						isCreator ? (
+							"Creator can't leave"
+						) : (
+							"Leave Lobby"
+						)
 					) : isFull ? (
 						"Lobby is Full"
 					) : userJoinState === "pending" ? (
