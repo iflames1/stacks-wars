@@ -17,35 +17,6 @@ import { Participant, transParticipant } from "@/types/schema";
 import { toast } from "sonner";
 import { truncateAddress } from "@/lib/utils";
 
-const GameHeaderProps = {
-	score: 0,
-	highScore: 0,
-};
-
-const GameRuleProps = {
-	currentRule: "Type the word shown below as fast as you can!",
-	repeatCount: 0,
-	requiredRepeats: 5,
-};
-
-const LexiInputFormProps = {
-	isPlaying: true,
-	word: "word",
-	timeLeft: 30,
-	isMobile: false,
-	startGame: () => {},
-	inputRef: { current: null } as React.RefObject<HTMLInputElement | null>,
-};
-
-const GameOverModalProps = {
-	isOpen: false,
-	onClose: () => {},
-	score: 0,
-	highScore: 0,
-	isNewHighScore: false,
-	onPlayAgain: () => {},
-};
-
 interface LexiWarsProps {
 	lobbyId: string;
 	userId: string;
@@ -122,6 +93,7 @@ export default function LexiWars({ lobbyId, userId }: LexiWarsProps) {
 		console.log("submitting", word);
 		if (word.trim() && readyState === WebSocket.OPEN) {
 			sendMessage({ type: "wordentry", word });
+			setWord("");
 		}
 	};
 
@@ -165,18 +137,11 @@ export default function LexiWars({ lobbyId, userId }: LexiWarsProps) {
 				<BackToGames />
 
 				<div className="space-y-3 sm:space-y-4">
-					<GameHeader
-						score={GameHeaderProps.score}
-						highScore={GameHeaderProps.highScore}
-					/>
+					<GameHeader />
 
 					<GameTimer timeLeft={countdown} />
 
-					<GameRule
-						currentRule={rule}
-						repeatCount={GameRuleProps.repeatCount}
-						requiredRepeats={GameRuleProps.requiredRepeats}
-					/>
+					<GameRule currentRule={rule} />
 
 					<div className="border border-primary/10 p-3 sm:p-4 bg-primary/10 rounded-xl shadow-sm space-y-4 sm:space-y-5">
 						<TurnIndicator
@@ -184,12 +149,9 @@ export default function LexiWars({ lobbyId, userId }: LexiWarsProps) {
 							userId={userId}
 						/>
 						<LexiInputForm
-							isPlaying={LexiInputFormProps.isPlaying}
 							word={word}
 							setWord={setWord}
-							timeLeft={LexiInputFormProps.timeLeft}
 							isTouchDevice={isTouchDevice}
-							startGame={LexiInputFormProps.startGame}
 							inputRef={inputRef}
 							handleSubmit={handleSubmit}
 						/>
@@ -203,14 +165,7 @@ export default function LexiWars({ lobbyId, userId }: LexiWarsProps) {
 					/>
 				)}
 
-				<GameOverModal
-					isOpen={GameOverModalProps.isOpen}
-					onClose={GameOverModalProps.onClose}
-					score={GameOverModalProps.score}
-					highScore={GameOverModalProps.highScore}
-					isNewHighScore={GameOverModalProps.isNewHighScore}
-					onPlayAgain={GameOverModalProps.onPlayAgain}
-				/>
+				<GameOverModal standing={finalStanding} userId={userId} />
 
 				<div className="sr-only" role="alert">
 					This is a competitive typing game that requires manual

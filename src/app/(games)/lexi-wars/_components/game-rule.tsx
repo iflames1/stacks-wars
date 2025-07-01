@@ -2,8 +2,6 @@ import { User } from "lucide-react";
 
 interface GameRuleProps {
 	currentRule: string;
-	repeatCount?: number;
-	requiredRepeats?: number;
 }
 
 export default function GameRule({ currentRule }: GameRuleProps) {
