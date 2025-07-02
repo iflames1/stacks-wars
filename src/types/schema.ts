@@ -132,21 +132,21 @@ export function transParticipant(
 export interface JsonPool {
 	entry_amount: number;
 	contract_address: string;
-	total_amount: number;
+	current_amount: number;
 }
 
 export function transPool(jsonPool: JsonPool): Pool {
 	return {
 		entryAmount: jsonPool.entry_amount,
 		contractAddress: jsonPool.contract_address,
-		totalAmount: jsonPool.total_amount,
+		currentAmount: jsonPool.current_amount,
 	};
 }
 
 export interface Pool {
 	entryAmount: number;
 	contractAddress: string;
-	totalAmount: number;
+	currentAmount: number;
 }
 
 export interface LobbyExtended {
@@ -158,7 +158,6 @@ export interface LobbyExtended {
 	game: GameType;
 	participants: Participant[];
 	pool: Pool;
-	maxPlayers: number;
 }
 
 export interface JsonLobbyExtended {

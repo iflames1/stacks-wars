@@ -45,7 +45,8 @@ export default function LobbyStats({ lobby, players }: LobbyStatsProps) {
 								Players
 							</p>
 							<p className="text-base sm:text-xl md:text-2xl font-bold">
-								{players.length}/{lobby.maxPlayers}
+								{players.length}
+								{/*/{lobby.maxPlayers}*/}
 							</p>
 						</div>
 					</div>

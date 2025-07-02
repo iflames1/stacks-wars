@@ -32,6 +32,7 @@ import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { nanoid } from "nanoid";
 import { createGamePool } from "@/lib/actions/deploy-game-pool";
 import { joinGamePool } from "@/lib/actions/join-game-pool";
+import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 
 const formSchema = z.object({
 	name: z.string().min(3, {
@@ -43,8 +44,8 @@ const formSchema = z.object({
 	withPool: z.boolean(),
 	amount: z
 		.number()
-		.min(50, {
-			message: "Amount must be at least 50 STX.",
+		.min(5, {
+			message: "Amount must be at least 5 STX.",
 		})
 		.optional(),
 });
@@ -103,21 +104,47 @@ export default function CreateLobbyForm({
 				const contract: `${string}.${string}` = `${deployerAddress}.${contractName}`;
 				const entry_amount = values.amount;
 
-				await createGamePool(
+				const deployTx = await createGamePool(
 					entry_amount,
 					contractName,
 					deployerAddress
 				);
-				const txResult = await joinGamePool(
+				if (!deployTx.txid) {
+					throw new Error(
+						"Failed to deploy game pool: missing transaction ID"
+					);
+				}
+				try {
+					await waitForTxConfirmed(deployTx.txid);
+					console.log("✅ Deploy Transaction confirmed!");
+				} catch (err) {
+					console.error("❌ TX failed or aborted:", err);
+				}
+
+				const joinTx = await joinGamePool(
 					contract,
 					deployerAddress,
 					entry_amount
 				);
-				const tx_id = txResult.txid;
+				console.log("called join pool");
+				if (!joinTx.txid) {
+					throw new Error(
+						"Failed to join game pool: missing transaction ID"
+					);
+				}
+				try {
+					await waitForTxConfirmed(deployTx.txid);
+					console.log("✅ Join Transaction confirmed!");
+				} catch (err) {
+					console.error("❌ TX failed or aborted:", err);
+				}
+
+				const tx_id = joinTx.txid;
 				const contract_address = contract;
+				console.log(entry_amount, contract_address, tx_id);
 
 				apiParams = {
-					path: "/room",
+					path: "room",
 					method: "POST",
 					body: {
 						name: values.name,

@@ -1,5 +1,4 @@
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Info, Timer } from "lucide-react";
 import { Lobby, lobbyStatus, Participant } from "@/types/schema";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,7 @@ export default function LobbyDetails({
 	sendMessage,
 	userId,
 }: LobbyDetailsProps) {
-	const participationPercentage = (players.length / lobby.maxPlayers) * 100;
+	//const participationPercentage = (players.length / lobby.maxPlayers) * 100;
 	const timeLeft = countdown ?? 30;
 	const [loading, setLoading] = useState<boolean>(false);
 
@@ -60,7 +59,7 @@ export default function LobbyDetails({
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="sm:p-6">
-				<div>
+				{/*<div>
 					<h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">
 						Pool Progress
 					</h3>
@@ -74,7 +73,7 @@ export default function LobbyDetails({
 							className="h-2"
 						/>
 					</div>
-				</div>
+				</div>*/}
 
 				<>
 					{/*<div className="mt-3">
