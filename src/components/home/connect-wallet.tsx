@@ -8,11 +8,13 @@ import { connectOrCreateUser, logoutUser } from "@/lib/actions/user";
 import { toast } from "sonner";
 import { disconnect } from "@stacks/connect";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
+import { useRouter } from "next/navigation";
 
 export default function ConnectWallet() {
 	const [loading, setLoading] = useState<boolean>(false);
 	const [loggedIn, setLoggedIn] = useState(false);
 	const [walletAddress, setWalletAddress] = useState<string>("");
+	const router = useRouter();
 
 	useEffect(() => {
 		const checkLoginStatus = async () => {
@@ -42,6 +44,7 @@ export default function ConnectWallet() {
 			}
 			await connectOrCreateUser(address);
 			setLoggedIn(true);
+			router.refresh();
 		} catch (error) {
 			toast.error("Something went wrong try again later.");
 			console.error("Error connecting wallet:", error);

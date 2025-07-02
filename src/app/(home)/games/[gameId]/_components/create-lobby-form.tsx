@@ -28,6 +28,10 @@ import { apiRequest, ApiRequestProps } from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
+import { nanoid } from "nanoid";
+import { createGamePool } from "@/lib/actions/deploy-game-pool";
+import { joinGamePool } from "@/lib/actions/join-game-pool";
 
 const formSchema = z.object({
 	name: z.string().min(3, {
@@ -80,26 +84,69 @@ export default function CreateLobbyForm({
 
 	const onSubmit = async (values: FormData) => {
 		setIsLoading(true);
-		console.log("Extra values:", {
-			description: values.description,
-			withPool: values.withPool,
-			amount: values.amount,
-		});
+
 		try {
-			const apiParams: ApiRequestProps = {
-				path: "room",
-				method: "POST",
-				body: {
-					name: values.name,
-					description: values.description,
-					max_participants: 4,
-					game_id: gameId,
-					game_name: gameName,
-				},
-				tag: "lobby",
-				revalidateTag: "lobby",
-				revalidatePath: "/lobby",
-			};
+			let apiParams: ApiRequestProps;
+
+			if (values.withPool) {
+				if (!values.amount) {
+					throw new Error("Amount is required when using a pool");
+				}
+
+				const deployerAddress = await getClaimFromJwt<string>("wallet");
+				if (!deployerAddress) {
+					toast.error("You need to connect your wallet first.");
+					setIsLoading(false);
+					return;
+				}
+				const contractName = `${nanoid(5)}-stacks-wars`;
+				const contract: `${string}.${string}` = `${deployerAddress}.${contractName}`;
+				const entry_amount = values.amount;
+
+				await createGamePool(
+					entry_amount,
+					contractName,
+					deployerAddress
+				);
+				const txResult = await joinGamePool(
+					contract,
+					deployerAddress,
+					entry_amount
+				);
+				const tx_id = txResult.txid;
+				const contract_address = contract;
+
+				apiParams = {
+					path: "/room",
+					method: "POST",
+					body: {
+						name: values.name,
+						description: values.description,
+						entry_amount,
+						contract_address,
+						tx_id,
+						game_id: gameId,
+						game_name: gameName,
+					},
+					tag: "lobby",
+					revalidateTag: "lobby",
+					revalidatePath: "/lobby",
+				};
+			} else {
+				apiParams = {
+					path: "room",
+					method: "POST",
+					body: {
+						name: values.name,
+						description: values.description,
+						game_id: gameId,
+						game_name: gameName,
+					},
+					tag: "lobby",
+					revalidateTag: "lobby",
+					revalidatePath: "/lobby",
+				};
+			}
 			const lobbyId = await apiRequest<string>(apiParams);
 			toast.info("Please wait while we redirect you to your lobby");
 			router.replace(`/lobby/${lobbyId}`);
