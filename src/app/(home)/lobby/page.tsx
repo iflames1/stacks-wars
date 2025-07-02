@@ -32,12 +32,12 @@ export default async function PoolsPage() {
 							Join a lobby to Battle
 						</p>
 					</div>
-					<Link href="/games">
-						<Button className="gap-1.5">
+					<Button className="gap-1.5" asChild>
+						<Link href="/games">
 							<Plus className="h-4 w-4" />
 							Create A Match
-						</Button>
-					</Link>
+						</Link>
+					</Button>
 				</div>
 				<div className="mt-6 p-4 bg-yellow-500/10 border-2 border-yellow-500/20 rounded-lg">
 					<p className="text-yellow-500 text-sm font-medium flex items-center gap-2">

@@ -33,8 +33,6 @@ export default function JoinLobbyForm({
 }: JoinLobbyFormProps) {
 	const [joined, setJoined] = useState(false);
 	const [loading, setLoading] = useState(false);
-
-	const isFull = players.length >= lobby.maxPlayers;
 	const isParticipant = players.some((p) => p.id === userId);
 	const isCreator = userId === lobby.creatorId;
 
@@ -95,9 +93,7 @@ export default function JoinLobbyForm({
 					disabled={
 						loading ||
 						(!joined &&
-							(!isConnected() ||
-								isFull ||
-								userJoinState === "pending"))
+							(!isConnected() || userJoinState === "pending"))
 					}
 				>
 					{loading ? (
@@ -111,8 +107,6 @@ export default function JoinLobbyForm({
 						) : (
 							"Leave Lobby"
 						)
-					) : isFull ? (
-						"Lobby is Full"
 					) : userJoinState === "pending" ? (
 						"Request Sent"
 					) : userJoinState === "allowed" ? (

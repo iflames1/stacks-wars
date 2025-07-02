@@ -4,7 +4,7 @@ import { apiRequest } from "@/lib/api";
 
 export default async function GamesPage() {
 	const jsonGames = await apiRequest<JsonGameType[]>({
-		path: "/game",
+		path: "/games",
 		auth: false,
 		cache: "force-cache",
 	});
