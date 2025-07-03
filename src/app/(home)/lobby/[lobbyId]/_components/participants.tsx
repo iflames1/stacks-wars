@@ -149,22 +149,24 @@ export default function Participants({
 													</Button>
 												</>
 											)}
-											{isSelfCreator && !isCreator && (
-												<Button
-													variant="destructive"
-													size="sm"
-													className="text-xs"
-													onClick={() =>
-														handleKickPlayer(
-															player.id,
-															player.walletAddress,
-															player.username
-														)
-													}
-												>
-													Kick
-												</Button>
-											)}
+											{isSelfCreator &&
+												!isCreator &&
+												!lobby.contractAddress && (
+													<Button
+														variant="destructive"
+														size="sm"
+														className="text-xs"
+														onClick={() =>
+															handleKickPlayer(
+																player.id,
+																player.walletAddress,
+																player.username
+															)
+														}
+													>
+														Kick
+													</Button>
+												)}
 										</div>
 									</div>
 								);

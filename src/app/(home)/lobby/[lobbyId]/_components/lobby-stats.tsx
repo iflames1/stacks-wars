@@ -28,7 +28,7 @@ export default function LobbyStats({ lobby, players, pool }: LobbyStatsProps) {
 									Pool Size
 								</p>
 								<p className="text-base sm:text-xl md:text-2xl font-bold">
-									{pool.currentAmount} STX
+									{pool.entryAmount * players.length} STX
 								</p>
 							</div>
 						</div>

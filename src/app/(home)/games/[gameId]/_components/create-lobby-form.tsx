@@ -29,8 +29,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { nanoid } from "nanoid";
-import { createGamePool } from "@/lib/actions/deploy-game-pool";
-import { joinGamePool } from "@/lib/actions/join-game-pool";
+import { createGamePool } from "@/lib/actions/createGamePool";
+import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { useConnectUser } from "@/hooks/useConnectUser";
 
@@ -128,7 +128,7 @@ export default function CreateLobbyForm({
 					);
 				}
 				try {
-					await waitForTxConfirmed(deployTx.txid);
+					await waitForTxConfirmed(joinTx.txid);
 					console.log("✅ Join Transaction confirmed!");
 				} catch (err) {
 					console.error("❌ TX failed or aborted:", err);

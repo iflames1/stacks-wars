@@ -11,7 +11,7 @@ import { Lobby, Participant, Pool } from "@/types/schema";
 import { Loader } from "lucide-react";
 import { toast } from "sonner";
 import { JoinState, LobbyClientMessage } from "@/hooks/useLobbySocket";
-import { joinGamePool } from "@/lib/actions/join-game-pool";
+import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 
 interface JoinLobbyFormProps {
