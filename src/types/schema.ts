@@ -149,31 +149,27 @@ export interface Pool {
 	currentAmount: number;
 }
 
-export interface LobbyExtended {
-	id: string;
-	name: string;
-	creatorId: string;
-	lobbyStatus: "open" | "full";
-	description: string;
-	game: GameType;
-	participants: Participant[];
-	pool: Pool;
-}
-
 export interface JsonLobbyExtended {
 	info: JsonLobby;
 	players: JsonParticipant[];
+	pool: JsonPool | null;
 }
 
-export interface NewLobbyExtended {
+export interface LobbyExtended {
 	lobby: Lobby;
 	players: Participant[];
+	pool: Pool | null;
 }
 
 export function transLobbyExtended(
 	jsonLobby: JsonLobbyExtended
-): NewLobbyExtended {
+): LobbyExtended {
 	const lobby: Lobby = transLobby(jsonLobby.info);
+	const jsonPool = jsonLobby.pool;
+	let pool: Pool | null = null;
+	if (jsonPool) {
+		pool = transPool(jsonPool);
+	}
 
 	const players: Participant[] = jsonLobby.players.map((p) => ({
 		...transUser({
@@ -187,5 +183,5 @@ export function transLobbyExtended(
 		txId: p.tx_id,
 	}));
 
-	return { lobby, players };
+	return { lobby, players, pool };
 }

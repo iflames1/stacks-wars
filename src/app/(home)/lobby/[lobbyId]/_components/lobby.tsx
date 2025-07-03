@@ -11,9 +11,11 @@ import {
 	lobbyStatus,
 	Lobby as LobbyType,
 	Participant,
+	Pool,
 	transParticipant,
 } from "@/types/schema";
 import {
+	JoinState,
 	LobbyServerMessage,
 	PendingJoin,
 	useLobbySocket,
@@ -25,6 +27,7 @@ import { useRouter } from "next/navigation";
 interface LobbyProps {
 	lobby: LobbyType;
 	players: Participant[];
+	pool: Pool | null;
 	userId: string;
 	lobbyId: string;
 	game: GameType;
@@ -32,6 +35,7 @@ interface LobbyProps {
 export default function Lobby({
 	lobby,
 	players,
+	pool,
 	userId,
 	lobbyId,
 	game,
@@ -44,6 +48,7 @@ export default function Lobby({
 		lobby.lobbyStatus
 	);
 	const [pendingPlayers, setPendingPlayers] = useState<PendingJoin[]>([]);
+	const [joinState, setJoinState] = useState<JoinState>("idle");
 	const router = useRouter();
 
 	const isParticipant = participantList.some((p) => p.id === userId);
@@ -73,6 +78,7 @@ export default function Lobby({
 					break;
 				case "notifykicked":
 					toast.info("You were kicked from the lobby.");
+					router.refresh();
 					break;
 				case "countdown":
 					setCountdown(message.time);
@@ -90,6 +96,22 @@ export default function Lobby({
 					break;
 				case "pendingplayers":
 					setPendingPlayers(message.pending_players);
+					const isInPending = message.pending_players.find(
+						(p) => p.user.id === userId
+					);
+					if (isInPending) setJoinState(isInPending.state);
+					break;
+				case "allowed":
+					setJoinState(message.type);
+					toast.success("Join request approved!");
+					break;
+				case "rejected":
+					setJoinState(message.type);
+					toast.info("Join request was dropped");
+					break;
+				case "pending":
+					setJoinState(message.type);
+					toast.info("Your join request is pending approval");
 					break;
 				case "error":
 					toast.error(`Error: ${message.message}`);
@@ -126,7 +148,13 @@ export default function Lobby({
 			{/* Main Content */}
 			<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
 				{/* Stats Cards */}
-				<LobbyStats lobby={lobby} players={participantList} />
+				<>
+					<LobbyStats
+						lobby={lobby}
+						players={participantList}
+						pool={pool}
+					/>
+				</>
 				{/* Lobby Details */}
 				<LobbyDetails
 					lobby={lobby}
@@ -153,15 +181,18 @@ export default function Lobby({
 							</div>
 						}
 					>
-						<JoinLobbyForm
-							lobby={lobby}
-							players={participantList}
-							pendingPlayers={pendingPlayers}
-							lobbyId={lobbyId}
-							userId={userId}
-							sendMessage={sendMessage}
-							disconnect={disconnect}
-						/>
+						{userId !== lobby.creatorId && (
+							<JoinLobbyForm
+								lobby={lobby}
+								players={participantList}
+								pool={pool}
+								joinState={joinState}
+								lobbyId={lobbyId}
+								userId={userId}
+								sendMessage={sendMessage}
+								disconnect={disconnect}
+							/>
+						)}
 					</Suspense>
 					<GamePreview game={game} />
 				</div>

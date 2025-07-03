@@ -38,6 +38,7 @@ export const useConnectUser = () => {
 
 			await connectOrCreateUser(address);
 			await checkConnection();
+			toast.success("Wallet connected successfully!");
 		} catch (error) {
 			toast.error("Something went wrong, try again later.");
 			console.error("Error connecting wallet:", error);

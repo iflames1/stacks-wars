@@ -70,8 +70,6 @@ export default function CreateLobbyForm({
 	const [isLoading, setIsLoading] = useState(false);
 	const { isConnecting, isConnected, handleConnect } = useConnectUser();
 
-	console.log("game id", gameId);
-
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -122,11 +120,7 @@ export default function CreateLobbyForm({
 					console.error("❌ TX failed or aborted:", err);
 				}
 
-				const joinTx = await joinGamePool(
-					contract,
-					deployerAddress,
-					entry_amount
-				);
+				const joinTx = await joinGamePool(contract, entry_amount);
 				console.log("called join pool");
 				if (!joinTx.txid) {
 					throw new Error(
@@ -318,7 +312,7 @@ export default function CreateLobbyForm({
 								)}
 								{isConnecting
 									? "Connecting..."
-									: "Connect wallet"}
+									: "Connect wallet to create lobby"}
 							</Button>
 						) : (
 							<Button type="submit" disabled={isLoading}>

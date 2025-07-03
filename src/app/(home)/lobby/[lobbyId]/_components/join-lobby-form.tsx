@@ -7,16 +7,18 @@ import {
 	CardDescription,
 	CardFooter,
 } from "@/components/ui/card";
-import { Lobby, Participant } from "@/types/schema";
+import { Lobby, Participant, Pool } from "@/types/schema";
 import { Loader } from "lucide-react";
 import { toast } from "sonner";
-import { isConnected } from "@stacks/connect";
-import { LobbyClientMessage, PendingJoin } from "@/hooks/useLobbySocket";
+import { JoinState, LobbyClientMessage } from "@/hooks/useLobbySocket";
+import { joinGamePool } from "@/lib/actions/join-game-pool";
+import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 
 interface JoinLobbyFormProps {
 	lobby: Lobby;
 	players: Participant[];
-	pendingPlayers: PendingJoin[];
+	pool: Pool | null;
+	joinState: JoinState;
 	lobbyId: string;
 	userId: string;
 	sendMessage: (msg: LobbyClientMessage) => void;
@@ -26,7 +28,8 @@ interface JoinLobbyFormProps {
 export default function JoinLobbyForm({
 	lobby,
 	players,
-	pendingPlayers,
+	pool,
+	joinState,
 	userId,
 	sendMessage,
 	disconnect,
@@ -36,42 +39,61 @@ export default function JoinLobbyForm({
 	const isParticipant = players.some((p) => p.id === userId);
 	const isCreator = userId === lobby.creatorId;
 
-	const userRequest = pendingPlayers.find((p) => p.user.id === userId);
-	const userJoinState = userRequest?.state || "idle";
-
 	useEffect(() => {
 		if (isParticipant) setJoined(true);
 	}, [isParticipant]);
 
-	const handleClick = () => {
+	const handleClick = async () => {
+		if (loading) return;
 		setLoading(true);
 
-		if (joined) {
-			if (isCreator) {
-				toast.error("You can't leave the lobby as the creator");
-				setLoading(false);
+		try {
+			if (joined) {
+				if (isCreator) {
+					toast.error("You can't leave the lobby as the creator");
+					return;
+				}
+				sendMessage({ type: "leaveroom" });
+				disconnect();
+				setJoined(false);
+				toast.info("You left the lobby");
 				return;
 			}
 
-			sendMessage({ type: "leaveroom" });
-			disconnect();
-			setJoined(false);
-			toast.info("You left the lobby");
-			return;
-		}
+			if (joinState === "pending") return;
 
-		if (userJoinState === "idle" || userJoinState === "rejected") {
-			sendMessage({ type: "requestjoin" });
-			toast.info("Join request sent");
-			return;
-		}
+			if (joinState === "idle" || joinState === "rejected") {
+				sendMessage({ type: "requestjoin" });
+				return;
+			}
 
-		if (userJoinState === "allowed") {
-			sendMessage({ type: "joinlobby" });
-			return;
-		}
+			if (joinState === "allowed") {
+				// ⛏ Check if this lobby has a pool contract
+				if (pool) {
+					const contract =
+						pool.contractAddress as `${string}.${string}`;
+					const amount = pool.entryAmount;
 
-		setLoading(false);
+					const joinTx = await joinGamePool(contract, amount);
+					if (!joinTx.txid) {
+						throw new Error(
+							"Failed to join game pool: missing transaction ID"
+						);
+					}
+
+					await waitForTxConfirmed(joinTx.txid);
+
+					sendMessage({ type: "joinlobby", tx_id: joinTx.txid });
+				} else {
+					sendMessage({ type: "joinlobby", tx_id: undefined });
+				}
+			}
+		} catch (error) {
+			console.error("Join failed:", error);
+			toast.error("Join failed. Please try again.");
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
@@ -90,13 +112,9 @@ export default function JoinLobbyForm({
 					size="lg"
 					variant={joined ? "destructive" : "default"}
 					onClick={handleClick}
-					disabled={
-						loading ||
-						(!joined &&
-							(!isConnected() || userJoinState === "pending"))
-					}
+					disabled={loading || (!joined && joinState === "pending")}
 				>
-					{loading ? (
+					{loading || joinState === "pending" ? (
 						<>
 							<Loader className="mr-2 h-4 w-4 animate-spin" />
 							{joined ? "Leaving..." : "Processing..."}
@@ -107,12 +125,12 @@ export default function JoinLobbyForm({
 						) : (
 							"Leave Lobby"
 						)
-					) : userJoinState === "pending" ? (
-						"Request Sent"
-					) : userJoinState === "allowed" ? (
+					) : joinState === "allowed" ? (
 						"Join Lobby"
-					) : (
+					) : joinState === "idle" || joinState === "rejected" ? (
 						"Request to Join"
+					) : (
+						"huh?"
 					)}
 				</Button>
 			</CardFooter>

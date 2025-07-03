@@ -5,7 +5,7 @@ import {
 	GameType,
 	JsonGameType,
 	JsonLobbyExtended,
-	NewLobbyExtended,
+	LobbyExtended,
 	transGameType,
 	transLobbyExtended,
 } from "@/types/schema";
@@ -26,7 +26,7 @@ export default async function LobbyDetailPage({
 		auth: false,
 		tag: "lobbyExtended",
 	});
-	const lobby: NewLobbyExtended = transLobbyExtended(jsonLobby);
+	const lobby: LobbyExtended = transLobbyExtended(jsonLobby);
 
 	if (!lobby) {
 		notFound();
@@ -43,7 +43,7 @@ export default async function LobbyDetailPage({
 
 	if (!userId) {
 		console.error("User ID not found in JWT claims");
-		return notFound();
+		return notFound(); // display connect wallet instead
 	}
 
 	return (
@@ -56,20 +56,10 @@ export default async function LobbyDetailPage({
 					<ArrowLeft className="h-4 w-4" />
 					<span>Back to Lobby</span>
 				</Link>
-				{/* Hero Section */}
-				<div className="mb-6 sm:mb-8 space-y-2 sm:space-y-3">
-					<div className="flex flex-wrap items-start justify-between gap-2">
-						<h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight break-words">
-							{lobby.lobby.name}
-						</h1>
-					</div>
-					<p className="text-sm sm:text-base text-muted-foreground max-w-3xl break-words">
-						{lobby.lobby.description}
-					</p>
-				</div>
 				<Lobby
 					lobby={lobby.lobby}
 					players={lobby.players}
+					pool={lobby.pool}
 					userId={userId}
 					lobbyId={lobbyId}
 					game={game}
