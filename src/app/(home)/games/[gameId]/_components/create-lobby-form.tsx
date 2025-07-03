@@ -11,7 +11,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Loader } from "lucide-react";
-import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -33,6 +32,7 @@ import { nanoid } from "nanoid";
 import { createGamePool } from "@/lib/actions/deploy-game-pool";
 import { joinGamePool } from "@/lib/actions/join-game-pool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
+import { useConnectUser } from "@/hooks/useConnectUser";
 
 const formSchema = z.object({
 	name: z.string().min(3, {
@@ -68,6 +68,7 @@ export default function CreateLobbyForm({
 }: CreateLobbyFormProps) {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
+	const { isConnecting, isConnected, handleConnect } = useConnectUser();
 
 	console.log("game id", gameId);
 
@@ -302,19 +303,34 @@ export default function CreateLobbyForm({
 							/>
 						)}
 					</CardContent>
-					<CardFooter className="flex justify-between">
-						<Button variant="outline" asChild>
-							<Link href="/games">Cancel</Link>
-						</Button>
-						<Button type="submit" disabled={isLoading}>
-							{isLoading && (
-								<Loader
-									className="h-4 w-4 mr-1 animate-spin"
-									size={17}
-								/>
-							)}
-							{isLoading ? "Creating..." : "Create Lobby"}
-						</Button>
+					<CardFooter className="flex justify-end">
+						{!isConnected ? (
+							<Button
+								onClick={handleConnect}
+								type="button"
+								disabled={isConnecting}
+							>
+								{isConnecting && (
+									<Loader
+										className="h-4 w-4 mr-1 animate-spin"
+										size={17}
+									/>
+								)}
+								{isConnecting
+									? "Connecting..."
+									: "Connect wallet"}
+							</Button>
+						) : (
+							<Button type="submit" disabled={isLoading}>
+								{isLoading && (
+									<Loader
+										className="h-4 w-4 mr-1 animate-spin"
+										size={17}
+									/>
+								)}
+								{isLoading ? "Creating..." : "Create Lobby"}
+							</Button>
+						)}
 					</CardFooter>
 				</form>
 			</Form>
