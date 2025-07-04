@@ -5,7 +5,7 @@ export const waitForTxConfirmed = async (txId: string): Promise<void> => {
 	const controller = new AbortController();
 
 	let resolvePromise: () => void;
-	let rejectPromise: (reason?: any) => void;
+	let rejectPromise: (reason?: unknown) => void;
 	let wsUnsub: () => void = () => {};
 
 	const combined = new Promise<void>((resolve, reject) => {
