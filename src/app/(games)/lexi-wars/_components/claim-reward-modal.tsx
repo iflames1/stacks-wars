@@ -74,8 +74,11 @@ export default function ClaimRewardModal({
 		} catch (error) {
 			console.error("Error claiming reward:", error);
 			toast.error("Failed to claim reward. Please try again later.");
+		} finally {
+			setIsLoading(false);
 		}
 	};
+
 	return (
 		<Dialog open={showPrizeModal} onOpenChange={setShowPrizeModal}>
 			<DialogContent className="sm:max-w-[400px]">
@@ -96,13 +99,6 @@ export default function ClaimRewardModal({
 						className="w-full"
 					>
 						Claim Reward
-					</Button>
-					<Button
-						variant="ghost"
-						className="w-full text-muted-foreground"
-						onClick={() => setShowPrizeModal(false)}
-					>
-						Close
 					</Button>
 				</DialogFooter>
 			</DialogContent>

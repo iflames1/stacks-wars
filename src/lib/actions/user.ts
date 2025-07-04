@@ -21,7 +21,6 @@ export async function connectOrCreateUser(walletAddress: string) {
 		}
 
 		const token = await apiRes.json();
-		console.log("token", token);
 
 		cookieStore.set("jwt", token, {
 			httpOnly: true,
