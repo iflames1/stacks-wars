@@ -110,7 +110,7 @@ export default function GameOverModal({
 	standing,
 	userId,
 }: GameOverModalProps) {
-	const [open, setOpen] = useState(true);
+	const [open, setOpen] = useState(false);
 
 	useEffect(() => {
 		if (standing && standing.length > 0) {
