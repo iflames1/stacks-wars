@@ -6,7 +6,9 @@
         "dev": "next dev --turbopack",
         "build": "next build --turbopack",
         "start": "next start",
-        "lint": "next lint"
+        "lint": "next lint",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
     },
     "dependencies": {
         "@hookform/resolvers": "^5.0.1",
@@ -26,6 +28,7 @@
         "@stacks/wallet-sdk": "^7.0.5",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "grammy": "^1.37.0",
         "lucide-react": "^0.511.0",
         "nanoid": "^5.1.5",
         "next": "15.3.2",
@@ -37,6 +40,7 @@
         "react-simple-keyboard": "^3.8.76",
         "sonner": "^2.0.6",
         "tailwind-merge": "^3.3.0",
+        "telegraf": "^4.16.3",
         "zod": "^3.25.50",
         "zsa-react": "^0.2.3"
     },
@@ -48,6 +52,7 @@
         "@types/react-dom": "^19",
         "eslint": "^9",
         "eslint-config-next": "15.3.2",
+        "prettier": "^3.6.2",
         "tailwindcss": "^4",
         "tw-animate-css": "^1.3.0",
         "typescript": "^5"

@@ -62,7 +62,7 @@ export const apiRequest = async <T = JSON>({
 			body: body ? JSON.stringify(body) : undefined,
 			...(cache && { cache }),
 			next: tag ? { tags: Array.isArray(tag) ? tag : [tag] } : undefined,
-		},
+		}
 	);
 
 	if (!res.ok) {

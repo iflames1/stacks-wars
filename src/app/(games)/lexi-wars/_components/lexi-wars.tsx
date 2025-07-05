@@ -66,7 +66,9 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 							userId === message.sender.id
 								? "You"
 								: message.sender.display_name ||
-								  truncateAddress(message.sender.wallet_address)
+									truncateAddress(
+										message.sender.wallet_address
+									)
 						} entered: ${message.word}`
 					);
 					break;

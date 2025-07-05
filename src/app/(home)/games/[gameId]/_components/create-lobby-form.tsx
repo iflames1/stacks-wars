@@ -33,6 +33,7 @@ import { createGamePool } from "@/lib/actions/createGamePool";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { useConnectUser } from "@/hooks/useConnectUser";
+// import { NotifierClient } from "@/lib/notifier";
 
 const formSchema = z.object({
 	name: z.string().min(3, {
@@ -84,6 +85,13 @@ export default function CreateLobbyForm({
 
 	const onSubmit = async (values: FormData) => {
 		setIsLoading(true);
+		// send tg message the code must run in the server
+		// to send to all users, get all users tg chat id from the db then loop and send
+		// const notifier = new NotifierClient(process.env.TELEGRAM_BOT_TOKEN);
+		// notifier.send("telegram", {
+		//     message: "New lobby created on stacks wars, jump in now ...",
+		//     recipient: { id: "TG CHAT ID OF THE USER HERE" },
+		// });
 
 		try {
 			let apiParams: ApiRequestProps;

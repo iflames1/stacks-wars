@@ -42,8 +42,8 @@ export default function LobbyDetails({
 		lobbyState === "waiting"
 			? "Start Game"
 			: lobbyState === "inprogress" && timeLeft > 0
-			? "Wait"
-			: "Ended";
+				? "Wait"
+				: "Ended";
 
 	const isDisabled =
 		loading ||
