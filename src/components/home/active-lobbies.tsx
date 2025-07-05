@@ -33,7 +33,8 @@ export default async function ActiveLobbies({ lobbies }: { lobbies: Lobby[] }) {
 								<div className="flex items-center gap-1">
 									<Users className="h-4 w-4 text-muted-foreground" />
 									<span className="font-medium">
-										{lobby.players}/{lobby.maxPlayers}
+										{lobby.players}
+										{/*/{lobby.maxPlayers}*/}
 									</span>
 								</div>
 							</div>

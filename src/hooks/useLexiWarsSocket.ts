@@ -16,7 +16,8 @@ export type LexiWarsServerMessage =
 	| { type: "wordentry"; word: string; sender: JsonParticipant }
 	| { type: "usedword"; word: string }
 	| { type: "gameover" }
-	| { type: "finalstanding"; standing: PlayerStanding[] };
+	| { type: "finalstanding"; standing: PlayerStanding[] }
+	| { type: "prize"; amount: number };
 
 export type LexiWarsClientMessage = { type: "wordentry"; word: string };
 
@@ -32,11 +33,11 @@ export function useLexiWarsSocket({
 	onMessage,
 }: UseLexiWarsSocketProps) {
 	const socketRef = useRef<WebSocket | null>(null);
+	const reconnectAttempts = useRef(0);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-	const reconnectAttempts = useRef<number>(0);
 	const manuallyDisconnectedRef = useRef(false);
 	const messageHandlerRef = useRef<typeof onMessage | null>(null);
-	const maxReconnectAttempts = 5;
+	const messageQueue = useRef<LexiWarsClientMessage[]>([]);
 
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
 		WebSocket.CLOSED
@@ -44,94 +45,105 @@ export function useLexiWarsSocket({
 	const [error, setError] = useState<null | Event>(null);
 	const [reconnecting, setReconnecting] = useState(false);
 
+	const maxReconnectAttempts = 5;
+
 	useEffect(() => {
 		messageHandlerRef.current = onMessage;
 	}, [onMessage]);
 
-	useEffect(() => {
-		if (socketRef.current || manuallyDisconnectedRef.current) return;
-
-		let mounted = true;
-
-		const startConnection = () => {
-			if (!lobbyId || !userId) return;
-
-			console.log("🟢 Connecting WebSocket...");
-
-			const ws = new WebSocket(
-				`${process.env.NEXT_PUBLIC_WS_URL}/ws/lexiwars/${lobbyId}?user_id=${userId}`
-			);
-			socketRef.current = ws;
-
-			ws.onopen = () => {
-				if (!mounted) return;
-				console.log("✅ LexiWars WebSocket connected");
-				setReadyState(ws.readyState);
-				setError(null);
-				setReconnecting(false);
-				reconnectAttempts.current = 0;
-			};
-
-			ws.onmessage = (event: MessageEvent<LexiWarsServerMessage>) => {
-				try {
-					const raw =
-						typeof event.data === "string" ? event.data : "";
-					const data = JSON.parse(raw) as LexiWarsServerMessage;
-					console.log("[LexiWars WS] →", data);
-					messageHandlerRef.current?.(data);
-				} catch (err) {
-					console.error("❌ Failed to parse LexiWars message", err);
+	const processMessageQueue = useCallback(() => {
+		if (socketRef.current?.readyState === WebSocket.OPEN) {
+			while (messageQueue.current.length > 0) {
+				const msg = messageQueue.current.shift();
+				if (msg) {
+					socketRef.current.send(JSON.stringify(msg));
 				}
-			};
+			}
+		}
+	}, []);
 
-			ws.onclose = (event: CloseEvent) => {
-				console.warn(
-					"🛑 LexiWars WebSocket closed:",
-					event.code,
-					event.reason
-				);
-				setReadyState(WebSocket.CLOSED);
-				socketRef.current = null;
+	const connectSocket = useCallback(() => {
+		if (!lobbyId || !userId) return;
+		if (socketRef.current) return;
 
-				if (
-					mounted &&
-					!manuallyDisconnectedRef.current &&
-					reconnectAttempts.current < maxReconnectAttempts
-				) {
-					setReconnecting(true);
-					const timeout =
-						Math.pow(2, reconnectAttempts.current) * 1000;
-					reconnectTimeoutRef.current = setTimeout(() => {
-						reconnectAttempts.current++;
-						startConnection();
-					}, timeout);
-				}
-			};
+		console.log("🟢 Connecting LexiWarsSocket...");
 
-			ws.onerror = (err: Event) => {
-				console.error("⚠️ LexiWars WebSocket error", err);
-				setError(err);
-				setReadyState(WebSocket.CLOSED);
-			};
+		const ws = new WebSocket(
+			`${process.env.NEXT_PUBLIC_WS_URL}/ws/lexiwars/${lobbyId}?user_id=${userId}`
+		);
+
+		socketRef.current = ws;
+
+		ws.onopen = () => {
+			console.log("✅ LexiWarsSocket connected");
+			setReadyState(ws.readyState);
+			setError(null);
+			setReconnecting(false);
+			reconnectAttempts.current = 0;
+			processMessageQueue();
 		};
 
-		startConnection();
+		ws.onmessage = (event) => {
+			try {
+				const raw = typeof event.data === "string" ? event.data : "";
+				const data = JSON.parse(raw) as LexiWarsServerMessage;
+				messageHandlerRef.current?.(data);
+			} catch (err) {
+				console.error("❌ Failed to parse LexiWars message", err);
+			}
+		};
+
+		ws.onclose = (event) => {
+			console.warn("🛑 LexiWarsSocket closed:", event.code, event.reason);
+			setReadyState(WebSocket.CLOSED);
+			socketRef.current = null;
+
+			if (
+				!manuallyDisconnectedRef.current &&
+				reconnectAttempts.current < maxReconnectAttempts
+			) {
+				reconnectAttempts.current++;
+				const timeout = Math.pow(2, reconnectAttempts.current) * 1000;
+				console.log(`♻️ Reconnecting in ${timeout / 1000}s...`);
+				setReconnecting(true);
+
+				reconnectTimeoutRef.current = setTimeout(() => {
+					connectSocket();
+				}, timeout);
+			}
+		};
+
+		ws.onerror = (err) => {
+			console.error("⚠️ LobbySocket error:", err);
+			setError(err);
+			setReadyState(WebSocket.CLOSED);
+
+			// Close the broken socket to trigger reconnection
+			if (socketRef.current) {
+				socketRef.current.close();
+				socketRef.current = null;
+			}
+		};
+	}, [lobbyId, userId, processMessageQueue]);
+
+	useEffect(() => {
+		connectSocket();
 
 		return () => {
-			mounted = false;
 			if (reconnectTimeoutRef.current)
 				clearTimeout(reconnectTimeoutRef.current);
-			if (socketRef.current) socketRef.current.close();
+			socketRef.current?.close();
 			socketRef.current = null;
 		};
-	}, [lobbyId, userId]);
+	}, [connectSocket]);
 
-	const sendMessage = useCallback((msg: LexiWarsClientMessage) => {
+	const sendMessage = useCallback((data: LexiWarsClientMessage) => {
 		const socket = socketRef.current;
-		if (socket && socket.readyState === WebSocket.OPEN) {
-			socket.send(JSON.stringify(msg));
+		if (socket?.readyState === WebSocket.OPEN) {
+			socket.send(JSON.stringify(data));
 		} else {
-			console.warn("LexiWars WebSocket not ready to send");
+			console.log("⏳ Queuing message (socket not ready)");
+			messageQueue.current.push(data);
 		}
 	}, []);
 
@@ -142,6 +154,7 @@ export function useLexiWarsSocket({
 		socketRef.current?.close();
 		socketRef.current = null;
 		setReadyState(WebSocket.CLOSED);
+		messageQueue.current = [];
 	}, []);
 
 	return {

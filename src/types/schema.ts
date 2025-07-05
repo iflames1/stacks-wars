@@ -61,11 +61,11 @@ export interface JsonLobby {
 	name: string;
 	description: string | null;
 	creator_id: string;
-	max_participants: number;
-	state: "waiting" | "inprogress" | "finished";
+	state: lobbyStatus;
 	game_id: string;
 	game_name: string;
 	participants: number;
+	contract_address: string | null;
 }
 
 export function transLobby(lobby: JsonLobby): Lobby {
@@ -74,11 +74,11 @@ export function transLobby(lobby: JsonLobby): Lobby {
 		name: lobby.name,
 		description: lobby.description,
 		creatorId: lobby.creator_id,
-		maxPlayers: lobby.max_participants,
 		lobbyStatus: lobby.state,
 		gameId: lobby.game_id,
 		gameName: lobby.game_name,
 		players: lobby.participants,
+		contractAddress: lobby.contract_address,
 	};
 }
 
@@ -89,11 +89,11 @@ export interface Lobby {
 	name: string;
 	description: string | null;
 	creatorId: string;
-	maxPlayers: number;
 	lobbyStatus: lobbyStatus;
 	gameId: string;
 	gameName: string;
 	players: number;
+	contractAddress: string | null;
 }
 
 export interface JsonParticipant {
@@ -103,12 +103,14 @@ export interface JsonParticipant {
 	state: "ready" | "notready";
 	rank: number | null;
 	used_words: string[];
+	tx_id: string | null;
 }
 
 export interface Participant extends User {
 	playerStatus: "ready" | "notready";
 	rank: number | null;
 	usedWords: string[];
+	txId: string | null;
 }
 
 export function transParticipant(
@@ -123,41 +125,51 @@ export function transParticipant(
 		playerStatus: jsonParticipant.state,
 		rank: jsonParticipant.rank,
 		usedWords: jsonParticipant.used_words,
+		txId: jsonParticipant.tx_id,
 	};
 }
 
-interface Pool {
-	id: string;
-	currentAmount: number;
-	entryAmount: number;
+export interface JsonPool {
+	entry_amount: number;
+	contract_address: string;
+	current_amount: number;
 }
 
-export interface LobbyExtended {
-	id: string;
-	name: string;
-	creatorId: string;
-	lobbyStatus: "open" | "full";
-	description: string;
-	game: GameType;
-	participants: Participant[];
-	pool: Pool;
-	maxPlayers: number;
+export function transPool(jsonPool: JsonPool): Pool {
+	return {
+		entryAmount: jsonPool.entry_amount,
+		contractAddress: jsonPool.contract_address,
+		currentAmount: jsonPool.current_amount,
+	};
+}
+
+export interface Pool {
+	entryAmount: number;
+	contractAddress: string;
+	currentAmount: number;
 }
 
 export interface JsonLobbyExtended {
 	info: JsonLobby;
 	players: JsonParticipant[];
+	pool: JsonPool | null;
 }
 
-export interface NewLobbyExtended {
+export interface LobbyExtended {
 	lobby: Lobby;
 	players: Participant[];
+	pool: Pool | null;
 }
 
 export function transLobbyExtended(
 	jsonLobby: JsonLobbyExtended
-): NewLobbyExtended {
+): LobbyExtended {
 	const lobby: Lobby = transLobby(jsonLobby.info);
+	const jsonPool = jsonLobby.pool;
+	let pool: Pool | null = null;
+	if (jsonPool) {
+		pool = transPool(jsonPool);
+	}
 
 	const players: Participant[] = jsonLobby.players.map((p) => ({
 		...transUser({
@@ -168,7 +180,8 @@ export function transLobbyExtended(
 		playerStatus: p.state,
 		rank: p.rank,
 		usedWords: p.used_words,
+		txId: p.tx_id,
 	}));
 
-	return { lobby, players };
+	return { lobby, players, pool };
 }

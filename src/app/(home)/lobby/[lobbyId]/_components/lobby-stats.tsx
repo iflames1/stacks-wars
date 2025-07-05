@@ -1,20 +1,22 @@
 import { Card, CardContent } from "@/components/ui/card";
 import {
 	Gamepad2,
+	Trophy,
 	//Trophy,
 	Users,
 } from "lucide-react";
-import { Lobby, Participant } from "@/types/schema";
+import { Lobby, Participant, Pool } from "@/types/schema";
 
 interface LobbyStatsProps {
 	lobby: Lobby;
 	players: Participant[];
+	pool: Pool | null;
 }
 
-export default function LobbyStats({ lobby, players }: LobbyStatsProps) {
+export default function LobbyStats({ lobby, players, pool }: LobbyStatsProps) {
 	return (
 		<div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-			{/*{lobby.pool && (
+			{pool && (
 				<Card className="bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/20 transition-colors">
 					<CardContent className="p-3 sm:p-4 md:p-6">
 						<div className="flex items-center gap-2 sm:gap-3 md:gap-4">
@@ -26,13 +28,13 @@ export default function LobbyStats({ lobby, players }: LobbyStatsProps) {
 									Pool Size
 								</p>
 								<p className="text-base sm:text-xl md:text-2xl font-bold">
-									{lobby.pool.currentAmount || 0} STX
+									{pool.entryAmount * players.length} STX
 								</p>
 							</div>
 						</div>
 					</CardContent>
 				</Card>
-			)}*/}
+			)}
 
 			<Card className="bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/20 transition-colors">
 				<CardContent className="p-3 sm:p-4 md:p-6">
@@ -45,7 +47,7 @@ export default function LobbyStats({ lobby, players }: LobbyStatsProps) {
 								Players
 							</p>
 							<p className="text-base sm:text-xl md:text-2xl font-bold">
-								{players.length}/{lobby.maxPlayers}
+								{players.length}
 							</p>
 						</div>
 					</div>
@@ -64,6 +66,9 @@ export default function LobbyStats({ lobby, players }: LobbyStatsProps) {
 							</p>
 							<p className="text-base sm:text-xl md:text-2xl font-bold">
 								{lobby.name}
+							</p>
+							<p className="text-sm sm:text-base text-muted-foreground max-w-3xl break-words">
+								{lobby.description}
 							</p>
 						</div>
 					</div>

@@ -16,13 +16,15 @@ import {
 import { Participant, transParticipant } from "@/types/schema";
 import { toast } from "sonner";
 import { truncateAddress } from "@/lib/utils";
+import ClaimRewardModal from "./claim-reward-modal";
 
 interface LexiWarsProps {
 	lobbyId: string;
 	userId: string;
+	contract: string | null;
 }
 
-export default function LexiWars({ lobbyId, userId }: LexiWarsProps) {
+export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
 	const [layoutName, setLayoutName] = useState<string>("default");
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +36,8 @@ export default function LexiWars({ lobbyId, userId }: LexiWarsProps) {
 	const [countdown, setCountdown] = useState<number>(10);
 	const [rank, setRank] = useState<string | null>(null);
 	const [finalStanding, setFinalStanding] = useState<PlayerStanding[]>();
+	const [showPrizeModal, setShowPrizeModal] = useState(false);
+	const [prizeAmount, setPrizeAmount] = useState<number | null>(null);
 
 	const handleMessage = useCallback(
 		(message: LexiWarsServerMessage) => {
@@ -49,6 +53,9 @@ export default function LexiWars({ lobbyId, userId }: LexiWarsProps) {
 					break;
 				case "rank":
 					setRank(message.rank);
+					toast.info(`Time's up!`, {
+						description: `Your rank was ${message.rank}.`,
+					});
 					break;
 				case "validate":
 					toast.info(`${message.msg}`);
@@ -72,6 +79,12 @@ export default function LexiWars({ lobbyId, userId }: LexiWarsProps) {
 				case "finalstanding":
 					setFinalStanding(message.standing);
 					break;
+				case "prize":
+					if (message.amount && message.amount > 0) {
+						setPrizeAmount(message.amount);
+						setShowPrizeModal(true);
+					}
+					break;
 				default:
 					console.warn("Unknown WS message type", message);
 			}
@@ -84,9 +97,6 @@ export default function LexiWars({ lobbyId, userId }: LexiWarsProps) {
 		userId,
 		onMessage: handleMessage,
 	});
-
-	console.log("rank:", rank);
-	console.log("finalStanding:", finalStanding);
 
 	const handleSubmit = (e?: FormEvent) => {
 		e?.preventDefault();
@@ -166,6 +176,16 @@ export default function LexiWars({ lobbyId, userId }: LexiWarsProps) {
 				)}
 
 				<GameOverModal standing={finalStanding} userId={userId} />
+				{rank && prizeAmount && (
+					<ClaimRewardModal
+						showPrizeModal={showPrizeModal}
+						setShowPrizeModal={setShowPrizeModal}
+						rank={rank}
+						prizeAmount={prizeAmount}
+						lobbyId={lobbyId}
+						contractAddress={contract}
+					/>
+				)}
 
 				<div className="sr-only" role="alert">
 					This is a competitive typing game that requires manual

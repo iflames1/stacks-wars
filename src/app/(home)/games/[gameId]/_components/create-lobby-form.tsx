@@ -11,7 +11,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Loader } from "lucide-react";
-import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -28,6 +27,12 @@ import { apiRequest, ApiRequestProps } from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
+import { nanoid } from "nanoid";
+import { createGamePool } from "@/lib/actions/createGamePool";
+import { joinGamePool } from "@/lib/actions/joinGamePool";
+import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
+import { useConnectUser } from "@/hooks/useConnectUser";
 
 const formSchema = z.object({
 	name: z.string().min(3, {
@@ -39,8 +44,8 @@ const formSchema = z.object({
 	withPool: z.boolean(),
 	amount: z
 		.number()
-		.min(50, {
-			message: "Amount must be at least 50 STX.",
+		.min(5, {
+			message: "Amount must be at least 5 STX.",
 		})
 		.optional(),
 });
@@ -63,8 +68,7 @@ export default function CreateLobbyForm({
 }: CreateLobbyFormProps) {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
-
-	console.log("game id", gameId);
+	const { isConnecting, isConnected, handleConnect } = useConnectUser();
 
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
@@ -80,26 +84,91 @@ export default function CreateLobbyForm({
 
 	const onSubmit = async (values: FormData) => {
 		setIsLoading(true);
-		console.log("Extra values:", {
-			description: values.description,
-			withPool: values.withPool,
-			amount: values.amount,
-		});
+
 		try {
-			const apiParams: ApiRequestProps = {
-				path: "room",
-				method: "POST",
-				body: {
-					name: values.name,
-					description: values.description,
-					max_participants: 4,
-					game_id: gameId,
-					game_name: gameName,
-				},
-				tag: "lobby",
-				revalidateTag: "lobby",
-				revalidatePath: "/lobby",
-			};
+			let apiParams: ApiRequestProps;
+
+			if (values.withPool) {
+				if (!values.amount) {
+					throw new Error("Amount is required when using a pool");
+				}
+
+				const deployerAddress = await getClaimFromJwt<string>("wallet");
+				if (!deployerAddress) {
+					toast.error("You need to connect your wallet first.");
+					setIsLoading(false);
+					return;
+				}
+				const contractName = `${nanoid(5)}-stacks-wars`;
+				const contract: `${string}.${string}` = `${deployerAddress}.${contractName}`;
+				const entry_amount = values.amount;
+
+				const deployTx = await createGamePool(
+					entry_amount,
+					contractName,
+					deployerAddress
+				);
+				if (!deployTx.txid) {
+					throw new Error(
+						"Failed to deploy game pool: missing transaction ID"
+					);
+				}
+				try {
+					await waitForTxConfirmed(deployTx.txid);
+					console.log("✅ Deploy Transaction confirmed!");
+				} catch (err) {
+					console.error("❌ TX failed or aborted:", err);
+				}
+
+				const joinTx = await joinGamePool(contract, entry_amount);
+				console.log("called join pool");
+				if (!joinTx.txid) {
+					throw new Error(
+						"Failed to join game pool: missing transaction ID"
+					);
+				}
+				try {
+					await waitForTxConfirmed(joinTx.txid);
+					console.log("✅ Join Transaction confirmed!");
+				} catch (err) {
+					console.error("❌ TX failed or aborted:", err);
+				}
+
+				const tx_id = joinTx.txid;
+				const contract_address = contract;
+				console.log(entry_amount, contract_address, tx_id);
+
+				apiParams = {
+					path: "room",
+					method: "POST",
+					body: {
+						name: values.name,
+						description: values.description,
+						entry_amount,
+						contract_address,
+						tx_id,
+						game_id: gameId,
+						game_name: gameName,
+					},
+					tag: "lobby",
+					revalidateTag: "lobby",
+					revalidatePath: "/lobby",
+				};
+			} else {
+				apiParams = {
+					path: "room",
+					method: "POST",
+					body: {
+						name: values.name,
+						description: values.description,
+						game_id: gameId,
+						game_name: gameName,
+					},
+					tag: "lobby",
+					revalidateTag: "lobby",
+					revalidatePath: "/lobby",
+				};
+			}
 			const lobbyId = await apiRequest<string>(apiParams);
 			toast.info("Please wait while we redirect you to your lobby");
 			router.replace(`/lobby/${lobbyId}`);
@@ -228,19 +297,34 @@ export default function CreateLobbyForm({
 							/>
 						)}
 					</CardContent>
-					<CardFooter className="flex justify-between">
-						<Button variant="outline" asChild>
-							<Link href="/games">Cancel</Link>
-						</Button>
-						<Button type="submit" disabled={isLoading}>
-							{isLoading && (
-								<Loader
-									className="h-4 w-4 mr-1 animate-spin"
-									size={17}
-								/>
-							)}
-							{isLoading ? "Creating..." : "Create Lobby"}
-						</Button>
+					<CardFooter className="flex justify-end">
+						{!isConnected ? (
+							<Button
+								onClick={handleConnect}
+								type="button"
+								disabled={isConnecting}
+							>
+								{isConnecting && (
+									<Loader
+										className="h-4 w-4 mr-1 animate-spin"
+										size={17}
+									/>
+								)}
+								{isConnecting
+									? "Connecting..."
+									: "Connect wallet to create lobby"}
+							</Button>
+						) : (
+							<Button type="submit" disabled={isLoading}>
+								{isLoading && (
+									<Loader
+										className="h-4 w-4 mr-1 animate-spin"
+										size={17}
+									/>
+								)}
+								{isLoading ? "Creating..." : "Create Lobby"}
+							</Button>
+						)}
 					</CardFooter>
 				</form>
 			</Form>

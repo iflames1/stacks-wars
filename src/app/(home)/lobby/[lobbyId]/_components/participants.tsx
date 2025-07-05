@@ -56,17 +56,19 @@ export default function Participants({
 						<Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
 						Current Participants
 					</CardTitle>
-					<Button
-						size="sm"
-						variant={isReady ? "destructive" : "default"}
-						onClick={() =>
-							handleUpdatePlayerStatus(
-								isReady ? "notready" : "ready"
-							)
-						}
-					>
-						{isReady ? "Unready" : "Ready"}
-					</Button>
+					{userId !== lobby.creatorId && (
+						<Button
+							size="sm"
+							variant={isReady ? "destructive" : "default"}
+							onClick={() =>
+								handleUpdatePlayerStatus(
+									isReady ? "notready" : "ready"
+								)
+							}
+						>
+							{isReady ? "Unready" : "Ready"}
+						</Button>
+					)}
 				</div>
 				<p className="text-xs text-muted-foreground mt-2">
 					After the game has started, participants who aren&apos;t
@@ -124,45 +126,47 @@ export default function Participants({
 															: "Not Ready"}
 													</span>
 												</div>
-												<p className="text-xs text-muted-foreground">
-													Joined{" "}
-													{new Date().toLocaleDateString()}
-												</p>
 											</div>
 										</div>
 										<div className="text-right flex flex-col">
-											<span className="text-sm sm:text-base font-bold">
-												{/*{player.amount}*/}
-												STX
-											</span>
-											<Button
-												variant={"link"}
-												asChild
-												className="!p-0 text-right"
-											>
-												<Link
-													href={`${EXPLORER_BASE_URL}txid/${player.walletAddress}?chain=testnet`}
-													target="_blank"
-												>
-													View in explorer
-												</Link>
-											</Button>
-											{isSelfCreator && !isCreator && (
-												<Button
-													variant="destructive"
-													size="sm"
-													className="text-xs px-2 py-1"
-													onClick={() =>
-														handleKickPlayer(
-															player.id,
-															player.walletAddress,
-															player.username
-														)
-													}
-												>
-													Kick
-												</Button>
+											{player.txId && (
+												<>
+													<span className="text-sm sm:text-base font-bold">
+														{/*{player.amount}*/}
+														STX
+													</span>
+													<Button
+														variant={"link"}
+														asChild
+														className="!p-0 text-right"
+													>
+														<Link
+															href={`${EXPLORER_BASE_URL}txid/${player.txId}?chain=testnet`}
+															target="_blank"
+														>
+															View in explorer
+														</Link>
+													</Button>
+												</>
 											)}
+											{isSelfCreator &&
+												!isCreator &&
+												!lobby.contractAddress && (
+													<Button
+														variant="destructive"
+														size="sm"
+														className="text-xs"
+														onClick={() =>
+															handleKickPlayer(
+																player.id,
+																player.walletAddress,
+																player.username
+															)
+														}
+													>
+														Kick
+													</Button>
+												)}
 										</div>
 									</div>
 								);

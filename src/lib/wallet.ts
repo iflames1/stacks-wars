@@ -1,5 +1,6 @@
 import { connect, disconnect, getLocalStorage } from "@stacks/connect";
 import { toast } from "sonner";
+import { getClaimFromJwt } from "./getClaimFromJwt";
 
 export const connectWallet = async () => {
 	try {
@@ -9,6 +10,20 @@ export const connectWallet = async () => {
 		toast.error("Failed to connect wallet. Please try again.");
 		console.error("Error connecting wallet:", error);
 	}
+};
+
+export const isConnected = async (): Promise<boolean> => {
+	const walletAddress = await getClaimFromJwt<string>("wallet");
+
+	if (!walletAddress) return false;
+
+	if (getWalletAddress() !== walletAddress) {
+		console.warn("Wallet address does not match JWT claim");
+		disconnect();
+		return false;
+	}
+
+	return true;
 };
 
 export const getWalletAddress = () => {

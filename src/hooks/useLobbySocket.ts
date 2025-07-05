@@ -9,9 +9,11 @@ interface UseLobbySocketProps {
 
 export type PlayerStatus = "ready" | "notready";
 
+export type JoinState = "idle" | "pending" | "allowed" | "rejected";
+
 export type PendingJoin = {
 	user: JsonUser;
-	state: "idle" | "pending" | "allowed" | "rejected";
+	state: JoinState;
 };
 
 export type LobbyClientMessage =
@@ -30,7 +32,10 @@ export type LobbyClientMessage =
 			user_id: string;
 			allow: boolean;
 	  }
-	| { type: "joinlobby" };
+	| {
+			type: "joinlobby";
+			tx_id: string | undefined;
+	  };
 
 export type LobbyServerMessage =
 	| { type: "playerjoined"; players: JsonParticipant[] }
@@ -53,6 +58,9 @@ export type LobbyServerMessage =
 			type: "pendingplayers";
 			pending_players: PendingJoin[];
 	  }
+	| { type: "allowed" }
+	| { type: "rejected" }
+	| { type: "pending" }
 	| {
 			type: "error";
 			message: string;
@@ -64,11 +72,11 @@ export function useLobbySocket({
 	onMessage,
 }: UseLobbySocketProps) {
 	const socketRef = useRef<WebSocket | null>(null);
-	const messageHandlerRef = useRef<typeof onMessage | null>(null);
+	const reconnectAttempts = useRef(0);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-	const reconnectAttempts = useRef<number>(0);
 	const manuallyDisconnectedRef = useRef(false);
-	const maxReconnectAttempts = 5;
+	const messageHandlerRef = useRef<typeof onMessage | null>(null);
+	const messageQueue = useRef<LobbyClientMessage[]>([]);
 
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
 		WebSocket.CLOSED
@@ -76,89 +84,105 @@ export function useLobbySocket({
 	const [error, setError] = useState<null | Event>(null);
 	const [reconnecting, setReconnecting] = useState(false);
 
+	const maxReconnectAttempts = 5;
+
+	const processMessageQueue = useCallback(() => {
+		if (socketRef.current?.readyState === WebSocket.OPEN) {
+			while (messageQueue.current.length > 0) {
+				const message = messageQueue.current.shift();
+				if (message) {
+					socketRef.current.send(JSON.stringify(message));
+				}
+			}
+		}
+	}, []);
+
 	useEffect(() => {
 		messageHandlerRef.current = onMessage;
 	}, [onMessage]);
 
-	useEffect(() => {
-		if (socketRef.current || manuallyDisconnectedRef.current) return;
+	const connectSocket = useCallback(() => {
+		if (!roomId || !userId) return;
+		if (socketRef.current) return; // already connecting or connected
 
-		let mounted = true;
+		console.log("🟢 Connecting LobbySocket...");
 
-		const startConnection = () => {
-			if (!roomId || !userId) return;
+		const ws = new WebSocket(
+			`${process.env.NEXT_PUBLIC_WS_URL}/ws/room/${roomId}?user_id=${userId}`
+		);
 
-			console.log("🟢 Connecting WebSocket...");
+		socketRef.current = ws;
 
-			const ws = new WebSocket(
-				`${process.env.NEXT_PUBLIC_WS_URL}/ws/room/${roomId}?user_id=${userId}`
-			);
-			socketRef.current = ws;
-
-			ws.onopen = () => {
-				if (!mounted) return;
-				console.log("✅ WebSocket connected");
-				setReadyState(ws.readyState);
-				setError(null);
-				setReconnecting(false);
-				reconnectAttempts.current = 0;
-			};
-
-			ws.onmessage = (event: MessageEvent<LobbyServerMessage>) => {
-				try {
-					const raw =
-						typeof event.data === "string" ? event.data : "";
-					const data = JSON.parse(raw) as LobbyServerMessage;
-					messageHandlerRef.current?.(data);
-				} catch (err) {
-					console.error("❌ Failed to parse WS message", err);
-				}
-			};
-
-			ws.onclose = (event: CloseEvent) => {
-				console.warn("🛑 WebSocket closed:", event.code, event.reason);
-				setReadyState(WebSocket.CLOSED);
-				socketRef.current = null;
-
-				if (
-					mounted &&
-					!manuallyDisconnectedRef.current &&
-					reconnectAttempts.current < maxReconnectAttempts
-				) {
-					setReconnecting(true);
-					const timeout =
-						Math.pow(2, reconnectAttempts.current) * 1000;
-					reconnectTimeoutRef.current = setTimeout(() => {
-						reconnectAttempts.current++;
-						startConnection();
-					}, timeout);
-				}
-			};
-
-			ws.onerror = (err: Event) => {
-				console.error("⚠️ WebSocket error", err);
-				setError(err);
-				setReadyState(WebSocket.CLOSED);
-			};
+		ws.onopen = () => {
+			console.log("✅ LobbySocket connected");
+			setReadyState(ws.readyState);
+			setError(null);
+			setReconnecting(false);
+			reconnectAttempts.current = 0;
+			processMessageQueue();
 		};
 
-		startConnection();
+		ws.onmessage = (event) => {
+			try {
+				const raw = typeof event.data === "string" ? event.data : "";
+				const data = JSON.parse(raw) as LobbyServerMessage;
+				messageHandlerRef.current?.(data);
+			} catch (err) {
+				console.error("❌ Failed to parse WS message", err);
+			}
+		};
+
+		ws.onclose = (event) => {
+			console.warn("🛑 LobbySocket closed:", event.code, event.reason);
+			setReadyState(WebSocket.CLOSED);
+			socketRef.current = null;
+
+			if (
+				!manuallyDisconnectedRef.current &&
+				reconnectAttempts.current < maxReconnectAttempts
+			) {
+				reconnectAttempts.current++;
+				const timeout = Math.pow(2, reconnectAttempts.current) * 1000;
+				console.log(`♻️ Reconnecting in ${timeout / 1000}s...`);
+
+				setReconnecting(true);
+				reconnectTimeoutRef.current = setTimeout(() => {
+					connectSocket();
+				}, timeout);
+			}
+		};
+
+		ws.onerror = (err) => {
+			console.error("⚠️ LobbySocket error:", err);
+			setError(err);
+			setReadyState(WebSocket.CLOSED);
+
+			// Close the broken socket to trigger reconnection
+			if (socketRef.current) {
+				socketRef.current.close();
+				socketRef.current = null;
+			}
+		};
+	}, [roomId, userId, processMessageQueue]);
+
+	useEffect(() => {
+		connectSocket();
 
 		return () => {
-			mounted = false;
 			if (reconnectTimeoutRef.current)
 				clearTimeout(reconnectTimeoutRef.current);
-			if (socketRef.current) socketRef.current.close();
+			socketRef.current?.close();
 			socketRef.current = null;
 		};
-	}, [roomId, userId]);
+	}, [connectSocket]);
 
 	const sendMessage = useCallback((data: LobbyClientMessage) => {
 		const socket = socketRef.current;
-		if (socket && socket.readyState === WebSocket.OPEN) {
+		if (socket?.readyState === WebSocket.OPEN) {
 			socket.send(JSON.stringify(data));
 		} else {
-			console.warn("LexiWars WebSocket not ready to send");
+			console.log("⏳ Queuing message (socket not ready)");
+			messageQueue.current.push(data);
 		}
 	}, []);
 
@@ -169,6 +193,7 @@ export function useLobbySocket({
 		socketRef.current?.close();
 		socketRef.current = null;
 		setReadyState(WebSocket.CLOSED);
+		messageQueue.current = [];
 	}, []);
 
 	return {
