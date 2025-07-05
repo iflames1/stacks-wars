@@ -7,13 +7,14 @@ import { Share } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ShareLinkButton({ lobbyId }: { lobbyId: string }) {
-    const [_, copy] = useCopyToClipboard();
+    const [copiedText, copy] = useCopyToClipboard();
     return (
         <Button
             variant={"outline"}
             onClick={() => {
                 copy(`${PUBLIC_BASE_URL}lobby/${lobbyId}`);
-                toast.info("Copied lobby id to clipboard");
+                if (copiedText) toast.info("Copied lobby id to clipboard");
+                else toast.error("Failed to copy lobby id to clipboard");
             }}
         >
             <Share className="h-4 w-4" /> Share
