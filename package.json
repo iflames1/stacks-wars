@@ -26,6 +26,7 @@
         "@stacks/wallet-sdk": "^7.0.5",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "grammy": "^1.37.0",
         "lucide-react": "^0.511.0",
         "nanoid": "^5.1.5",
         "next": "15.3.2",
@@ -37,6 +38,7 @@
         "react-simple-keyboard": "^3.8.76",
         "sonner": "^2.0.6",
         "tailwind-merge": "^3.3.0",
+        "telegraf": "^4.16.3",
         "zod": "^3.25.50",
         "zsa-react": "^0.2.3"
     },
