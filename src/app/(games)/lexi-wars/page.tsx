@@ -1,5 +1,5 @@
-import LexiWars from "./_components/lexi-wars";
+//import LexiWars from "./_components/lexi-wars";
 
 export default function Page() {
-	return <LexiWars/>;
+	return <div>Hi</div>;
 }

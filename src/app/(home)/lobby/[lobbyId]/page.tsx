@@ -1,26 +1,49 @@
 import Link from "next/link";
-import { ArrowLeft, Loader } from "lucide-react";
-import JoinLobbyForm from "./_components/join-lobby-form";
+import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
-import LobbyStats from "./_components/lobby-stats";
-import LobbyDetails from "./_components/lobby-details";
-import Participants from "./_components/participants";
-import GamePreview from "./_components/game-preview";
-import { LobbyExtended } from "@/types/schema";
-import { lobbiesDataExtended } from "@/lib/gamePlaceholder";
+import {
+	GameType,
+	JsonGameType,
+	JsonLobbyExtended,
+	LobbyExtended,
+	transGameType,
+	transLobbyExtended,
+} from "@/types/schema";
+import { apiRequest } from "@/lib/api";
+import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
+import Lobby from "./_components/lobby";
 
-export default async function PoolDetailPage({
+export default async function LobbyDetailPage({
 	params,
 }: {
-	params: Promise<{ id: string }>;
+	params: Promise<{ lobbyId: string }>;
 }) {
-	const id = (await params).id;
-	console.log("Lobby ID:", id);
+	const lobbyId = (await params).lobbyId;
+	console.log("Lobby ID:", lobbyId);
 
-	const lobby: LobbyExtended = lobbiesDataExtended[0];
+	const jsonLobby = await apiRequest<JsonLobbyExtended>({
+		path: `/room/${lobbyId}/extended`,
+		auth: false,
+		tag: "lobbyExtended",
+	});
+	const lobby: LobbyExtended = transLobbyExtended(jsonLobby);
+
 	if (!lobby) {
 		notFound();
+	}
+
+	const jsonGame = await apiRequest<JsonGameType>({
+		path: `/game/${lobby.lobby.gameId}`,
+		auth: false,
+		cache: "force-cache",
+	});
+	const game: GameType = await transGameType(jsonGame);
+
+	const userId = await getClaimFromJwt<string>("sub");
+
+	if (!userId) {
+		console.error("User ID not found in JWT claims");
+		return notFound(); // display connect wallet instead
 	}
 
 	return (
@@ -33,41 +56,14 @@ export default async function PoolDetailPage({
 					<ArrowLeft className="h-4 w-4" />
 					<span>Back to Lobby</span>
 				</Link>
-				{/* Hero Section */}
-				<div className="mb-6 sm:mb-8 space-y-2 sm:space-y-3">
-					<div className="flex flex-wrap items-start justify-between gap-2">
-						<h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight break-words">
-							{lobby.name}
-						</h1>
-					</div>
-					<p className="text-sm sm:text-base text-muted-foreground max-w-3xl break-words">
-						{lobby.description}
-					</p>
-				</div>
-				<div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
-					{/* Main Content */}
-					<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
-						{/* Stats Cards */}
-						<LobbyStats lobby={lobby} />
-						{/* Lobby Details */}
-						<LobbyDetails lobby={lobby} />
-						<Participants lobby={lobby} />
-					</div>
-					<div className="space-y-4 sm:space-y-6">
-						<div className="lg:sticky lg:top-6 flex flex-col gap-4">
-							<Suspense
-								fallback={
-									<div className="flex justify-center items-center py-6 sm:py-8">
-										<Loader className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
-									</div>
-								}
-							>
-								<JoinLobbyForm lobby={lobby} />
-							</Suspense>
-							<GamePreview lobby={lobby} />
-						</div>
-					</div>
-				</div>
+				<Lobby
+					lobby={lobby.lobby}
+					players={lobby.players}
+					pool={lobby.pool}
+					userId={userId}
+					lobbyId={lobbyId}
+					game={game}
+				/>
 			</div>
 		</section>
 	);

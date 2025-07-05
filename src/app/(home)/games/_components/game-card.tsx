@@ -43,9 +43,9 @@ export default function GameCard({ game }: { game: GameType }) {
 									<p className="text-sm font-medium">
 										Total Volume
 									</p>
-									<p className="text-lg font-bold">
+									{/*<p className="text-lg font-bold">
 										{game.totalPrize} STX
-									</p>
+									</p>*/}
 								</div>
 							</div>
 							<div className="flex items-center gap-2">
@@ -82,6 +82,7 @@ export default function GameCard({ game }: { game: GameType }) {
 						className="absolute inset-0 h-full w-full object-cover"
 						width={300}
 						height={300}
+						priority={false}
 					/>
 				</div>
 				<div className="sm:hidden mt-4">
@@ -91,6 +92,7 @@ export default function GameCard({ game }: { game: GameType }) {
 						className="w-full rounded-md object-cover"
 						width={400}
 						height={200}
+						priority={false}
 					/>
 				</div>
 			</div>

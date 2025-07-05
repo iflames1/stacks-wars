@@ -1,52 +1,15 @@
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Users } from "lucide-react";
-import { truncateAddress } from "@/lib/utils";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { getWalletAddress } from "@/lib/wallet";
 import { Lobby } from "@/types/schema";
+import OpenLobby from "./open-lobby";
+import ActiveLobbyHeader from "./active-lobby-header";
 
 export default async function ActiveLobbies({ lobbies }: { lobbies: Lobby[] }) {
 	return (
 		<>
 			{lobbies.map((lobby) => (
 				<Card key={lobby.id} className="overflow-hidden bg-primary/30">
-					<CardHeader className="pb-3">
-						<div className="flex justify-between items-start">
-							<CardTitle>{lobby.name}</CardTitle>
-							<Badge
-								variant={
-									lobby.status === "open"
-										? "default"
-										: "secondary"
-								}
-							>
-								{lobby.status === "open" ? "Open" : "Full"}
-							</Badge>
-						</div>
-						<CardDescription>
-							Created by{" "}
-							{/*{(() => {
-								const stxAddress = getStxAddressByUserId(
-									lobby.creatorId
-								);
-								return stxAddress.then((addr) =>
-									addr
-										? truncateAddress(addr)
-										: "unknown user"
-								);
-							})()}*/}
-							{truncateAddress(getWalletAddress())}
-						</CardDescription>
-					</CardHeader>
+					<ActiveLobbyHeader lobby={lobby} />
 					<CardContent className="pb-3">
 						<div className="grid gap-2">
 							<div className="flex justify-between">
@@ -60,7 +23,7 @@ export default async function ActiveLobbies({ lobbies }: { lobbies: Lobby[] }) {
 									Game:
 								</span>
 								<span className="font-medium">
-									{/* {lobby.game.name} */}
+									{lobby.gameName}
 								</span>
 							</div>
 							<div className="flex justify-between items-center">
@@ -70,36 +33,15 @@ export default async function ActiveLobbies({ lobbies }: { lobbies: Lobby[] }) {
 								<div className="flex items-center gap-1">
 									<Users className="h-4 w-4 text-muted-foreground" />
 									<span className="font-medium">
-										{/* {lobby.participants.length}/{lobby.maxPlayers} */}
+										{lobby.players}
+										{/*/{lobby.maxPlayers}*/}
 									</span>
 								</div>
 							</div>
 						</div>
 					</CardContent>
 					<CardFooter>
-						<Button
-							asChild
-							variant={
-								lobby.status === "open" ? "default" : "outline"
-							}
-							className="w-full gap-1.5 cursor cursor-not-allowed"
-							disabled={lobby.status !== "open"}
-						>
-							<Link
-								// href={`${lobby.status === "open" ? `/lobby/${lobby.id}` : ""}`}
-								href={`/lobby/${lobby.id}`}
-
-								// className={`w-full ${
-								//   lobby.status === "open"
-								//     ? "cursor-pointer"
-								//     : "cursor-not-allowed"
-								// }`}
-							>
-								Open Lobby
-								{/* {lobby.status === "open" ? "Join Lobby" : "Lobby Full"} */}
-								{/* {lobby.status === "open" && <ArrowRight className="h-4 w-4" />} */}
-							</Link>
-						</Button>
+						<OpenLobby lobby={lobby} />
 					</CardFooter>
 				</Card>
 			))}

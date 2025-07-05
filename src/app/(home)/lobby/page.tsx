@@ -3,13 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import ActiveLobbies from "@/components/home/active-lobbies";
 //import { getAvailableLobbies, getLobbies } from "@/lib/services/lobby";
-import { Lobby } from "@/types/schema";
-import { lobbiesData } from "@/lib/gamePlaceholder";
+import { JsonLobby, Lobby, transLobby } from "@/types/schema";
+import { apiRequest } from "@/lib/api";
 
-export default function PoolsPage() {
-	//const lobbies = await getAvailableLobbies();
-	//console.log(JSON.stringify(lobbies, null, 2));
-	const lobbies: Lobby[] = lobbiesData;
+export default async function PoolsPage() {
+	const jsonLobbies = await apiRequest<JsonLobby[]>({
+		path: "/rooms",
+		auth: false,
+	});
+
+	const lobbies: Lobby[] = jsonLobbies.map(transLobby);
 
 	if (!lobbies) {
 		return <div>No lobbies found</div>;
@@ -26,15 +29,15 @@ export default function PoolsPage() {
 								: "There are no active lobbies"}
 						</h1>
 						<p className="mt-2 text-muted-foreground">
-							Join a lobby to Bettle
+							Join a lobby to Battle
 						</p>
 					</div>
-					<Link href="/games">
-						<Button className="gap-1.5">
+					<Button className="gap-1.5" asChild>
+						<Link href="/games">
 							<Plus className="h-4 w-4" />
 							Create A Match
-						</Button>
-					</Link>
+						</Link>
+					</Button>
 				</div>
 				<div className="mt-6 p-4 bg-yellow-500/10 border-2 border-yellow-500/20 rounded-lg">
 					<p className="text-yellow-500 text-sm font-medium flex items-center gap-2">

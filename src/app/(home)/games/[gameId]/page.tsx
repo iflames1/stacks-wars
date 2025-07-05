@@ -1,22 +1,26 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import ActiveLobbies from "@/components/home/active-lobbies";
+//import ActiveLobbies from "@/components/home/active-lobbies";
 import CreateLobbyForm from "./_components/create-lobby-form";
 import GameDetails from "./_components/game-details";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SinglePlayer from "./_components/single-player";
-import { GameType, Lobby } from "@/types/schema";
-import { gamesData, lobbiesData } from "@/lib/gamePlaceholder";
+import { JsonGameType, GameType, transGameType } from "@/types/schema";
+import { apiRequest } from "@/lib/api";
 
 export default async function CreateGame({
 	params,
 }: {
-	params: Promise<{ id: string }>;
+	params: Promise<{ gameId: string }>;
 }) {
-	const { id } = await params;
+	const { gameId } = await params;
 
-	const game: GameType = gamesData[0];
-	const lobbies: Lobby[] = lobbiesData;
+	const jsonGame = await apiRequest<JsonGameType>({
+		path: `/game/${gameId}`,
+		auth: false,
+		cache: "force-cache",
+	});
+	const game: GameType = await transGameType(jsonGame);
 
 	return (
 		<div className="mx-auto max-w-3xl px-4 py-4 sm:px-6 sm:py-6">
@@ -36,20 +40,13 @@ export default async function CreateGame({
 						<TabsTrigger value="multiplayer">
 							Multiplayer
 						</TabsTrigger>
-						<TabsTrigger value="singleplayer">
+						{/*<TabsTrigger value="singleplayer">
 							Singleplayer
-						</TabsTrigger>
+						</TabsTrigger>*/}
 					</TabsList>
 
 					<TabsContent value="multiplayer" className="space-y-6">
-						<CreateLobbyForm gameId={id} />
-
-						<div className="space-y-4">
-							<h2 className="text-2xl font-bold tracking-tighter sm:text-3xl">
-								Active Lobbies
-							</h2>
-							<ActiveLobbies lobbies={lobbies} />
-						</div>
+						<CreateLobbyForm gameId={gameId} gameName={game.name} />
 					</TabsContent>
 
 					<TabsContent value="singleplayer">

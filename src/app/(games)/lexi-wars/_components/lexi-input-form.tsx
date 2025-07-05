@@ -4,25 +4,19 @@ import { Button } from "@/components/ui/button";
 import { RefObject } from "react";
 
 interface LexiInputFormProps {
-	isPlaying: boolean;
 	word: string;
 	setWord: (word: string) => void;
-	handleSubmit: (e?: React.FormEvent) => void;
-	timeLeft: number;
 	isTouchDevice: boolean;
-	startGame: () => void;
 	inputRef: RefObject<HTMLInputElement | null>;
+	handleSubmit: (e?: React.FormEvent) => void;
 }
 
 export default function LexiInputForm({
-	handleSubmit,
-	isPlaying,
 	word,
 	setWord,
-	timeLeft,
 	isTouchDevice,
-	startGame,
 	inputRef,
+	handleSubmit,
 }: LexiInputFormProps) {
 	const handlePaste = (e: React.ClipboardEvent) => {
 		e.preventDefault();
@@ -39,10 +33,6 @@ export default function LexiInputForm({
 		toast.error("Cutting is not permited!", { position: "top-center" });
 	};
 
-	const handleStartGame = () => {
-		startGame();
-	};
-
 	//console.log("isTouchDevice", isTouchDevice);
 
 	return (
@@ -54,11 +44,7 @@ export default function LexiInputForm({
 			<Input
 				ref={inputRef}
 				type="text"
-				placeholder={
-					isPlaying
-						? "Type your word here..."
-						: "Press Start Game to begin"
-				}
+				placeholder={"Type your word here..."}
 				onClick={() => inputRef.current?.focus()}
 				value={word}
 				onChange={
@@ -67,7 +53,7 @@ export default function LexiInputForm({
 				onPaste={handlePaste}
 				onCopy={handleCopy}
 				onCut={handleCut}
-				disabled={!isPlaying || timeLeft === 0}
+				//disabled={!isPlaying || timeLeft === 0}
 				className="text-lg sm:text-xl sm:px-4 h-12"
 				//className="absolute opacity-0 pointer-events-none h-0 w-0"
 				autoComplete="off"
@@ -82,19 +68,8 @@ export default function LexiInputForm({
 			/>
 
 			<div className="flex justify-end">
-				<Button
-					onClick={() => {
-						if (!isPlaying) {
-							handleStartGame();
-						} else {
-							handleSubmit();
-						}
-					}}
-					type="button"
-					size="lg"
-					className="w-full md:w-fit"
-				>
-					{!isPlaying ? "Start Game" : "Submit"}
+				<Button type="submit" size="lg" className="w-full md:w-fit">
+					Submit
 				</Button>
 			</div>
 		</form>

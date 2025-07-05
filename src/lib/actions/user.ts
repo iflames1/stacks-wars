@@ -1,8 +1,8 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { toast } from "sonner";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { disconnect } from "@stacks/connect";
 
 export async function connectOrCreateUser(walletAddress: string) {
 	const cookieStore = await cookies();
@@ -21,7 +21,6 @@ export async function connectOrCreateUser(walletAddress: string) {
 		}
 
 		const token = await apiRes.json();
-		console.log(token);
 
 		cookieStore.set("jwt", token, {
 			httpOnly: true,
@@ -31,8 +30,7 @@ export async function connectOrCreateUser(walletAddress: string) {
 		});
 
 		revalidateTag("user");
-
-		toast.success("Wallet connected successfully!");
+		revalidatePath("/");
 
 		return { success: true };
 	} catch (err) {
@@ -44,9 +42,13 @@ export async function connectOrCreateUser(walletAddress: string) {
 export async function logoutUser() {
 	const cookieStore = await cookies();
 
+	console.log("disconnect called");
+
 	try {
+		disconnect();
 		cookieStore.delete("jwt");
 		revalidateTag("user");
+		revalidatePath("/");
 
 		return { success: true };
 	} catch {

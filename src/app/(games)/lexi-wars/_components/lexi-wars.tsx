@@ -7,91 +7,105 @@ import TurnIndicator from "./turn-indicator";
 import LexiInputForm from "./lexi-input-form";
 import GameOverModal from "./game-over-modal";
 import Keyboard from "./keyboard";
-import { FormEvent, useRef, useState } from "react";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import { getWalletAddress } from "@/lib/wallet";
+import { FormEvent, useCallback, useRef, useState } from "react";
+import {
+	LexiWarsServerMessage,
+	PlayerStanding,
+	useLexiWarsSocket,
+} from "@/hooks/useLexiWarsSocket";
+import { Participant, transParticipant } from "@/types/schema";
+import { toast } from "sonner";
+import { truncateAddress } from "@/lib/utils";
+import ClaimRewardModal from "./claim-reward-modal";
 
-const GameHeaderProps = {
-	score: 0,
-	highScore: 0,
-};
+interface LexiWarsProps {
+	lobbyId: string;
+	userId: string;
+	contract: string | null;
+}
 
-const GameRuleProps = {
-	currentRule: "Type the word shown below as fast as you can!",
-	repeatCount: 0,
-	requiredRepeats: 5,
-};
-
-const LexiInputFormProps = {
-	isPlaying: true,
-	word: "word",
-	timeLeft: 30,
-	isMobile: false,
-	startGame: () => {},
-	inputRef: { current: null } as React.RefObject<HTMLInputElement | null>,
-};
-
-const GameOverModalProps = {
-	isOpen: false,
-	onClose: () => {},
-	score: 0,
-	highScore: 0,
-	isNewHighScore: false,
-	onPlayAgain: () => {},
-};
-
-//interface ChatMessage {
-//	type: string;
-//	content: string;
-//	timestamp: number;
-//}
-
-export default function LexiWars() {
+export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
 	const [layoutName, setLayoutName] = useState<string>("default");
 	const inputRef = useRef<HTMLInputElement>(null);
-	const {
-		sendMessage,
-		readyState,
-		error,
-		rule,
-		countdown,
-		rank,
-		finalStanding,
-		currentTurn,
-	} = useWebSocket(
-		`ws://localhost:3001/ws/67e55044-10b1-426f-9247-bb680e5fe0c8?username=${getWalletAddress()}`
+
+	const [currentTurn, setCurrentTurn] = useState<Participant | null>(null);
+	const [rule, setRule] = useState<string>(
+		"Word must be at least 4 characters!"
+	);
+	const [countdown, setCountdown] = useState<number>(10);
+	const [rank, setRank] = useState<string | null>(null);
+	const [finalStanding, setFinalStanding] = useState<PlayerStanding[]>();
+	const [showPrizeModal, setShowPrizeModal] = useState(false);
+	const [prizeAmount, setPrizeAmount] = useState<number | null>(null);
+
+	const handleMessage = useCallback(
+		(message: LexiWarsServerMessage) => {
+			switch (message.type) {
+				case "turn":
+					setCurrentTurn(transParticipant(message.current_turn));
+					break;
+				case "rule":
+					setRule(message.rule);
+					break;
+				case "countdown":
+					setCountdown(message.time);
+					break;
+				case "rank":
+					setRank(message.rank);
+					toast.info(`Time's up!`, {
+						description: `Your rank was ${message.rank}.`,
+					});
+					break;
+				case "validate":
+					toast.info(`${message.msg}`);
+					break;
+				case "wordentry":
+					toast.info(
+						`${
+							userId === message.sender.id
+								? "You"
+								: message.sender.display_name ||
+								  truncateAddress(message.sender.wallet_address)
+						} entered: ${message.word}`
+					);
+					break;
+				case "usedword":
+					toast.info(`${message.word} has already been used!`);
+					break;
+				case "gameover":
+					toast.info(`🏁 Game Over!`);
+					break;
+				case "finalstanding":
+					setFinalStanding(message.standing);
+					break;
+				case "prize":
+					if (message.amount && message.amount > 0) {
+						setPrizeAmount(message.amount);
+						setShowPrizeModal(true);
+					}
+					break;
+				default:
+					console.warn("Unknown WS message type", message);
+			}
+		},
+		[userId]
 	);
 
-	console.log("rank:", rank);
-	console.log("finalStanding:", finalStanding);
+	const { sendMessage, readyState, error } = useLexiWarsSocket({
+		lobbyId,
+		userId,
+		onMessage: handleMessage,
+	});
 
 	const handleSubmit = (e?: FormEvent) => {
 		e?.preventDefault();
 		console.log("submitting", word);
 		if (word.trim() && readyState === WebSocket.OPEN) {
-			if (sendMessage(word)) {
-				setWord("");
-			}
+			sendMessage({ type: "wordentry", word });
+			setWord("");
 		}
 	};
-
-	const getConnectionStatus = (): string => {
-		switch (readyState) {
-			case WebSocket.CONNECTING:
-				return "Connecting...";
-			case WebSocket.OPEN:
-				return "Connected";
-			case WebSocket.CLOSING:
-				return "Disconnecting...";
-			case WebSocket.CLOSED:
-				return "Disconnected";
-			default:
-				return "Unknown";
-		}
-	};
-
-	console.log("ws is", getConnectionStatus());
 
 	const getErrorMessage = (error: Event | Error | null): string => {
 		if (!error) return "Connection failed";
@@ -133,28 +147,21 @@ export default function LexiWars() {
 				<BackToGames />
 
 				<div className="space-y-3 sm:space-y-4">
-					<GameHeader
-						score={GameHeaderProps.score}
-						highScore={GameHeaderProps.highScore}
-					/>
+					<GameHeader />
 
 					<GameTimer timeLeft={countdown} />
 
-					<GameRule
-						currentRule={rule}
-						repeatCount={GameRuleProps.repeatCount}
-						requiredRepeats={GameRuleProps.requiredRepeats}
-					/>
+					<GameRule currentRule={rule} />
 
 					<div className="border border-primary/10 p-3 sm:p-4 bg-primary/10 rounded-xl shadow-sm space-y-4 sm:space-y-5">
-						<TurnIndicator currentPlayer={currentTurn} />
+						<TurnIndicator
+							currentPlayer={currentTurn}
+							userId={userId}
+						/>
 						<LexiInputForm
-							isPlaying={LexiInputFormProps.isPlaying}
 							word={word}
 							setWord={setWord}
-							timeLeft={LexiInputFormProps.timeLeft}
 							isTouchDevice={isTouchDevice}
-							startGame={LexiInputFormProps.startGame}
 							inputRef={inputRef}
 							handleSubmit={handleSubmit}
 						/>
@@ -168,14 +175,17 @@ export default function LexiWars() {
 					/>
 				)}
 
-				<GameOverModal
-					isOpen={GameOverModalProps.isOpen}
-					onClose={GameOverModalProps.onClose}
-					score={GameOverModalProps.score}
-					highScore={GameOverModalProps.highScore}
-					isNewHighScore={GameOverModalProps.isNewHighScore}
-					onPlayAgain={GameOverModalProps.onPlayAgain}
-				/>
+				<GameOverModal standing={finalStanding} userId={userId} />
+				{rank && prizeAmount && (
+					<ClaimRewardModal
+						showPrizeModal={showPrizeModal}
+						setShowPrizeModal={setShowPrizeModal}
+						rank={rank}
+						prizeAmount={prizeAmount}
+						lobbyId={lobbyId}
+						contractAddress={contract}
+					/>
+				)}
 
 				<div className="sr-only" role="alert">
 					This is a competitive typing game that requires manual

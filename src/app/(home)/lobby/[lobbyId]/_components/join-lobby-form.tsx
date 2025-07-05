@@ -1,93 +1,136 @@
-"use client";
-
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
 	CardHeader,
 	CardTitle,
+	CardDescription,
+	CardFooter,
 } from "@/components/ui/card";
-import { LobbyExtended } from "@/types/schema";
+import { Lobby, Participant, Pool } from "@/types/schema";
 import { Loader } from "lucide-react";
-import { isConnected } from "@stacks/connect";
+import { toast } from "sonner";
+import { JoinState, LobbyClientMessage } from "@/hooks/useLobbySocket";
+import { joinGamePool } from "@/lib/actions/joinGamePool";
+import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 
-interface JoinPoolFormProps {
-	lobby: LobbyExtended;
+interface JoinLobbyFormProps {
+	lobby: Lobby;
+	players: Participant[];
+	pool: Pool | null;
+	joinState: JoinState;
+	lobbyId: string;
+	userId: string;
+	sendMessage: (msg: LobbyClientMessage) => void;
+	disconnect: () => void;
 }
 
-export default function JoinLobbyForm({ lobby }: JoinPoolFormProps) {
-	const isLoading = false;
-	const isFull = lobby.participants.length >= lobby.game.maxPlayers;
+export default function JoinLobbyForm({
+	lobby,
+	players,
+	pool,
+	joinState,
+	userId,
+	sendMessage,
+	disconnect,
+}: JoinLobbyFormProps) {
+	const [joined, setJoined] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const isParticipant = players.some((p) => p.id === userId);
+	const isCreator = userId === lobby.creatorId;
 
-	const handleSubmit = async () => {
-		console.log("lobby", lobby);
-		//if (!user) {
-		//	toast.info("you need to be logged in");
-		//	return;
-		//}
-		//const isUserJoined = lobby.participants.some(
-		//	(p) => p.userId === user.id
-		//);
+	useEffect(() => {
+		if (isParticipant) setJoined(true);
+	}, [isParticipant]);
 
-		//if (isUserJoined) {
-		//	toast.info("you have already joined this lobby");
-		//	return;
-		//}
+	const handleClick = async () => {
+		if (loading) return;
+		setLoading(true);
 
-		//if (lobby.pool && lobby.pool.contract) {
-		//	const response = await joinGamePool(
-		//		lobby.pool.contract,
-		//		user.stxAddress,
-		//		Number(lobby.pool.entryAmount)
-		//	);
-		//	console.log("response", response.txid);
-		//}
-		//await joinLobby({
-		//	userId: user.id,
-		//	lobbyId: lobby.id,
-		//	stxAddress: user?.stxAddress,
-		//	username: user.stxAddress,
-		//});
+		try {
+			if (joined) {
+				if (isCreator) {
+					toast.error("You can't leave the lobby as the creator");
+					return;
+				}
+				sendMessage({ type: "leaveroom" });
+				disconnect();
+				setJoined(false);
+				toast.info("You left the lobby");
+				return;
+			}
+
+			if (joinState === "pending") return;
+
+			if (joinState === "idle" || joinState === "rejected") {
+				sendMessage({ type: "requestjoin" });
+				return;
+			}
+
+			if (joinState === "allowed") {
+				// ⛏ Check if this lobby has a pool contract
+				if (pool) {
+					const contract =
+						pool.contractAddress as `${string}.${string}`;
+					const amount = pool.entryAmount;
+
+					const joinTx = await joinGamePool(contract, amount);
+					if (!joinTx.txid) {
+						throw new Error(
+							"Failed to join game pool: missing transaction ID"
+						);
+					}
+
+					await waitForTxConfirmed(joinTx.txid);
+
+					sendMessage({ type: "joinlobby", tx_id: joinTx.txid });
+				} else {
+					sendMessage({ type: "joinlobby", tx_id: undefined });
+				}
+			}
+		} catch (error) {
+			console.error("Join failed:", error);
+			toast.error("Join failed. Please try again.");
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
 		<Card className="bg-primary/10">
 			<CardHeader>
-				<CardTitle>Join Lobby</CardTitle>
+				<CardTitle>{joined ? "Leave Lobby" : "Join Lobby"}</CardTitle>
 				<CardDescription>
-					Join this lobby to participate in the game
+					{joined
+						? "You're currently in this lobby"
+						: "Join this lobby to participate in the game"}
 				</CardDescription>
 			</CardHeader>
-			{lobby.pool && (
-				<CardContent>
-					<div className="space-y-4">
-						<p className="text-sm font-medium mb-1">Entry Fee</p>
-						<p className="text-2xl font-bold">
-							{lobby.pool.entryAmount} STX
-						</p>
-					</div>
-				</CardContent>
-			)}
 			<CardFooter>
 				<Button
 					className="w-full"
 					size="lg"
-					disabled={isLoading || isFull || !isConnected()}
-					onClick={handleSubmit}
+					variant={joined ? "destructive" : "default"}
+					onClick={handleClick}
+					disabled={loading || (!joined && joinState === "pending")}
 				>
-					{isLoading ? (
+					{loading || joinState === "pending" ? (
 						<>
 							<Loader className="mr-2 h-4 w-4 animate-spin" />
-							Joining...
+							{joined ? "Leaving..." : "Processing..."}
 						</>
-					) : !isConnected() ? (
-						"Connect Wallet to Join"
-					) : isFull ? (
-						"Pool is Full"
-					) : (
+					) : joined ? (
+						isCreator ? (
+							"Creator can't leave"
+						) : (
+							"Leave Lobby"
+						)
+					) : joinState === "allowed" ? (
 						"Join Lobby"
+					) : joinState === "idle" || joinState === "rejected" ? (
+						"Request to Join"
+					) : (
+						"huh?"
 					)}
 				</Button>
 			</CardFooter>
