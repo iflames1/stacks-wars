@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -117,6 +118,7 @@ export default function RootLayout({
 					<div className="flex flex-col min-h-screen">{children}</div>
 					<Toaster richColors position="top-right" />
 				</ThemeProvider>
+				<SpeedInsights />
 			</body>
 		</html>
 	);
