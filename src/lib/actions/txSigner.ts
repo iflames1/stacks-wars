@@ -1,3 +1,5 @@
+"use server";
+
 import {
 	principalCV,
 	serializeCV,
@@ -8,7 +10,7 @@ import {
 import { generateWallet } from "@stacks/wallet-sdk";
 import { createHash } from "crypto";
 
-const secretKey = process.env.NEXT_PUBLIC_TRUSTED_SIGNER_SECRET_KEY;
+const secretKey = process.env.TRUSTED_SIGNER_SECRET_KEY;
 
 const getSignerPrivateKey = async () => {
 	if (!secretKey) {
