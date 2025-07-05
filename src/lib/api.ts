@@ -1,7 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { cookies } from "next/headers";
 
 type JSONValue = string | number | boolean | null | JSONObject | JSONValue[];
 
@@ -62,7 +62,7 @@ export const apiRequest = async <T = JSON>({
 			body: body ? JSON.stringify(body) : undefined,
 			...(cache && { cache }),
 			next: tag ? { tags: Array.isArray(tag) ? tag : [tag] } : undefined,
-		}
+		},
 	);
 
 	if (!res.ok) {
