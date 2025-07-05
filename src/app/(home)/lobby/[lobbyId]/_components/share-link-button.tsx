@@ -8,7 +8,6 @@ import { toast } from "sonner";
 
 export default function ShareLinkButton({ lobbyId }: { lobbyId: string }) {
 	const [copiedText, copy] = useCopyToClipboard();
-	const [copiedText, copy] = useCopyToClipboard();
 	return (
 		<Button
 			variant={"outline"}
