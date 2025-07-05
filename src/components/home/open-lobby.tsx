@@ -26,8 +26,8 @@ export default function OpenLobby({ lobby }: OpenLobbyProps) {
 					{lobby.lobbyStatus === "waiting"
 						? "Open Lobby"
 						: lobby.lobbyStatus === "inprogress"
-						? "In Progress"
-						: "Closed"}
+							? "In Progress"
+							: "Closed"}
 				</Button>
 			) : (
 				<Button

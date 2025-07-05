@@ -28,8 +28,8 @@ export default async function ActiveLobbyHeader({ lobby }: LobbyProps) {
 					{lobby.lobbyStatus === "waiting"
 						? "Open"
 						: lobby.lobbyStatus === "inprogress"
-						? "In Progress"
-						: "Closed"}
+							? "In Progress"
+							: "Closed"}
 				</Badge>
 			</div>
 			<CardDescription>

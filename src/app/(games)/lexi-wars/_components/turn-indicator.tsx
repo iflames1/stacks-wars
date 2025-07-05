@@ -54,7 +54,7 @@ export default function TurnIndicator({
 									truncateAddress(
 										currentPlayer?.walletAddress
 									)
-							  }`}
+								}`}
 					</h3>
 				</div>
 			</div>

@@ -9,10 +9,12 @@ export class TelegramSender implements IChannelSender {
 		this.botToken = botToken || process.env.TELEGRAM_BOT_TOKEN;
 		if (!this.botToken) {
 			console.warn(
-				"Telegram Bot Token not provided. TelegramSender will not be able to send messages.",
+				"Telegram Bot Token not provided. TelegramSender will not be able to send messages."
 			);
 			// Set a dummy bot to prevent errors if methods are called, though isReady should be false.
-			this.bot = new Telegraf("YOUR_FALLBACK_BOT_TOKEN_IF_ANY_OR_EMPTY_STRING");
+			this.bot = new Telegraf(
+				"YOUR_FALLBACK_BOT_TOKEN_IF_ANY_OR_EMPTY_STRING"
+			);
 		} else {
 			this.bot = new Telegraf(this.botToken);
 		}
@@ -30,9 +32,11 @@ export class TelegramSender implements IChannelSender {
 	async send(notification: Notification): Promise<void> {
 		if (!this.isReady()) {
 			console.warn(
-				"TelegramSender is not ready (missing bot token). Cannot send message.",
+				"TelegramSender is not ready (missing bot token). Cannot send message."
 			);
-			return Promise.reject(new Error("Telegram Bot Token is not configured."));
+			return Promise.reject(
+				new Error("Telegram Bot Token is not configured.")
+			);
 		}
 
 		if (!notification.recipient.id) {
@@ -48,7 +52,7 @@ export class TelegramSender implements IChannelSender {
 			};
 			if (notification.buttons) {
 				extra.reply_markup = Markup.inlineKeyboard(
-					notification.buttons,
+					notification.buttons
 				).reply_markup;
 			}
 
@@ -56,14 +60,16 @@ export class TelegramSender implements IChannelSender {
 			const result = await this.bot.telegram.sendMessage(
 				notification.recipient.id,
 				notification.message,
-				extra,
+				extra
 			);
-			console.log(`Telegram message sent to ${notification.recipient.id}`);
+			console.log(
+				`Telegram message sent to ${notification.recipient.id}`
+			);
 			console.log(result);
 		} catch (error) {
 			console.error(
 				`Failed to send Telegram message to ${notification.recipient.id}:`,
-				error,
+				error
 			);
 			throw error; // Re-throw the error to be handled by the caller
 		}

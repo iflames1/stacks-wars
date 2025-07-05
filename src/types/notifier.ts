@@ -17,7 +17,10 @@ export interface Notification {
 export type NotificationChannel = "partykit" | "telegram";
 
 export interface INotifier {
-	send(channel: NotificationChannel, notification: Notification): Promise<void>;
+	send(
+		channel: NotificationChannel,
+		notification: Notification
+	): Promise<void>;
 	// We could also have channel-specific methods if needed, or a more generic send
 	// send(notification: Notification, channels: NotificationChannel[]): Promise<void>;
 }
