@@ -28,7 +28,7 @@ export default async function PoolsPage({
         <>
             {error === "wallet-required" && (
                 <div className="py-3 flex items-center justify-center text-sm bg-red-400">
-                    <p>Please connect your wallet to access lobbies.</p>
+                    <p>Please connect your wallet to access lobbies</p>
                 </div>
             )}
             <section className="w-full py-12 md:py-24 lg:py-32">
