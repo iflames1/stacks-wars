@@ -39,9 +39,12 @@ const formSchema = z.object({
 	name: z.string().min(3, {
 		message: "Lobby name must be at least 3 characters.",
 	}),
-	description: z.string().min(3, {
-		message: "Lobby description must be at least 3 characters.",
-	}),
+	description: z
+		.string()
+		.min(3, {
+			message: "Lobby description must be at least 3 characters.",
+		})
+		.optional(),
 	withPool: z.boolean(),
 	amount: z
 		.number()
@@ -53,7 +56,7 @@ const formSchema = z.object({
 
 interface FormData {
 	name: string;
-	description: string;
+	description?: string;
 	withPool: boolean;
 	amount?: number;
 }
@@ -75,7 +78,6 @@ export default function CreateLobbyForm({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: "",
-			description: "",
 			withPool: false,
 		},
 		mode: "onChange",
@@ -151,7 +153,7 @@ export default function CreateLobbyForm({
 					method: "POST",
 					body: {
 						name: values.name,
-						description: values.description,
+						description: values.description || null,
 						entry_amount,
 						contract_address,
 						tx_id,
@@ -168,7 +170,7 @@ export default function CreateLobbyForm({
 					method: "POST",
 					body: {
 						name: values.name,
-						description: values.description,
+						description: values.description || null,
 						game_id: gameId,
 						game_name: gameName,
 					},
