@@ -50,7 +50,7 @@ export interface GameType {
 	id: string;
 	name: string;
 	description: string;
-	image?: string;
+	image: string;
 	tags: string[];
 	minPlayers: number;
 	activeLobbies: number;
