@@ -20,12 +20,12 @@ export default function GamePreview({ game }: { game: GameType }) {
 			</CardHeader>
 			<CardContent className="p-0">
 				<Image
-					src={game.image || "/lexi-wars.webp?height=300&width=500"}
+					src={game.image}
 					width={500}
 					height={300}
 					alt="Game preview"
 					className="w-full h-auto object-cover"
-					priority={false}
+					loading="lazy"
 				/>
 			</CardContent>
 			<CardFooter className="flex justify-between p-3 sm:p-4 bg-muted/30">

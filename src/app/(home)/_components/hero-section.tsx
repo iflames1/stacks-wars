@@ -13,6 +13,7 @@ export default function HeroSection() {
 						height={550}
 						alt="Stacks Wars Lobby"
 						className="mx-auto aspect-square overflow-hidden rounded-xl object-cover object-center sm:w-full lg:order-last"
+						priority={true}
 					/>
 					<div className="flex flex-col justify-center space-y-4">
 						<div className="space-y-2">

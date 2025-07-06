@@ -77,22 +77,22 @@ export default function GameCard({ game }: { game: GameType }) {
 				</div>
 				<div className="relative hidden sm:block mr-6">
 					<Image
-						src={game.image || "/lexi-wars.webp"}
+						src={game.image}
 						alt={game.name}
 						className="absolute inset-0 h-full w-full object-cover"
 						width={300}
 						height={300}
-						priority={false}
+						loading="lazy"
 					/>
 				</div>
 				<div className="sm:hidden mt-4">
 					<Image
-						src={game.image || "/lexi-wars.webp"}
+						src={game.image}
 						alt={game.name}
 						className="w-full rounded-md object-cover"
 						width={400}
 						height={200}
-						priority={false}
+						loading="lazy"
 					/>
 				</div>
 			</div>
