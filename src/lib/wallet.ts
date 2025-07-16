@@ -4,7 +4,7 @@ import { getClaimFromJwt } from "./getClaimFromJwt";
 
 export const connectWallet = async () => {
 	try {
-		const response = await connect(); // stores users address in local storage by default
+		const response = await connect({ network: "testnet" }); // stores users address in local storage by default
 		return response.addresses[2].address; // returns stx address
 	} catch (error) {
 		toast.error("Failed to connect wallet. Please try again.");
