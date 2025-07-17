@@ -6,7 +6,7 @@ import GameTimer from "./game-timer";
 import TurnIndicator from "./turn-indicator";
 import LexiInputForm from "./lexi-input-form";
 import GameOverModal from "./game-over-modal";
-import Keyboard from "./keyboard";
+//import Keyboard from "./keyboard";
 import { FormEvent, useCallback, useRef, useState } from "react";
 import {
 	LexiWarsServerMessage,
@@ -26,7 +26,7 @@ interface LexiWarsProps {
 
 export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
-	const [layoutName, setLayoutName] = useState<string>("default");
+	//const [layoutName, setLayoutName] = useState<string>("default");
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const [currentTurn, setCurrentTurn] = useState<Participant | null>(null);
@@ -127,7 +127,8 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		console.log("getting error", getErrorMessage(error));
 	}
 
-	const handleShift = () => {
+	{
+		/*const handleShift = () => {
 		const newLayoutName = layoutName === "default" ? "shift" : "default";
 		setLayoutName(newLayoutName);
 	};
@@ -142,10 +143,11 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		} else {
 			setWord((prev) => prev + key);
 		}
-	};
+	};*/
+	}
 
-	const isTouchDevice =
-		typeof window !== "undefined" && "ontouchstart" in window;
+	//const isTouchDevice =
+	//	typeof window !== "undefined" && "ontouchstart" in window;
 
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
@@ -167,19 +169,18 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 						<LexiInputForm
 							word={word}
 							setWord={setWord}
-							isTouchDevice={isTouchDevice}
 							inputRef={inputRef}
 							handleSubmit={handleSubmit}
 						/>
 					</div>
 				</div>
 
-				{isTouchDevice && (
+				{/*{isTouchDevice && (
 					<Keyboard
 						onKeyPress={handleKeyboardInput}
 						layoutName={layoutName}
 					/>
-				)}
+				)}*/}
 
 				<GameOverModal
 					standing={finalStanding}
