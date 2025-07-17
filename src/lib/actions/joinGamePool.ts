@@ -1,6 +1,5 @@
 import { StxPostCondition } from "@stacks/transactions";
 import { request } from "@stacks/connect";
-import { toast } from "sonner";
 import { getClaimFromJwt } from "../getClaimFromJwt";
 
 export const joinGamePool = async (
@@ -9,9 +8,6 @@ export const joinGamePool = async (
 ) => {
 	const address = await getClaimFromJwt<string>("wallet");
 	if (!address) {
-		toast.error("No wallet address found", {
-			description: "Please connect your wallet",
-		});
 		throw new Error("No wallet address found");
 	}
 	try {
@@ -31,9 +27,6 @@ export const joinGamePool = async (
 			postConditions: [stxPostCondition],
 		});
 	} catch (error) {
-		toast.error("Failed to join pool", {
-			description: "Please try again",
-		});
 		console.error("Wallet returned an error:", error);
 		throw error;
 	}
