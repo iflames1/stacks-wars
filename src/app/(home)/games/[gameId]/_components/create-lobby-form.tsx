@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Loader } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
 import {
 	Form,
@@ -90,7 +90,11 @@ export default function CreateLobbyForm({
 		mode: "onChange",
 	});
 
-	const amount = form.watch("amount");
+	//const amount = form.watch("amount");
+	const amount = useWatch({
+		control: form.control,
+		name: "amount",
+	});
 
 	useEffect(() => {
 		const amountChanged =
