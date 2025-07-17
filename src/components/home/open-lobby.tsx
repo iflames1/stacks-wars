@@ -1,8 +1,8 @@
 "use client";
-import { Lobby } from "@/types/schema";
+import { type Lobby } from "@/types/schema";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { useConnectUser } from "@/hooks/useConnectUser";
+import { useConnectUser } from "@/contexts/ConnectWalletContext";
 import { Loader } from "lucide-react";
 
 interface OpenLobbyProps {
