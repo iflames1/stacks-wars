@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import { request } from "@stacks/connect";
 import { getClarityCode } from "@/lib/poolClarityCode";
 
@@ -15,9 +14,6 @@ export const createGamePool = async (
 			network: "testnet",
 		});
 	} catch (error) {
-		toast.error("Failed to deploy contract", {
-			description: "Please try again later",
-		});
 		console.error("Failed to deploy contract", error);
 		throw error;
 	}
