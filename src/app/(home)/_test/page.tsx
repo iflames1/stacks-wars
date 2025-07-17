@@ -3,28 +3,33 @@ import { Button } from "@/components/ui/button";
 import { claimPoolReward } from "@/lib/actions/claimReward";
 import { createGamePool } from "@/lib/actions/createGamePool";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
+//import { generateSignature } from "@/lib/actions/txSigner";
+//import { apiRequest, ApiRequestProps } from "@/lib/api";
+//import { useRouter } from "next/navigation";
 //import { getSignerPublicKey } from "@/lib/actions/txSigner";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
-import { apiRequest, ApiRequestProps } from "@/lib/api";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { nanoid } from "nanoid";
-import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function TestPage() {
 	const [isLoading, setIsLoading] = useState(false);
-	const router = useRouter();
+	//const router = useRouter();
 
 	const contract =
-		"STF0V8KWBS70F0WDKTMY65B3G591NN52PR4Z71Y3.fhpKW-stacks-wars";
+		"STF0V8KWBS70F0WDKTMY65B3G591NN52PR4Z71Y3.bt35s-stacks-wars";
 	const entry_amount = 5;
-	const gameName = "Lexi Wars";
-	const gameId = "096b7f01-aea6-46a0-be9f-d1ddf4c05786"; // lexi wars
-	const lobbyId = "5bf95dce-3f2b-42cf-badc-6966663eae9f";
+	//const gameName = "Lexi Wars";
+	//const gameId = "096b7f01-aea6-46a0-be9f-d1ddf4c05786";
+	//const lobbyId = "5bf95dce-3f2b-42cf-badc-6966663eae9f";
 
 	useEffect(() => {});
 	//console.log("public key", getSignerPublicKey());
+	//console.log(
+	//	"signature",
+	//	generateSignature(5, "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM")
+	//);
 
 	const deployContract = async () => {
 		const walletAddress = await getClaimFromJwt<string>("wallet");
@@ -34,7 +39,7 @@ export default function TestPage() {
 				throw new Error("User not logged in");
 			}
 			const contractName = `${nanoid(5)}-stacks-wars`;
-			const contract = `${walletAddress}.${contractName}`;
+			//const contract = `${walletAddress}.${contractName}`;
 
 			const deployTx = await createGamePool(
 				entry_amount,
