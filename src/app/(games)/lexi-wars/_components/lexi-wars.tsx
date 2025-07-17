@@ -33,11 +33,12 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [rule, setRule] = useState<string>(
 		"Word must be at least 4 characters!"
 	);
-	const [countdown, setCountdown] = useState<number>(10);
+	const [countdown, setCountdown] = useState<number>(30);
 	const [rank, setRank] = useState<string | null>(null);
 	const [finalStanding, setFinalStanding] = useState<PlayerStanding[]>();
 	const [showPrizeModal, setShowPrizeModal] = useState(false);
 	const [prizeAmount, setPrizeAmount] = useState<number | null>(null);
+	const [isClaimed, setIsClaimed] = useState(false);
 
 	const handleMessage = useCallback(
 		(message: LexiWarsServerMessage) => {
@@ -56,6 +57,9 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					toast.info(`Time's up!`, {
 						description: `Your rank was ${message.rank}.`,
 					});
+					if (Number(message.rank) > 3) {
+						setIsClaimed(true);
+					}
 					break;
 				case "validate":
 					toast.info(`${message.msg}`);
@@ -177,11 +181,17 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					/>
 				)}
 
-				<GameOverModal standing={finalStanding} userId={userId} />
+				<GameOverModal
+					standing={finalStanding}
+					userId={userId}
+					contractAddress={contract}
+					isClaimed={isClaimed}
+				/>
 				{rank && prizeAmount && (
 					<ClaimRewardModal
 						showPrizeModal={showPrizeModal}
 						setShowPrizeModal={setShowPrizeModal}
+						setIsClaimed={setIsClaimed}
 						rank={rank}
 						prizeAmount={prizeAmount}
 						lobbyId={lobbyId}
