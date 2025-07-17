@@ -2,6 +2,7 @@
 
 import {
 	principalCV,
+	privateKeyToPublic,
 	serializeCV,
 	signMessageHashRsv,
 	tupleCV,
@@ -41,4 +42,9 @@ export const generateSignature = async (
 		messageHash: hash.toString("hex"),
 		privateKey,
 	});
+};
+
+export const getSignerPublicKey = async () => {
+	const publicKey = privateKeyToPublic(await getSignerPrivateKey());
+	return publicKey;
 };
