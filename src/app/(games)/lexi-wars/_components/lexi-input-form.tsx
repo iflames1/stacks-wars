@@ -50,17 +50,17 @@ export default function LexiInputForm({
 				onCopy={handleCopy}
 				onCut={handleCut}
 				className="text-lg sm:text-xl sm:px-4 h-12"
+				inputMode="text"
 				autoComplete="off"
 				aria-autocomplete="none"
 				autoCorrect="off"
-				inputMode="none"
-				spellCheck="false"
+				spellCheck={false}
 				autoCapitalize="off"
+				autoFocus
 				//disabled={!isPlaying || timeLeft === 0}
 				//className="absolute opacity-0 pointer-events-none h-0 w-0"
 				//aria-hidden={isTouchDevice}
 				//readOnly={isTouchDevice}
-				//autoFocus={!isTouchDevice}
 			/>
 
 			<div className="flex justify-end">
