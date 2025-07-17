@@ -26,7 +26,7 @@ import {
 import { apiRequest, ApiRequestProps } from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { nanoid } from "nanoid";
 import { createGamePool } from "@/lib/actions/createGamePool";
@@ -79,6 +79,7 @@ export default function CreateLobbyForm({
 		entryAmount: number;
 		txId: string;
 	} | null>(null);
+	const prevAmountRef = useRef<number | undefined>(undefined);
 
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
@@ -88,6 +89,21 @@ export default function CreateLobbyForm({
 		},
 		mode: "onChange",
 	});
+
+	const amount = form.watch("amount");
+
+	useEffect(() => {
+		const amountChanged =
+			prevAmountRef.current !== undefined &&
+			amount !== prevAmountRef.current;
+
+		if (deployedContract && amountChanged) {
+			console.log("⚠️ Amount changed, resetting deployed contract");
+			setDeployedContract(null);
+		}
+
+		prevAmountRef.current = amount;
+	}, [deployedContract, amount]);
 
 	const withPool = form.watch("withPool");
 
@@ -200,7 +216,7 @@ export default function CreateLobbyForm({
 			router.replace(`/lobby/${lobbyId}`);
 		} catch (error) {
 			toast.error("Something went wrong", {
-				description: "Please try again later",
+				description: "Please try again",
 			});
 			console.error("An error occured while creating lobby:", error);
 		}
