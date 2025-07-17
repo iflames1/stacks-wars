@@ -18,6 +18,7 @@ import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 interface ClaimRewardModalProps {
 	showPrizeModal: boolean;
 	setShowPrizeModal: (show: boolean) => void;
+	setIsClaimed: (claimed: boolean) => void;
 	rank: string;
 	prizeAmount: number;
 	lobbyId: string;
@@ -27,6 +28,7 @@ interface ClaimRewardModalProps {
 export default function ClaimRewardModal({
 	showPrizeModal,
 	setShowPrizeModal,
+	setIsClaimed,
 	rank,
 	prizeAmount,
 	lobbyId,
@@ -40,6 +42,9 @@ export default function ClaimRewardModal({
 			const walletAddress = await getClaimFromJwt<string>("wallet");
 			if (!walletAddress) {
 				throw new Error("User not logged in");
+			}
+			if (!contractAddress) {
+				throw new Error("Contract address is missing");
 			}
 			const contract = contractAddress as `${string}.${string}`;
 			const claimTxId = await claimPoolReward(
@@ -71,6 +76,9 @@ export default function ClaimRewardModal({
 					},
 				},
 			});
+
+			setIsClaimed(true);
+			toast.success("Reward claimed successfully!");
 		} catch (error) {
 			console.error("Error claiming reward:", error);
 			toast.error("Failed to claim reward. Please try again later.");

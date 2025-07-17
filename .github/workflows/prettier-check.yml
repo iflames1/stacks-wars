@@ -13,21 +13,21 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - name: Set up Node.js
-              uses: actions/setup-node@v4
+            - name: Install Bun
+              uses: oven-sh/setup-bun@v1
               with:
-                  node-version: 20
+                  bun-version: latest
 
             - name: Install dependencies
-              run: npm install
+              run: bun install
 
             - name: Run Prettier check
-              run: npm run format:check
+              run: bun run format:check
 
             - name: Attempt to fix formatting
               if: failure()
               run: |
-                  npm run format
+                  bun run format
                   git config --global user.name "GitHub Actions"
                   git config --global user.email "actions@github.com"
                   git add .
