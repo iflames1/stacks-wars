@@ -23,8 +23,8 @@ export default function Participants({
 	userId,
 	sendMessage,
 }: ParticipantProps) {
-	const currentPlayer = players.find((p) => p.id === userId);
-	const isReady = currentPlayer?.playerStatus === "ready";
+	//const currentPlayer = players.find((p) => p.id === userId);
+	//const isReady = currentPlayer?.playerStatus === "ready";
 
 	const handleKickPlayer = (
 		playerId: string,
@@ -39,14 +39,14 @@ export default function Participants({
 		});
 	};
 
-	type PlayerStatus = "ready" | "notready";
+	//type PlayerStatus = "ready" | "notready";
 
-	const handleUpdatePlayerStatus = (status: PlayerStatus) => {
-		sendMessage({
-			type: "updateplayerstate",
-			new_state: status,
-		});
-	};
+	//const handleUpdatePlayerStatus = (status: PlayerStatus) => {
+	//	sendMessage({
+	//		type: "updateplayerstate",
+	//		new_state: status,
+	//	});
+	//};
 
 	return (
 		<Card className="overflow-hidden bg-primary/10">
@@ -56,7 +56,7 @@ export default function Participants({
 						<Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
 						Current Participants
 					</CardTitle>
-					{userId !== lobby.creatorId && (
+					{/*{userId !== lobby.creatorId && (
 						<Button
 							size="sm"
 							variant={isReady ? "destructive" : "default"}
@@ -68,7 +68,7 @@ export default function Participants({
 						>
 							{isReady ? "Unready" : "Ready"}
 						</Button>
-					)}
+					)}*/}
 				</div>
 				<p className="text-xs text-muted-foreground mt-2">
 					After the game has started, participants who aren&apos;t

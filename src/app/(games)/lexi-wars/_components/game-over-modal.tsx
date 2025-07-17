@@ -51,7 +51,7 @@ export default function GameOverModal({
 
 			return () => clearInterval(timer);
 		}
-	}, [standing, router]);
+	}, [standing, router, contractAddress, isClaimed]);
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
