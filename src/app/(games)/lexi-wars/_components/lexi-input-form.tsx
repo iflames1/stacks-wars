@@ -6,7 +6,6 @@ import { RefObject } from "react";
 interface LexiInputFormProps {
 	word: string;
 	setWord: (word: string) => void;
-	isTouchDevice: boolean;
 	inputRef: RefObject<HTMLInputElement | null>;
 	handleSubmit: (e?: React.FormEvent) => void;
 }
@@ -14,7 +13,6 @@ interface LexiInputFormProps {
 export default function LexiInputForm({
 	word,
 	setWord,
-	isTouchDevice,
 	inputRef,
 	handleSubmit,
 }: LexiInputFormProps) {
@@ -47,24 +45,22 @@ export default function LexiInputForm({
 				placeholder={"Type your word here..."}
 				onClick={() => inputRef.current?.focus()}
 				value={word}
-				onChange={
-					!isTouchDevice ? (e) => setWord(e.target.value) : undefined
-				}
+				onChange={(e) => setWord(e.target.value)}
 				onPaste={handlePaste}
 				onCopy={handleCopy}
 				onCut={handleCut}
-				//disabled={!isPlaying || timeLeft === 0}
 				className="text-lg sm:text-xl sm:px-4 h-12"
-				//className="absolute opacity-0 pointer-events-none h-0 w-0"
 				autoComplete="off"
-				aria-hidden={isTouchDevice}
 				aria-autocomplete="none"
 				autoCorrect="off"
 				inputMode="none"
 				spellCheck="false"
 				autoCapitalize="off"
-				readOnly={isTouchDevice}
-				autoFocus={!isTouchDevice}
+				//disabled={!isPlaying || timeLeft === 0}
+				//className="absolute opacity-0 pointer-events-none h-0 w-0"
+				//aria-hidden={isTouchDevice}
+				//readOnly={isTouchDevice}
+				//autoFocus={!isTouchDevice}
 			/>
 
 			<div className="flex justify-end">
