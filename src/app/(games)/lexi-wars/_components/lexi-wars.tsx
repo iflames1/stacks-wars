@@ -7,7 +7,7 @@ import TurnIndicator from "./turn-indicator";
 import LexiInputForm from "./lexi-input-form";
 import GameOverModal from "./game-over-modal";
 //import Keyboard from "./keyboard";
-import { FormEvent, useCallback, useRef, useState } from "react";
+import { FormEvent, useCallback, useState } from "react";
 import {
 	LexiWarsServerMessage,
 	PlayerStanding,
@@ -27,7 +27,6 @@ interface LexiWarsProps {
 export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
 	//const [layoutName, setLayoutName] = useState<string>("default");
-	const inputRef = useRef<HTMLInputElement>(null);
 
 	const [currentTurn, setCurrentTurn] = useState<Participant | null>(null);
 	const [rule, setRule] = useState<string>(
@@ -169,7 +168,6 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 						<LexiInputForm
 							word={word}
 							setWord={setWord}
-							inputRef={inputRef}
 							handleSubmit={handleSubmit}
 						/>
 					</div>

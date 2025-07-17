@@ -73,6 +73,12 @@ export default function CreateLobbyForm({
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const { isConnecting, isConnected, handleConnect } = useConnectUser();
+	const [deployedContract, setDeployedContract] = useState<{
+		contractName: string;
+		contractAddress: `${string}.${string}`;
+		entryAmount: number;
+		txId: string;
+	} | null>(null);
 
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
@@ -87,13 +93,6 @@ export default function CreateLobbyForm({
 
 	const onSubmit = async (values: FormData) => {
 		setIsLoading(true);
-		// send tg message the code must run in the server
-		// to send to all users, get all users tg chat id from the db then loop and send
-		// const notifier = new NotifierClient(process.env.TELEGRAM_BOT_TOKEN);
-		// notifier.send("telegram", {
-		//     message: "New lobby created on stacks wars, jump in now ...",
-		//     recipient: { id: "TG CHAT ID OF THE USER HERE" },
-		// });
 
 		try {
 			let apiParams: ApiRequestProps;
@@ -109,29 +108,47 @@ export default function CreateLobbyForm({
 					setIsLoading(false);
 					return;
 				}
-				const contractName = `${nanoid(5)}-stacks-wars`;
-				const contract: `${string}.${string}` = `${deployerAddress}.${contractName}`;
-				const entry_amount = values.amount;
 
-				const deployTx = await createGamePool(
-					entry_amount,
-					contractName,
-					deployerAddress
-				);
-				if (!deployTx.txid) {
-					throw new Error(
-						"Failed to deploy game pool: missing transaction ID"
+				let contractInfo = deployedContract;
+
+				if (!contractInfo) {
+					const contractName = `${nanoid(5)}-stacks-wars`;
+					const contract: `${string}.${string}` = `${deployerAddress}.${contractName}`;
+					const entry_amount = values.amount;
+
+					const deployTx = await createGamePool(
+						entry_amount,
+						contractName,
+						deployerAddress
 					);
-				}
-				try {
-					await waitForTxConfirmed(deployTx.txid);
-					console.log("✅ Deploy Transaction confirmed!");
-				} catch (err) {
-					console.error("❌ TX failed or aborted:", err);
+
+					if (!deployTx.txid) {
+						throw new Error(
+							"Failed to deploy game pool: missing transaction ID"
+						);
+					}
+
+					try {
+						await waitForTxConfirmed(deployTx.txid);
+						console.log("✅ Deploy Transaction confirmed!");
+					} catch (err) {
+						console.error("❌ TX failed or aborted:", err);
+						throw err;
+					}
+
+					contractInfo = {
+						contractName,
+						contractAddress: contract,
+						entryAmount: entry_amount,
+						txId: deployTx.txid,
+					};
+					setDeployedContract(contractInfo);
 				}
 
-				const joinTx = await joinGamePool(contract, entry_amount);
-				console.log("called join pool");
+				const joinTx = await joinGamePool(
+					contractInfo.contractAddress,
+					contractInfo.entryAmount
+				);
 				if (!joinTx.txid) {
 					throw new Error(
 						"Failed to join game pool: missing transaction ID"
@@ -142,11 +159,10 @@ export default function CreateLobbyForm({
 					console.log("✅ Join Transaction confirmed!");
 				} catch (err) {
 					console.error("❌ TX failed or aborted:", err);
+					throw err;
 				}
 
 				const tx_id = joinTx.txid;
-				const contract_address = contract;
-				console.log(entry_amount, contract_address, tx_id);
 
 				apiParams = {
 					path: "room",
@@ -154,8 +170,8 @@ export default function CreateLobbyForm({
 					body: {
 						name: values.name,
 						description: values.description || null,
-						entry_amount,
-						contract_address,
+						entry_amount: contractInfo.entryAmount,
+						contract_address: contractInfo.contractAddress,
 						tx_id,
 						game_id: gameId,
 						game_name: gameName,

@@ -1,19 +1,16 @@
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefObject } from "react";
 
 interface LexiInputFormProps {
 	word: string;
 	setWord: (word: string) => void;
-	inputRef: RefObject<HTMLInputElement | null>;
 	handleSubmit: (e?: React.FormEvent) => void;
 }
 
 export default function LexiInputForm({
 	word,
 	setWord,
-	inputRef,
 	handleSubmit,
 }: LexiInputFormProps) {
 	const handlePaste = (e: React.ClipboardEvent) => {
@@ -40,10 +37,8 @@ export default function LexiInputForm({
 			className="space-y-3 sm:space-y-4"
 		>
 			<Input
-				ref={inputRef}
 				type="text"
 				placeholder={"Type your word here..."}
-				onClick={() => inputRef.current?.focus()}
 				value={word}
 				onChange={(e) => setWord(e.target.value)}
 				onPaste={handlePaste}
