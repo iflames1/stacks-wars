@@ -32,7 +32,8 @@ import { nanoid } from "nanoid";
 import { createGamePool } from "@/lib/actions/createGamePool";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
-import { useConnectUser } from "@/hooks/useConnectUser";
+import { useConnectUser } from "@/contexts/ConnectWalletContext";
+// import { useConnectUser } from "@/contexts/ConnectWalletContext";}
 // import { NotifierClient } from "@/lib/notifier";
 
 const formSchema = z.object({

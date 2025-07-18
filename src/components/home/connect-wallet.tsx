@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Loader, Wallet2 } from "lucide-react";
 import { truncateAddress } from "@/lib/utils";
-import { useConnectUser } from "@/hooks/useConnectUser";
+import { useConnectUser } from "@/contexts/ConnectWalletContext";
 
 export default function ConnectWallet() {
 	const {
