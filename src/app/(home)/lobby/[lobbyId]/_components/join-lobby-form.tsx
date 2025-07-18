@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { JoinState, LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
+import { leaveGamePool } from "@/lib/actions/leaveGamePool";
 
 interface JoinLobbyFormProps {
 	lobby: Lobby;
@@ -21,6 +22,7 @@ interface JoinLobbyFormProps {
 	joinState: JoinState;
 	lobbyId: string;
 	userId: string;
+	userWalletAddress: string;
 	sendMessage: (msg: LobbyClientMessage) => void;
 	disconnect: () => void;
 }
@@ -31,6 +33,7 @@ export default function JoinLobbyForm({
 	pool,
 	joinState,
 	userId,
+	userWalletAddress,
 	sendMessage,
 	disconnect,
 }: JoinLobbyFormProps) {
@@ -52,6 +55,25 @@ export default function JoinLobbyForm({
 				if (isCreator) {
 					toast.error("You can't leave the lobby as the creator");
 					return;
+				}
+				if (lobby.contractAddress) {
+					if (!pool) {
+						throw new Error("No pool found for this lobby");
+					}
+					const contract =
+						lobby.contractAddress as `${string}.${string}`;
+					const leaveTxId = await leaveGamePool(
+						userWalletAddress,
+						contract,
+						pool.entryAmount
+					);
+					if (!leaveTxId) {
+						throw new Error(
+							"Failed to leave game pool: missing transaction ID"
+						);
+					}
+
+					await waitForTxConfirmed(leaveTxId);
 				}
 				sendMessage({ type: "leaveroom" });
 				disconnect();

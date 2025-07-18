@@ -22,8 +22,9 @@ export default async function LobbyDetailPage({
 	const lobbyId = (await params).lobbyId;
 
 	const userId = await getClaimFromJwt<string>("sub");
+	const userWalletAddress = await getClaimFromJwt<string>("wallet");
 
-	if (!userId) {
+	if (!userId || !userWalletAddress) {
 		// console.error("User ID not found in JWT claims");
 		// toast.error("Something went wrong, try again later.");
 		redirect("/lobby?error=wallet-required");
@@ -67,6 +68,7 @@ export default async function LobbyDetailPage({
 					players={lobby.players}
 					pool={lobby.pool}
 					userId={userId}
+					userWalletAddress={userWalletAddress}
 					lobbyId={lobbyId}
 					game={game}
 				/>

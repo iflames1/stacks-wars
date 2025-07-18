@@ -57,12 +57,8 @@ export default function ClaimRewardModal({
 					"Failed to join game pool: missing transaction ID"
 				);
 			}
-			try {
-				await waitForTxConfirmed(claimTxId);
-				console.log("✅ Claim Transaction confirmed!");
-			} catch (err) {
-				console.error("❌ TX failed or aborted:", err);
-			}
+
+			await waitForTxConfirmed(claimTxId);
 
 			await apiRequest({
 				path: `/room/${lobbyId}/claim-state`,
