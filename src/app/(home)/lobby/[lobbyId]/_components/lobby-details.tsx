@@ -36,8 +36,6 @@ export default function LobbyDetails({
 		setTimeout(() => setLoading(false), 300);
 	};
 
-	const readyPlayers = players.filter((p) => p.playerStatus === "ready");
-
 	const buttonLabel =
 		lobbyState === "waiting"
 			? "Start Game"
@@ -146,7 +144,7 @@ export default function LobbyDetails({
 						onClick={() => {
 							if (
 								lobbyState === "waiting" &&
-								readyPlayers.length < 2
+								players.length < 2
 							) {
 								toast.info(
 									"At least 2 players are required to start the game."
