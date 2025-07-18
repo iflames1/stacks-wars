@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Lobby, Participant } from "@/types/schema";
 import { truncateAddress } from "@/lib/utils";
 import { LobbyClientMessage, PendingJoin } from "@/hooks/useLobbySocket";
+import { useState } from "react";
 
 const EXPLORER_BASE_URL = "https://explorer.hiro.so/";
 
@@ -23,30 +24,46 @@ export default function Participants({
 	userId,
 	sendMessage,
 }: ParticipantProps) {
-	//const currentPlayer = players.find((p) => p.id === userId);
-	//const isReady = currentPlayer?.playerStatus === "ready";
+	const currentPlayer = players.find((p) => p.id === userId);
+	const isReady = currentPlayer?.playerStatus === "ready";
+	const [isUpdating, setIsUpdating] = useState(false);
+	const [isKicking, setIsKicking] = useState(false);
 
 	const handleKickPlayer = (
 		playerId: string,
 		wallet_address: string,
 		display_name: string | null
 	) => {
-		sendMessage({
-			type: "kickplayer",
-			player_id: playerId,
-			wallet_address: wallet_address,
-			display_name: display_name,
-		});
+		setIsKicking(true);
+		try {
+			sendMessage({
+				type: "kickplayer",
+				player_id: playerId,
+				wallet_address: wallet_address,
+				display_name: display_name,
+			});
+		} catch (error) {
+			console.error("Error kicking player:", error);
+		} finally {
+			setIsKicking(false);
+		}
 	};
 
-	//type PlayerStatus = "ready" | "notready";
+	type PlayerStatus = "ready" | "notready";
 
-	//const handleUpdatePlayerStatus = (status: PlayerStatus) => {
-	//	sendMessage({
-	//		type: "updateplayerstate",
-	//		new_state: status,
-	//	});
-	//};
+	const handleUpdatePlayerStatus = (status: PlayerStatus) => {
+		setIsUpdating(true);
+		try {
+			sendMessage({
+				type: "updateplayerstate",
+				new_state: status,
+			});
+		} catch (error) {
+			console.error("Error updating status:", error);
+		} finally {
+			setIsUpdating(false);
+		}
+	};
 
 	return (
 		<Card className="overflow-hidden bg-primary/10">
@@ -56,23 +73,26 @@ export default function Participants({
 						<Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
 						Current Participants
 					</CardTitle>
-					{/*{userId !== lobby.creatorId && (
-						<Button
-							size="sm"
-							variant={isReady ? "destructive" : "default"}
-							onClick={() =>
-								handleUpdatePlayerStatus(
-									isReady ? "notready" : "ready"
-								)
-							}
-						>
-							{isReady ? "Unready" : "Ready"}
-						</Button>
-					)}*/}
+					{userId !== lobby.creatorId &&
+						!lobby.contractAddress &&
+						players.some((p) => p.id === userId) && (
+							<Button
+								size="sm"
+								variant={isReady ? "destructive" : "default"}
+								disabled={isUpdating}
+								onClick={() =>
+									handleUpdatePlayerStatus(
+										isReady ? "notready" : "ready"
+									)
+								}
+							>
+								{isReady ? "Unready" : "Ready"}
+							</Button>
+						)}
 				</div>
 				<p className="text-xs text-muted-foreground mt-2">
-					After the game has started, participants who aren&apos;t
-					ready will be dropped
+					{/*After the game has started, participants who aren&apos;t
+					ready will be dropped*/}
 				</p>
 			</CardHeader>
 			<CardContent className="p-4 sm:p-6">
@@ -156,6 +176,7 @@ export default function Participants({
 														variant="destructive"
 														size="sm"
 														className="text-xs"
+														disabled={isKicking}
 														onClick={() =>
 															handleKickPlayer(
 																player.id,

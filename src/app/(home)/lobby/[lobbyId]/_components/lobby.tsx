@@ -43,7 +43,7 @@ export default function Lobby({
 	const [joined, setJoined] = useState(false);
 	const [participantList, setParticipantList] =
 		useState<Participant[]>(players);
-	const [countdown, setCountdown] = useState<number>(30);
+	const [countdown, setCountdown] = useState<number>(15);
 	const [lobbyState, setLobbyState] = useState<lobbyStatus>(
 		lobby.lobbyStatus
 	);
@@ -93,6 +93,9 @@ export default function Lobby({
 							router.push(`/lobby`);
 						}
 					}
+					if (message.state === "waiting") {
+						setCountdown(15);
+					}
 					break;
 				case "pendingplayers":
 					setPendingPlayers(message.pending_players);
@@ -100,6 +103,15 @@ export default function Lobby({
 						(p) => p.user.id === userId
 					);
 					if (isInPending) setJoinState(isInPending.state);
+					break;
+				case "playersnotready":
+					const notReadyPlayers =
+						message.players.map(transParticipant);
+					notReadyPlayers.forEach((p) => {
+						toast.error(
+							`${p.username || truncateAddress(p.walletAddress)} is not ready`
+						);
+					});
 					break;
 				case "allowed":
 					setJoinState(message.type);
@@ -148,13 +160,11 @@ export default function Lobby({
 			{/* Main Content */}
 			<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
 				{/* Stats Cards */}
-				<>
-					<LobbyStats
-						lobby={lobby}
-						players={participantList}
-						pool={pool}
-					/>
-				</>
+				<LobbyStats
+					lobby={lobby}
+					players={participantList}
+					pool={pool}
+				/>
 				{/* Lobby Details */}
 				<LobbyDetails
 					lobby={lobby}

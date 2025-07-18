@@ -27,7 +27,7 @@ export default function HeroSection() {
 							</p>
 						</div>
 						<div className="flex flex-col gap-2 min-[400px]:flex-row">
-							<Link href="/lexi-wars">
+							<Link href="/lobby">
 								<Button size="lg" className="gap-1.5">
 									Play Now
 								</Button>

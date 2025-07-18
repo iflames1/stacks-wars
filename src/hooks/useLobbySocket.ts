@@ -58,6 +58,7 @@ export type LobbyServerMessage =
 			type: "pendingplayers";
 			pending_players: PendingJoin[];
 	  }
+	| { type: "playersnotready"; players: JsonParticipant[] }
 	| { type: "allowed" }
 	| { type: "rejected" }
 	| { type: "pending" }
