@@ -90,6 +90,7 @@ export function useLobbySocket({
 	const messageHandlerRef = useRef<typeof onMessage | null>(null);
 	const messageQueue = useRef<QueuedMessage[]>([]);
 	const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+	const pingInProgress = useRef(false);
 	const PING_INTERVAL = 10000; // 10 seconds
 
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
@@ -142,6 +143,27 @@ export function useLobbySocket({
 		[]
 	);
 
+	const schedulePing = useCallback(async () => {
+		if (pingInProgress.current || !socketRef.current) return;
+
+		pingInProgress.current = true;
+		try {
+			await sendMessage({ type: "ping", ts: Date.now() });
+		} catch (error) {
+			console.error("❌ Ping failed:", error);
+		} finally {
+			pingInProgress.current = false;
+
+			// Schedule next ping only after current one completes
+			if (socketRef.current?.readyState === WebSocket.OPEN) {
+				pingIntervalRef.current = setTimeout(
+					schedulePing,
+					PING_INTERVAL
+				);
+			}
+		}
+	}, [sendMessage]);
+
 	const connectSocket = useCallback(() => {
 		if (!roomId || !userId) return;
 		if (socketRef.current) return; // already connecting or connected
@@ -160,9 +182,10 @@ export function useLobbySocket({
 			setError(null);
 			setReconnecting(false);
 			reconnectAttempts.current = 0;
-			pingIntervalRef.current = setInterval(() => {
-				sendMessage({ type: "ping", ts: Date.now() });
-			}, PING_INTERVAL);
+
+			// Start the ping cycle
+			pingIntervalRef.current = setTimeout(schedulePing, PING_INTERVAL);
+
 			processMessageQueue();
 		};
 
@@ -180,9 +203,10 @@ export function useLobbySocket({
 			console.warn("🛑 LobbySocket closed:", event.code, event.reason);
 			setReadyState(WebSocket.CLOSED);
 			socketRef.current = null;
+			pingInProgress.current = false;
 
 			if (pingIntervalRef.current) {
-				clearInterval(pingIntervalRef.current);
+				clearTimeout(pingIntervalRef.current);
 				pingIntervalRef.current = null;
 			}
 
@@ -220,7 +244,7 @@ export function useLobbySocket({
 				socketRef.current = null;
 			}
 		};
-	}, [roomId, userId, processMessageQueue, sendMessage]);
+	}, [roomId, userId, processMessageQueue, schedulePing]);
 
 	useEffect(() => {
 		connectSocket();
@@ -235,11 +259,13 @@ export function useLobbySocket({
 
 	const disconnect = useCallback(() => {
 		manuallyDisconnectedRef.current = true;
+		pingInProgress.current = false;
+
 		if (reconnectTimeoutRef.current)
 			clearTimeout(reconnectTimeoutRef.current);
 
 		if (pingIntervalRef.current) {
-			clearInterval(pingIntervalRef.current);
+			clearTimeout(pingIntervalRef.current);
 			pingIntervalRef.current = null;
 		}
 

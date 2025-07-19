@@ -142,7 +142,7 @@ export default function Lobby({
 		[router, lobbyId, userId]
 	);
 
-	const { sendMessage } = useLobbySocket({
+	const { sendMessage, readyState } = useLobbySocket({
 		roomId: lobbyId,
 		userId,
 		onMessage: handleMessage,
@@ -163,13 +163,28 @@ export default function Lobby({
 		return "text-red-500"; // very bad
 	};
 
-	return (
-		<>
-			{latency !== null && (
-				<span className={`text-xs ${getLatencyColor(latency)} `}>
+	const getConnectionStatus = () => {
+		if (
+			readyState === WebSocket.CONNECTING ||
+			readyState === WebSocket.CLOSED
+		) {
+			return <span className="text-xs text-blue-500">connecting...</span>;
+		}
+
+		if (latency !== null && readyState === WebSocket.OPEN) {
+			return (
+				<span className={`text-xs ${getLatencyColor(latency)}`}>
 					{Math.min(latency, 999)}ms
 				</span>
-			)}
+			);
+		}
+
+		return null;
+	};
+
+	return (
+		<>
+			{getConnectionStatus()}
 			<div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3 mt-4 sm:mt-6">
 				{/* Main Content */}
 				<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
