@@ -5,7 +5,7 @@ import LobbyStats from "./lobby-stats";
 import Participants from "./participants";
 import JoinLobbyForm from "./join-lobby-form";
 import GamePreview from "./game-preview";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import {
 	GameType,
 	lobbyStatus,
@@ -142,17 +142,11 @@ export default function Lobby({
 		[router, lobbyId, userId]
 	);
 
-	const disconnectRef = useRef<(() => void) | null>(null);
-
-	const { disconnect, sendMessage } = useLobbySocket({
+	const { sendMessage } = useLobbySocket({
 		roomId: lobbyId,
 		userId,
 		onMessage: handleMessage,
 	});
-
-	useEffect(() => {
-		disconnectRef.current = disconnect;
-	}, [disconnect]);
 
 	useEffect(() => {
 		if (isParticipant && !joined) {
@@ -223,7 +217,6 @@ export default function Lobby({
 									userId={userId}
 									userWalletAddress={userWalletAddress}
 									sendMessage={sendMessage}
-									disconnect={disconnect}
 								/>
 							)}
 						</Suspense>

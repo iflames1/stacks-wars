@@ -24,7 +24,6 @@ interface JoinLobbyFormProps {
 	userId: string;
 	userWalletAddress: string;
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
-	disconnect: () => void;
 }
 
 export default function JoinLobbyForm({
