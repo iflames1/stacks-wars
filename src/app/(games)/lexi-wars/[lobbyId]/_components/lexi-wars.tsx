@@ -17,6 +17,7 @@ import { Participant, transParticipant } from "@/types/schema";
 import { toast } from "sonner";
 import { truncateAddress } from "@/lib/utils";
 import ClaimRewardModal from "./claim-reward-modal";
+import ConnectionStatus from "@/components/connection-status";
 
 interface LexiWarsProps {
 	lobbyId: string;
@@ -38,6 +39,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [showPrizeModal, setShowPrizeModal] = useState(false);
 	const [prizeAmount, setPrizeAmount] = useState<number | null>(null);
 	const [isClaimed, setIsClaimed] = useState(false);
+	const [latency, setLatency] = useState<number | null>(null);
 
 	const handleMessage = useCallback(
 		(message: LexiWarsServerMessage) => {
@@ -90,6 +92,9 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 						setShowPrizeModal(true);
 					}
 					break;
+				case "pong":
+					setLatency(message.pong);
+					break;
 				default:
 					console.warn("Unknown WS message type", message);
 			}
@@ -105,11 +110,8 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 
 	const handleSubmit = (e?: FormEvent) => {
 		e?.preventDefault();
-		console.log("submitting", word);
-		if (word.trim() && readyState === WebSocket.OPEN) {
-			sendMessage({ type: "wordentry", word });
-			setWord("");
-		}
+		sendMessage({ type: "wordentry", word: word.trim() });
+		setWord("");
 	};
 
 	const getErrorMessage = (error: Event | Error | null): string => {
@@ -151,8 +153,13 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
 			<div className="max-w-3xl mx-auto p-4 sm:p-6 ">
-				<BackToGames />
-
+				<div className="flex justify-between">
+					<BackToGames />
+					<ConnectionStatus
+						readyState={readyState}
+						latency={latency}
+					/>
+				</div>
 				<div className="space-y-3 sm:space-y-4">
 					<GameHeader />
 
