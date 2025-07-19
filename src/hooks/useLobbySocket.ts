@@ -72,6 +72,12 @@ export type LobbyServerMessage =
 	  }
 	| { type: "pong"; ts: number; pong: number };
 
+interface QueuedMessage {
+	data: LobbyClientMessage;
+	resolve: () => void;
+	reject: (error: Error) => void;
+}
+
 export function useLobbySocket({
 	roomId,
 	userId,
@@ -82,7 +88,7 @@ export function useLobbySocket({
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const manuallyDisconnectedRef = useRef(false);
 	const messageHandlerRef = useRef<typeof onMessage | null>(null);
-	const messageQueue = useRef<LobbyClientMessage[]>([]);
+	const messageQueue = useRef<QueuedMessage[]>([]);
 	const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const PING_INTERVAL = 10000; // 10 seconds
 
@@ -97,9 +103,16 @@ export function useLobbySocket({
 	const processMessageQueue = useCallback(() => {
 		if (socketRef.current?.readyState === WebSocket.OPEN) {
 			while (messageQueue.current.length > 0) {
-				const message = messageQueue.current.shift();
-				if (message) {
-					socketRef.current.send(JSON.stringify(message));
+				const queuedMessage = messageQueue.current.shift();
+				if (queuedMessage) {
+					try {
+						socketRef.current.send(
+							JSON.stringify(queuedMessage.data)
+						);
+						queuedMessage.resolve();
+					} catch (error) {
+						queuedMessage.reject(error as Error);
+					}
 				}
 			}
 		}
@@ -109,15 +122,25 @@ export function useLobbySocket({
 		messageHandlerRef.current = onMessage;
 	}, [onMessage]);
 
-	const sendMessage = useCallback((data: LobbyClientMessage) => {
-		const socket = socketRef.current;
-		if (socket?.readyState === WebSocket.OPEN) {
-			socket.send(JSON.stringify(data));
-		} else {
-			console.log("⏳ Queuing message (socket not ready)");
-			messageQueue.current.push(data);
-		}
-	}, []);
+	const sendMessage = useCallback(
+		(data: LobbyClientMessage): Promise<void> => {
+			return new Promise((resolve, reject) => {
+				const socket = socketRef.current;
+				if (socket?.readyState === WebSocket.OPEN) {
+					try {
+						socket.send(JSON.stringify(data));
+						resolve();
+					} catch (error) {
+						reject(error as Error);
+					}
+				} else {
+					console.log("⏳ Queuing message (socket not ready)");
+					messageQueue.current.push({ data, resolve, reject });
+				}
+			});
+		},
+		[]
+	);
 
 	const connectSocket = useCallback(() => {
 		if (!roomId || !userId) return;
@@ -175,6 +198,14 @@ export function useLobbySocket({
 				reconnectTimeoutRef.current = setTimeout(() => {
 					connectSocket();
 				}, timeout);
+			} else {
+				// Reject all queued messages if we can't reconnect
+				while (messageQueue.current.length > 0) {
+					const queuedMessage = messageQueue.current.shift();
+					if (queuedMessage) {
+						queuedMessage.reject(new Error("Connection failed"));
+					}
+				}
 			}
 		};
 
@@ -210,6 +241,14 @@ export function useLobbySocket({
 		if (pingIntervalRef.current) {
 			clearInterval(pingIntervalRef.current);
 			pingIntervalRef.current = null;
+		}
+
+		// Reject all queued messages
+		while (messageQueue.current.length > 0) {
+			const queuedMessage = messageQueue.current.shift();
+			if (queuedMessage) {
+				queuedMessage.reject(new Error("Socket disconnected"));
+			}
 		}
 
 		socketRef.current?.close();
