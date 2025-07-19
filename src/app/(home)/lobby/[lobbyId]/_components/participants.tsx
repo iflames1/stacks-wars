@@ -2,15 +2,15 @@ import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { User as UserIcon, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Lobby, Participant } from "@/types/schema";
+import { Lobby, Participant, Pool } from "@/types/schema";
 import { truncateAddress } from "@/lib/utils";
 import { LobbyClientMessage, PendingJoin } from "@/hooks/useLobbySocket";
 import { useState } from "react";
-
-const EXPLORER_BASE_URL = "https://explorer.hiro.so/";
+import { EXPLORER_BASE_URL } from "@/lib/constants";
 
 interface ParticipantProps {
 	lobby: Lobby;
+	pool: Pool | null;
 	players: Participant[];
 	pendingPlayers: PendingJoin[];
 	userId: string;
@@ -19,6 +19,7 @@ interface ParticipantProps {
 
 export default function Participants({
 	lobby,
+	pool,
 	players,
 	pendingPlayers,
 	userId,
@@ -149,11 +150,10 @@ export default function Participants({
 											</div>
 										</div>
 										<div className="text-right flex flex-col">
-											{player.txId && (
+											{player.txId && pool && (
 												<>
 													<span className="text-sm sm:text-base font-bold">
-														{/*{player.amount}*/}
-														STX
+														{pool.entryAmount} STX
 													</span>
 													<Button
 														variant={"link"}
