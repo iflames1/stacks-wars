@@ -40,6 +40,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [prizeAmount, setPrizeAmount] = useState<number | null>(null);
 	const [isClaimed, setIsClaimed] = useState(false);
 	const [latency, setLatency] = useState<number | null>(null);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 
 	const handleMessage = useCallback(
 		(message: LexiWarsServerMessage) => {
@@ -102,31 +103,24 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		[userId]
 	);
 
-	const { sendMessage, readyState, error } = useLexiWarsSocket({
+	const { sendMessage, readyState } = useLexiWarsSocket({
 		lobbyId,
 		userId,
 		onMessage: handleMessage,
 	});
 
-	const handleSubmit = (e?: FormEvent) => {
-		e?.preventDefault();
-		sendMessage({ type: "wordentry", word: word.trim() });
-		setWord("");
-	};
-
-	const getErrorMessage = (error: Event | Error | null): string => {
-		if (!error) return "Connection failed";
-
-		if (error instanceof Error) {
-			return error.message;
+	const handleSubmit = async (e?: FormEvent) => {
+		setIsLoading(true);
+		try {
+			e?.preventDefault();
+			await sendMessage({ type: "wordentry", word: word.trim() });
+			setWord("");
+		} catch (error) {
+			console.error("Failed to send word:", error);
+		} finally {
+			setIsLoading(false);
 		}
-
-		return "Connection failed";
 	};
-
-	if (error) {
-		console.log("getting error", getErrorMessage(error));
-	}
 
 	{
 		/*const handleShift = () => {
@@ -176,6 +170,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 							word={word}
 							setWord={setWord}
 							handleSubmit={handleSubmit}
+							isLoading={isLoading}
 						/>
 					</div>
 				</div>
