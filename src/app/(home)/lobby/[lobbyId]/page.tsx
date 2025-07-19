@@ -53,10 +53,10 @@ export default async function LobbyDetailPage({
 	return (
 		<section className="bg-gradient-to-b from-primary/10 to-primary/30">
 			<div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-6 ">
-				<div className="flex items-center justify-between mb-4 sm:mb-6">
+				<div className="flex items-center justify-between ">
 					<Link
 						href="/lobby"
-						className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4 sm:mb-6"
+						className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
 					>
 						<ArrowLeft className="h-4 w-4" />
 						<span>Back to Lobby</span>

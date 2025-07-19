@@ -35,6 +35,10 @@ export type LobbyClientMessage =
 	| {
 			type: "joinlobby";
 			tx_id: string | undefined;
+	  }
+	| {
+			type: "ping";
+			ts: number;
 	  };
 
 export type LobbyServerMessage =
@@ -65,7 +69,8 @@ export type LobbyServerMessage =
 	| {
 			type: "error";
 			message: string;
-	  };
+	  }
+	| { type: "pong"; ts: number; pong: number };
 
 export function useLobbySocket({
 	roomId,
@@ -78,6 +83,8 @@ export function useLobbySocket({
 	const manuallyDisconnectedRef = useRef(false);
 	const messageHandlerRef = useRef<typeof onMessage | null>(null);
 	const messageQueue = useRef<LobbyClientMessage[]>([]);
+	const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+	const PING_INTERVAL = 10000; // 10 seconds
 
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
 		WebSocket.CLOSED
@@ -102,6 +109,16 @@ export function useLobbySocket({
 		messageHandlerRef.current = onMessage;
 	}, [onMessage]);
 
+	const sendMessage = useCallback((data: LobbyClientMessage) => {
+		const socket = socketRef.current;
+		if (socket?.readyState === WebSocket.OPEN) {
+			socket.send(JSON.stringify(data));
+		} else {
+			console.log("⏳ Queuing message (socket not ready)");
+			messageQueue.current.push(data);
+		}
+	}, []);
+
 	const connectSocket = useCallback(() => {
 		if (!roomId || !userId) return;
 		if (socketRef.current) return; // already connecting or connected
@@ -120,6 +137,9 @@ export function useLobbySocket({
 			setError(null);
 			setReconnecting(false);
 			reconnectAttempts.current = 0;
+			pingIntervalRef.current = setInterval(() => {
+				sendMessage({ type: "ping", ts: Date.now() });
+			}, PING_INTERVAL);
 			processMessageQueue();
 		};
 
@@ -137,6 +157,11 @@ export function useLobbySocket({
 			console.warn("🛑 LobbySocket closed:", event.code, event.reason);
 			setReadyState(WebSocket.CLOSED);
 			socketRef.current = null;
+
+			if (pingIntervalRef.current) {
+				clearInterval(pingIntervalRef.current);
+				pingIntervalRef.current = null;
+			}
 
 			if (
 				!manuallyDisconnectedRef.current &&
@@ -164,7 +189,7 @@ export function useLobbySocket({
 				socketRef.current = null;
 			}
 		};
-	}, [roomId, userId, processMessageQueue]);
+	}, [roomId, userId, processMessageQueue, sendMessage]);
 
 	useEffect(() => {
 		connectSocket();
@@ -177,20 +202,16 @@ export function useLobbySocket({
 		};
 	}, [connectSocket]);
 
-	const sendMessage = useCallback((data: LobbyClientMessage) => {
-		const socket = socketRef.current;
-		if (socket?.readyState === WebSocket.OPEN) {
-			socket.send(JSON.stringify(data));
-		} else {
-			console.log("⏳ Queuing message (socket not ready)");
-			messageQueue.current.push(data);
-		}
-	}, []);
-
 	const disconnect = useCallback(() => {
 		manuallyDisconnectedRef.current = true;
 		if (reconnectTimeoutRef.current)
 			clearTimeout(reconnectTimeoutRef.current);
+
+		if (pingIntervalRef.current) {
+			clearInterval(pingIntervalRef.current);
+			pingIntervalRef.current = null;
+		}
+
 		socketRef.current?.close();
 		socketRef.current = null;
 		setReadyState(WebSocket.CLOSED);
