@@ -5,7 +5,7 @@ import LobbyStats from "./lobby-stats";
 import Participants from "./participants";
 import JoinLobbyForm from "./join-lobby-form";
 import GamePreview from "./game-preview";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import {
 	GameType,
 	lobbyStatus,
@@ -51,6 +51,8 @@ export default function Lobby({
 	);
 	const [pendingPlayers, setPendingPlayers] = useState<PendingJoin[]>([]);
 	const [joinState, setJoinState] = useState<JoinState>("idle");
+	const [latency, setLatency] = useState<number | null>(null);
+
 	const router = useRouter();
 
 	const isParticipant = participantList.some((p) => p.id === userId);
@@ -130,6 +132,9 @@ export default function Lobby({
 				case "error":
 					toast.error(`Error: ${message.message}`);
 					break;
+				case "pong":
+					setLatency(message.pong);
+					break;
 				default:
 					console.warn("Unknown WS message type", message);
 			}
@@ -137,17 +142,11 @@ export default function Lobby({
 		[router, lobbyId, userId]
 	);
 
-	const disconnectRef = useRef<(() => void) | null>(null);
-
-	const { disconnect, sendMessage } = useLobbySocket({
+	const { sendMessage, readyState } = useLobbySocket({
 		roomId: lobbyId,
 		userId,
 		onMessage: handleMessage,
 	});
-
-	useEffect(() => {
-		disconnectRef.current = disconnect;
-	}, [disconnect]);
 
 	useEffect(() => {
 		if (isParticipant && !joined) {
@@ -157,61 +156,89 @@ export default function Lobby({
 		}
 	}, [isParticipant, joined]);
 
+	const getLatencyColor = (ms: number) => {
+		if (ms <= 60) return "text-green-500"; // very good
+		if (ms <= 120) return "text-yellow-500"; // good
+		if (ms <= 250) return "text-orange-500"; // bad
+		return "text-red-500"; // very bad
+	};
+
+	const getConnectionStatus = () => {
+		if (
+			readyState === WebSocket.CONNECTING ||
+			readyState === WebSocket.CLOSED
+		) {
+			return <span className="text-xs text-blue-500">connecting...</span>;
+		}
+
+		if (latency !== null && readyState === WebSocket.OPEN) {
+			return (
+				<span className={`text-xs ${getLatencyColor(latency)}`}>
+					{Math.min(latency, 999)}ms
+				</span>
+			);
+		}
+
+		return null;
+	};
+
 	return (
-		<div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
-			{/* Main Content */}
-			<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
-				{/* Stats Cards */}
-				<LobbyStats
-					lobby={lobby}
-					players={participantList}
-					pool={pool}
-				/>
-				{/* Lobby Details */}
-				<LobbyDetails
-					lobby={lobby}
-					pool={pool}
-					players={participantList}
-					countdown={countdown}
-					lobbyState={lobbyState}
-					sendMessage={sendMessage}
-					userId={userId}
-				/>
-				<Participants
-					lobby={lobby}
-					pool={pool}
-					players={participantList}
-					pendingPlayers={pendingPlayers}
-					userId={userId}
-					sendMessage={sendMessage}
-				/>
-			</div>
-			<div className="space-y-4 sm:space-y-6">
-				<div className="lg:sticky lg:top-6 flex flex-col gap-4">
-					<Suspense
-						fallback={
-							<div className="flex justify-center items-center py-6 sm:py-8">
-								<Loader className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
-							</div>
-						}
-					>
-						{userId !== lobby.creatorId && (
-							<JoinLobbyForm
-								lobby={lobby}
-								players={participantList}
-								pool={pool}
-								joinState={joinState}
-								lobbyId={lobbyId}
-								userId={userId}
-								userWalletAddress={userWalletAddress}
-								sendMessage={sendMessage}
-								disconnect={disconnect}
-							/>
-						)}
-					</Suspense>
-					<GamePreview game={game} />
+		<>
+			{getConnectionStatus()}
+			<div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3 mt-4 sm:mt-6">
+				{/* Main Content */}
+				<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
+					{/* Stats Cards */}
+					<LobbyStats
+						lobby={lobby}
+						players={participantList}
+						pool={pool}
+					/>
+					{/* Lobby Details */}
+					<LobbyDetails
+						lobby={lobby}
+						pool={pool}
+						players={participantList}
+						countdown={countdown}
+						lobbyState={lobbyState}
+						sendMessage={sendMessage}
+						userId={userId}
+					/>
+					<Participants
+						lobby={lobby}
+						pool={pool}
+						players={participantList}
+						pendingPlayers={pendingPlayers}
+						userId={userId}
+						sendMessage={sendMessage}
+					/>
+				</div>
+				<div className="space-y-4 sm:space-y-6">
+					<div className="lg:sticky lg:top-6 flex flex-col gap-4">
+						<Suspense
+							fallback={
+								<div className="flex justify-center items-center py-6 sm:py-8">
+									<Loader className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
+								</div>
+							}
+						>
+							{userId !== lobby.creatorId && (
+								<JoinLobbyForm
+									lobby={lobby}
+									players={participantList}
+									pool={pool}
+									joinState={joinState}
+									lobbyId={lobbyId}
+									userId={userId}
+									userWalletAddress={userWalletAddress}
+									sendMessage={sendMessage}
+								/>
+							)}
+						</Suspense>
+						<GamePreview game={game} />
+					</div>
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }

@@ -8,7 +8,7 @@ import {
 	CardFooter,
 } from "@/components/ui/card";
 import { Lobby, Participant, Pool } from "@/types/schema";
-import { Loader } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { JoinState, LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
@@ -23,8 +23,7 @@ interface JoinLobbyFormProps {
 	lobbyId: string;
 	userId: string;
 	userWalletAddress: string;
-	sendMessage: (msg: LobbyClientMessage) => void;
-	disconnect: () => void;
+	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
 }
 
 export default function JoinLobbyForm({
@@ -35,7 +34,6 @@ export default function JoinLobbyForm({
 	userId,
 	userWalletAddress,
 	sendMessage,
-	disconnect,
 }: JoinLobbyFormProps) {
 	const [joined, setJoined] = useState(false);
 	const [loading, setLoading] = useState(false);
@@ -47,7 +45,6 @@ export default function JoinLobbyForm({
 	}, [isParticipant]);
 
 	const handleClick = async () => {
-		if (loading) return;
 		setLoading(true);
 
 		try {
@@ -75,8 +72,7 @@ export default function JoinLobbyForm({
 
 					await waitForTxConfirmed(leaveTxId);
 				}
-				sendMessage({ type: "leaveroom" });
-				disconnect();
+				await sendMessage({ type: "leaveroom" });
 				setJoined(false);
 				toast.info("You left the lobby");
 				return;
@@ -85,7 +81,7 @@ export default function JoinLobbyForm({
 			if (joinState === "pending") return;
 
 			if (joinState === "idle" || joinState === "rejected") {
-				sendMessage({ type: "requestjoin" });
+				await sendMessage({ type: "requestjoin" });
 				return;
 			}
 
@@ -105,14 +101,17 @@ export default function JoinLobbyForm({
 
 					await waitForTxConfirmed(joinTx.txid);
 
-					sendMessage({ type: "joinlobby", tx_id: joinTx.txid });
+					await sendMessage({
+						type: "joinlobby",
+						tx_id: joinTx.txid,
+					});
 				} else {
-					sendMessage({ type: "joinlobby", tx_id: undefined });
+					await sendMessage({ type: "joinlobby", tx_id: undefined });
 				}
 			}
 		} catch (error) {
-			console.error("Join failed:", error);
-			toast.error("Join failed. Please try again.");
+			console.error("An error occured:", error);
+			toast.error("Failed. Please try again.");
 		} finally {
 			setLoading(false);
 		}
@@ -138,7 +137,7 @@ export default function JoinLobbyForm({
 				>
 					{loading || joinState === "pending" ? (
 						<>
-							<Loader className="mr-2 h-4 w-4 animate-spin" />
+							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 							{joined ? "Leaving..." : "Processing..."}
 						</>
 					) : joined ? (
