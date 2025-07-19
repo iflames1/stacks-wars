@@ -1,13 +1,17 @@
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
-import { Info, Timer } from "lucide-react";
-import { Lobby, lobbyStatus, Participant } from "@/types/schema";
+import { Info, Timer, User } from "lucide-react";
+import { Lobby, lobbyStatus, Participant, Pool } from "@/types/schema";
 import { Button } from "@/components/ui/button";
 import { LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { useState } from "react";
 import { toast } from "sonner";
+import { EXPLORER_BASE_URL } from "@/lib/constants";
+import Link from "next/link";
+import { truncateAddress } from "@/lib/utils";
 
 interface LobbyDetailsProps {
 	lobby: Lobby;
+	pool: Pool | null;
 	players: Participant[];
 	countdown?: number;
 	lobbyState: lobbyStatus;
@@ -17,6 +21,7 @@ interface LobbyDetailsProps {
 
 export default function LobbyDetails({
 	lobby,
+	pool,
 	players,
 	countdown,
 	lobbyState,
@@ -57,82 +62,60 @@ export default function LobbyDetails({
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="sm:p-6">
-				{/*<div>
-					<h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">
-						Pool Progress
+				<div className="mt-3">
+					<h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2 sm:mb-3">
+						Created by
 					</h3>
-					<div className="space-y-2">
-						<div className="flex justify-between text-xs sm:text-sm">
-							<span>{players.length} joined</span>
-							<span>{lobby.maxPlayers} max</span>
-						</div>
-						<Progress
-							value={participationPercentage}
-							className="h-2"
-						/>
-					</div>
-				</div>*/}
-
-				<>
-					{/*<div className="mt-3">
-						<h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2 sm:mb-3">
-							Created by
-						</h3>
-						<div className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-2 sm:gap-3">
-									<div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center">
-										<User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-									</div>
-									<div className="overflow-hidden">
-										<p className="text-sm sm:text-base font-medium truncate max-w-[120px] xs:max-w-[160px] sm:max-w-[200px] md:max-w-[300px]">
-											{
-												pool.creator
-													.stxAddress
-											}
-										</p>
-									</div>
+					<div className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+						<div className="flex items-center justify-between w-full">
+							<div className="flex items-center gap-2 sm:gap-3">
+								<div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center">
+									<User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
 								</div>
-								<div>
-									<Button
-										variant={"link"}
-										asChild
-									>
-										<a
-											href={`${EXPLORER_BASE_URL}txid/${
-												deployTx?.tx_status ===
-												"success"
-													? pool
-															.creator
-															.stxAddress +
-														"." +
-														slugify(
-															pool.name
-														) +
-														"-stacks-wars"
-													: pool.txID
-											}`}
-											target="_blank"
-										>
-											{deployTx?.tx_status ===
-											"success"
-												? "View Pool Contract"
-												: "TX ID"}
-										</a>
-									</Button>
+								<div className="overflow-hidden">
+									<p className="text-sm sm:text-base font-medium truncate max-w-[120px] xs:max-w-[160px] sm:max-w-[200px] md:max-w-[300px]">
+										{(() => {
+											const creator = players.find(
+												(player) =>
+													player.id ===
+													lobby.creatorId
+											);
+											return (
+												creator?.username ||
+												truncateAddress(
+													creator?.walletAddress
+												) ||
+												"Unknown Player"
+											);
+										})()}
+									</p>
 								</div>
 							</div>
+							{pool && (
+								<Button variant={"link"} asChild>
+									<Link
+										href={`${EXPLORER_BASE_URL}txid/${
+											pool.contractAddress
+										}?chain=testnet`}
+										target="_blank"
+									>
+										View Pool Contract
+									</Link>
+								</Button>
+							)}
 						</div>
-					</div>*/}
-				</>
+					</div>
+				</div>
 
 				{/* Countdown Timer */}
-				<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted space-x-2 flex items-center justify-center">
-					<Timer className="h-5 w-5 text-muted-foreground" />
-					<span className="text-lg sm:text-xl font-semibold text-primary">
-						Game starting in {timeLeft} seconds
-					</span>
-				</div>
+				{lobbyState === "inprogress" && (
+					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted space-x-2 flex items-center justify-center">
+						<Timer className="h-5 w-5 text-muted-foreground" />
+						<span className="text-lg sm:text-xl font-semibold text-primary">
+							Game starting in {timeLeft} seconds
+						</span>
+					</div>
+				)}
 
 				{userId === lobby.creatorId && (
 					<Button
