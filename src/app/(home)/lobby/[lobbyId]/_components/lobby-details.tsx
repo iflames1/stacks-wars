@@ -1,5 +1,5 @@
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
-import { Info, Timer, User } from "lucide-react";
+import { Info, Timer, User, Loader2 } from "lucide-react";
 import { Lobby, lobbyStatus, Participant, Pool } from "@/types/schema";
 import { Button } from "@/components/ui/button";
 import { LobbyClientMessage } from "@/hooks/useLobbySocket";
@@ -15,7 +15,7 @@ interface LobbyDetailsProps {
 	players: Participant[];
 	countdown?: number;
 	lobbyState: lobbyStatus;
-	sendMessage: (msg: LobbyClientMessage) => void;
+	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
 	userId: string;
 }
 
@@ -32,13 +32,18 @@ export default function LobbyDetails({
 	const timeLeft = countdown ?? 30;
 	const [loading, setLoading] = useState<boolean>(false);
 
-	const handleLobbyState = (state: lobbyStatus) => {
+	const handleLobbyState = async (state: lobbyStatus) => {
 		setLoading(true);
-		sendMessage({
-			type: "updategamestate",
-			new_state: state,
-		});
-		setTimeout(() => setLoading(false), 300);
+		try {
+			await sendMessage({
+				type: "updategamestate",
+				new_state: state,
+			});
+		} catch (error) {
+			console.error("Failed to send message:", error);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const buttonLabel =
@@ -138,6 +143,9 @@ export default function LobbyDetails({
 								handleLobbyState("waiting");
 						}}
 					>
+						{loading && (
+							<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+						)}
 						{buttonLabel}
 					</Button>
 				)}

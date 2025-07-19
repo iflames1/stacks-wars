@@ -1,5 +1,5 @@
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
-import { User as UserIcon, Users } from "lucide-react";
+import { Loader2, User as UserIcon, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Lobby, Participant, Pool } from "@/types/schema";
@@ -14,7 +14,7 @@ interface ParticipantProps {
 	players: Participant[];
 	pendingPlayers: PendingJoin[];
 	userId: string;
-	sendMessage: (msg: LobbyClientMessage) => void;
+	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
 }
 
 export default function Participants({
@@ -29,15 +29,16 @@ export default function Participants({
 	const isReady = currentPlayer?.playerStatus === "ready";
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [isKicking, setIsKicking] = useState(false);
+	const [isHandlingJoin, setIsHandlingJoin] = useState(false);
 
-	const handleKickPlayer = (
+	const handleKickPlayer = async (
 		playerId: string,
 		wallet_address: string,
 		display_name: string | null
 	) => {
 		setIsKicking(true);
 		try {
-			sendMessage({
+			await sendMessage({
 				type: "kickplayer",
 				player_id: playerId,
 				wallet_address: wallet_address,
@@ -52,10 +53,10 @@ export default function Participants({
 
 	type PlayerStatus = "ready" | "notready";
 
-	const handleUpdatePlayerStatus = (status: PlayerStatus) => {
+	const handleUpdatePlayerStatus = async (status: PlayerStatus) => {
 		setIsUpdating(true);
 		try {
-			sendMessage({
+			await sendMessage({
 				type: "updateplayerstate",
 				new_state: status,
 			});
@@ -63,6 +64,21 @@ export default function Participants({
 			console.error("Error updating status:", error);
 		} finally {
 			setIsUpdating(false);
+		}
+	};
+
+	const handleJoinRequest = async (userId: string, allow: boolean) => {
+		setIsHandlingJoin(true);
+		try {
+			sendMessage({
+				type: "permitjoin",
+				user_id: userId,
+				allow,
+			});
+		} catch (error) {
+			console.error("Error handling join request:", error);
+		} finally {
+			setIsHandlingJoin(false);
 		}
 	};
 
@@ -87,6 +103,9 @@ export default function Participants({
 									)
 								}
 							>
+								{isUpdating && (
+									<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+								)}
 								{isReady ? "Unready" : "Ready"}
 							</Button>
 						)}
@@ -185,6 +204,9 @@ export default function Participants({
 															)
 														}
 													>
+														{isKicking && (
+															<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+														)}
 														Kick
 													</Button>
 												)}
@@ -229,33 +251,41 @@ export default function Participants({
 														<Button
 															size="sm"
 															variant="outline"
+															disabled={
+																isHandlingJoin
+															}
 															onClick={() =>
-																sendMessage({
-																	type: "permitjoin",
-																	user_id:
-																		pendingplayer
-																			.user
-																			.id,
-																	allow: true,
-																})
+																handleJoinRequest(
+																	pendingplayer
+																		.user
+																		.id,
+																	true
+																)
 															}
 														>
+															{isHandlingJoin && (
+																<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+															)}
 															Accept
 														</Button>
 														<Button
 															size="sm"
 															variant="destructive"
+															disabled={
+																isHandlingJoin
+															}
 															onClick={() =>
-																sendMessage({
-																	type: "permitjoin",
-																	user_id:
-																		pendingplayer
-																			.user
-																			.id,
-																	allow: false,
-																})
+																handleJoinRequest(
+																	pendingplayer
+																		.user
+																		.id,
+																	false
+																)
 															}
 														>
+															{isHandlingJoin && (
+																<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+															)}
 															Decline
 														</Button>
 													</div>
