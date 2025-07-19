@@ -1,6 +1,6 @@
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { notFound } from "next/navigation";
-import LexiWars from "../_components/lexi-wars";
+import LexiWars from "./_components/lexi-wars";
 import { apiRequest } from "@/lib/api";
 import { JsonLobby, transLobby } from "@/types/schema";
 

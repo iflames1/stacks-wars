@@ -1,17 +1,20 @@
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface LexiInputFormProps {
 	word: string;
 	setWord: (word: string) => void;
 	handleSubmit: (e?: React.FormEvent) => void;
+	isLoading: boolean;
 }
 
 export default function LexiInputForm({
 	word,
 	setWord,
 	handleSubmit,
+	isLoading,
 }: LexiInputFormProps) {
 	const handlePaste = (e: React.ClipboardEvent) => {
 		e.preventDefault();
@@ -59,7 +62,15 @@ export default function LexiInputForm({
 			/>
 
 			<div className="flex justify-end">
-				<Button type="submit" size="lg" className="w-full md:w-fit">
+				<Button
+					type="submit"
+					disabled={isLoading}
+					size="lg"
+					className="w-full md:w-fit"
+				>
+					{isLoading && (
+						<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+					)}
 					Submit
 				</Button>
 			</div>
