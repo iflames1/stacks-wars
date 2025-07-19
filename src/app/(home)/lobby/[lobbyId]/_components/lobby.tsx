@@ -170,6 +170,7 @@ export default function Lobby({
 				{/* Lobby Details */}
 				<LobbyDetails
 					lobby={lobby}
+					pool={pool}
 					players={participantList}
 					countdown={countdown}
 					lobbyState={lobbyState}
@@ -178,6 +179,7 @@ export default function Lobby({
 				/>
 				<Participants
 					lobby={lobby}
+					pool={pool}
 					players={participantList}
 					pendingPlayers={pendingPlayers}
 					userId={userId}
