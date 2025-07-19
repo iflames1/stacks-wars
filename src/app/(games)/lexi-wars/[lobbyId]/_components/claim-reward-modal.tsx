@@ -85,7 +85,7 @@ export default function ClaimRewardModal({
 
 	return (
 		<Dialog open={showPrizeModal} onOpenChange={setShowPrizeModal}>
-			<DialogContent className="sm:max-w-[400px]">
+			<DialogContent className="sm:max-w-[400px]" hideClose>
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 justify-center text-xl">
 						🏆 Claim Your Prize!

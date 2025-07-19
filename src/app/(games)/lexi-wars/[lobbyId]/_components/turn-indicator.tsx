@@ -1,5 +1,4 @@
 import { truncateAddress } from "@/lib/utils";
-import { getWalletAddress } from "@/lib/wallet";
 import { Participant } from "@/types/schema";
 import { User } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -14,8 +13,6 @@ export default function TurnIndicator({
 	userId,
 }: TurnIndicatorProps) {
 	const [isCurrentPlayer, setIsCurrentPlayer] = useState<boolean>(false);
-	const walletAddress = getWalletAddress();
-	console.log("walletAddress:", walletAddress);
 
 	useEffect(() => {
 		if (currentPlayer && currentPlayer.id === userId) {
@@ -24,8 +21,6 @@ export default function TurnIndicator({
 			setIsCurrentPlayer(false);
 		}
 	}, [currentPlayer, userId]);
-
-	console.log("currentPlayer:", currentPlayer);
 
 	return (
 		<div

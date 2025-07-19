@@ -1,10 +1,12 @@
 interface ConnectionStatusProps {
 	readyState: WebSocket["readyState"];
 	latency: number | null;
+	className?: string;
 }
 export default function ConnectionStatus({
 	readyState,
 	latency,
+	className,
 }: ConnectionStatusProps) {
 	const getLatencyColor = (ms: number) => {
 		if (ms <= 60) return "text-green-500"; // very good
@@ -19,7 +21,7 @@ export default function ConnectionStatus({
 			readyState === WebSocket.CLOSED
 		) {
 			return (
-				<span className="text-xs text-blue-500 block">
+				<span className={`text-xs text-blue-500 block ${className}`}>
 					connecting...
 				</span>
 			);
@@ -27,7 +29,9 @@ export default function ConnectionStatus({
 
 		if (latency !== null && readyState === WebSocket.OPEN) {
 			return (
-				<span className={`text-xs block ${getLatencyColor(latency)}`}>
+				<span
+					className={`text-xs block ${className} ${getLatencyColor(latency)}`}
+				>
 					{Math.min(latency, 999)}ms
 				</span>
 			);

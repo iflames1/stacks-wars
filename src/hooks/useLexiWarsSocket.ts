@@ -51,8 +51,7 @@ export function useLexiWarsSocket({
 	const messageQueue = useRef<QueuedMessage[]>([]);
 	const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const pingInProgress = useRef(false);
-	const PING_INTERVAL = 5000; // 5 seconds
-
+	const PING_INTERVAL = 2000; // 2 seconds
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
 		WebSocket.CLOSED
 	);

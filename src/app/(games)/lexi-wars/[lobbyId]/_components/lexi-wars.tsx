@@ -1,5 +1,5 @@
 "use client";
-import BackToGames from "@/components/back-to-games";
+//import BackToGames from "@/components/back-to-games";
 import GameHeader from "./game-header";
 import GameRule from "./game-rule";
 import GameTimer from "./game-timer";
@@ -148,8 +148,9 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
 			<div className="max-w-3xl mx-auto p-4 sm:p-6 ">
 				<div className="flex justify-between">
-					<BackToGames />
+					{/*<BackToGames />*/}
 					<ConnectionStatus
+						className="mb-4 sm:mb-6"
 						readyState={readyState}
 						latency={latency}
 					/>
