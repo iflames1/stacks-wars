@@ -14,7 +14,7 @@ export default async function PoolsPage({
 	const params = await searchParams;
 	const error = params.error;
 	const jsonLobbies = await apiRequest<JsonLobby[]>({
-		path: "/rooms",
+		path: "/rooms?state=waiting,inprogress",
 		auth: false,
 	});
 
