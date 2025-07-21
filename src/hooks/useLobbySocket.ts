@@ -283,11 +283,34 @@ export function useLobbySocket({
 		messageQueue.current = [];
 	}, []);
 
+	const forceReconnect = useCallback(() => {
+		// Clear any existing timeouts
+		if (reconnectTimeoutRef.current) {
+			clearTimeout(reconnectTimeoutRef.current);
+			reconnectTimeoutRef.current = null;
+		}
+
+		// Close existing connection
+		if (socketRef.current) {
+			socketRef.current.close();
+			socketRef.current = null;
+		}
+
+		// Reset reconnection attempts and flags
+		reconnectAttempts.current = 0;
+		manuallyDisconnectedRef.current = false;
+		setReconnecting(false);
+
+		// Reconnect immediately
+		connectSocket();
+	}, [connectSocket]);
+
 	return {
 		sendMessage,
 		disconnect,
 		readyState,
 		error,
 		reconnecting,
+		forceReconnect,
 	};
 }

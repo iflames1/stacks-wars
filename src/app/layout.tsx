@@ -139,17 +139,6 @@ export const metadata: Metadata = {
 	category: "Gaming",
 	classification: "Gaming Platform",
 	referrer: "origin-when-cross-origin",
-	colorScheme: "dark light",
-	themeColor: [
-		{ media: "(prefers-color-scheme: light)", color: "#ffffff" },
-		{ media: "(prefers-color-scheme: dark)", color: "#000000" },
-	],
-	viewport: {
-		width: "device-width",
-		initialScale: 1,
-		maximumScale: 5,
-		userScalable: true,
-	},
 	alternates: {
 		canonical: "https://stackswars.com",
 		languages: {

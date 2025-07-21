@@ -86,7 +86,7 @@ export default function CreateLobbyForm({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: "",
-			withPool: false,
+			withPool: true,
 		},
 		mode: "onChange",
 	});
