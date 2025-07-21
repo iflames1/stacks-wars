@@ -18,11 +18,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
 	metadataBase: new URL("https://stackswars.com"),
 	title: {
-		default: "Stacks Wars - Web3 Gaming Platform",
+		default: "Stacks Wars - Web3 Gaming Platform on Stacks Blockchain",
 		template: "%s | Stacks Wars",
 	},
 	description:
-		"Experience the future of competitive gaming on the Stacks blockchain. Join tournaments, compete in various games, and win STX rewards in our growing ecosystem of blockchain-powered games.",
+		"The ultimate Web3 gaming platform on Stacks blockchain. Compete in skill-based games like Lexi Wars, join tournaments, and earn real STX rewards. Fair play, transparent gaming, endless competition.",
 	keywords: [
 		"stacks blockchain",
 		"web3 gaming",
@@ -30,73 +30,142 @@ export const metadata: Metadata = {
 		"crypto gaming",
 		"STX rewards",
 		"play to earn",
+		"skill-based gaming",
 		"multiplayer games",
 		"blockchain tournaments",
 		"gaming platform",
 		"stacks ecosystem",
 		"word games",
 		"strategy games",
-		"competitive platform",
+		"competitive gaming",
 		"lexi wars",
 		"casino games",
 		"GameFi",
 		"GameFi on Stacks",
+		"decentralized gaming",
+		"Bitcoin L2 gaming",
+		"smart contract games",
+		"competitive esports",
 	],
-	authors: [{ name: "SWE Hashiras" }],
+	authors: [{ name: "SWE Hashiras", url: "https://stackswars.com/about" }],
 	creator: "SWE Hashiras",
-	publisher: "SWE Hashiras",
+	publisher: "Stacks Wars",
 	formatDetection: {
 		email: false,
 		address: false,
 		telephone: false,
+	},
+	robots: {
+		index: true,
+		follow: true,
+		googleBot: {
+			index: true,
+			follow: true,
+			"max-video-preview": -1,
+			"max-image-preview": "large",
+			"max-snippet": -1,
+		},
+	},
+	verification: {
+		// Add these when you have them
+		// google: 'your-google-site-verification',
+		// other: {
+		//   'msvalidate.01': 'your-bing-verification',
+		// },
 	},
 	openGraph: {
 		type: "website",
 		locale: "en_US",
 		url: "https://stackswars.com",
 		siteName: "Stacks Wars",
-		title: "Stacks Wars - Web3 Gaming Platform",
+		title: "Stacks Wars - Web3 Gaming Platform on Stacks Blockchain",
 		description:
-			"Join the next generation of competitive gaming. Compete in various blockchain-powered games, participate in tournaments, and win STX rewards on the Stacks blockchain.",
+			"Compete in skill-based Web3 games on Stacks blockchain. Join tournaments, play Lexi Wars, and earn real STX rewards. Fair, transparent, and competitive gaming for everyone.",
 		images: [
 			{
-				url: "https://stackswars.com/logo.png?height=1200&width=630",
+				url: "https://stackswars.com/og-image.png",
 				width: 1200,
 				height: 630,
 				alt: "Stacks Wars - Web3 Gaming Platform",
+				type: "image/png",
+			},
+			{
+				url: "https://stackswars.com/og-image-square.png",
+				width: 600,
+				height: 600,
+				alt: "Stacks Wars Logo",
+				type: "image/png",
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
+		site: "@stackswars",
+		creator: "@stackswars",
 		title: "Stacks Wars - Web3 Gaming Platform",
 		description:
-			"Discover a new era of competitive gaming on the Stacks blockchain. Multiple games, exciting tournaments, and STX rewards await.",
-		creator: "@stackswars",
-		images: ["https://stackswars.com/logo.png?height=1200&width=630"],
+			"🎮 Skill-based Web3 gaming on Stacks blockchain\n🏆 Compete in tournaments & earn STX rewards\n🎯 Fair play, transparent gaming\n🔥 Join the competition now!",
+		images: {
+			url: "https://stackswars.com/twitter-image.png",
+			alt: "Stacks Wars - Web3 Gaming Platform",
+		},
 	},
 	icons: {
 		icon: [
-			{ url: "/favicon.ico" },
-			{ url: "/logo.png?height=32&width=32", type: "image/png" },
+			{ url: "/favicon.ico", sizes: "any" },
+			{ url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+			{ url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
 		],
 		apple: [
-			{ url: "/logo.png" },
 			{
-				url: "/logo.png?height=72&width=72",
-				sizes: "72x72",
+				url: "/apple-touch-icon.png",
+				sizes: "180x180",
 				type: "image/png",
 			},
+		],
+		other: [
 			{
-				url: "/logo.png?height=114&width=114",
-				sizes: "114x114",
-				type: "image/png",
+				rel: "android-chrome-192x192",
+				url: "/android-chrome-192x192.png",
+			},
+			{
+				rel: "android-chrome-512x512",
+				url: "/android-chrome-512x512.png",
 			},
 		],
 	},
 	manifest: "/site.webmanifest",
 	applicationName: "Stacks Wars",
-	category: "Gaming Platform",
+	category: "Gaming",
+	classification: "Gaming Platform",
+	referrer: "origin-when-cross-origin",
+	colorScheme: "dark light",
+	themeColor: [
+		{ media: "(prefers-color-scheme: light)", color: "#ffffff" },
+		{ media: "(prefers-color-scheme: dark)", color: "#000000" },
+	],
+	viewport: {
+		width: "device-width",
+		initialScale: 1,
+		maximumScale: 5,
+		userScalable: true,
+	},
+	alternates: {
+		canonical: "https://stackswars.com",
+		languages: {
+			"en-US": "https://stackswars.com",
+			// Add other languages when available
+			// 'es-ES': 'https://stackswars.com/es',
+		},
+	},
+	other: {
+		"apple-mobile-web-app-capable": "yes",
+		"apple-mobile-web-app-status-bar-style": "default",
+		"apple-mobile-web-app-title": "Stacks Wars",
+		"mobile-web-app-capable": "yes",
+		"msapplication-TileColor": "#000000",
+		"msapplication-config": "/browserconfig.xml",
+	},
 };
 
 export default function RootLayout({
