@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import {
 	GameType,
 	JsonGameType,
@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/api";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import Lobby from "./_components/lobby";
 import ShareLinkButton from "./_components/share-link-button";
+import RequireAuth from "@/components/require-auth";
 
 export default async function LobbyDetailPage({
 	params,
@@ -27,10 +28,8 @@ export default async function LobbyDetailPage({
 	if (!userId || !userWalletAddress) {
 		// console.error("User ID not found in JWT claims");
 		// toast.error("Something went wrong, try again later.");
-		redirect("/lobby?error=wallet-required");
+		return <RequireAuth />;
 	}
-
-	console.log("Lobby ID:", lobbyId);
 
 	const jsonLobby = await apiRequest<JsonLobbyExtended>({
 		path: `/room/${lobbyId}/extended`,
