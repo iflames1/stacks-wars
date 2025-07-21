@@ -25,7 +25,7 @@ export async function connectOrCreateUser(walletAddress: string) {
 		cookieStore.set("jwt", token, {
 			httpOnly: true,
 			secure: true,
-			maxAge: 60 * 60 * 24, // 1 day
+			maxAge: 60 * 60 * 24 * 7, // 7 days
 			path: "/",
 		});
 
