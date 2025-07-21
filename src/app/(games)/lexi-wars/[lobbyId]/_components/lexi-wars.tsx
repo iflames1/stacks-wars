@@ -103,11 +103,12 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		[userId]
 	);
 
-	const { sendMessage, readyState } = useLexiWarsSocket({
-		lobbyId,
-		userId,
-		onMessage: handleMessage,
-	});
+	const { sendMessage, readyState, reconnecting, forceReconnect } =
+		useLexiWarsSocket({
+			lobbyId,
+			userId,
+			onMessage: handleMessage,
+		});
 
 	const handleSubmit = async (e?: FormEvent) => {
 		setIsLoading(true);
@@ -153,6 +154,8 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 						className="mb-4 sm:mb-6"
 						readyState={readyState}
 						latency={latency}
+						reconnecting={reconnecting}
+						onReconnect={forceReconnect}
 					/>
 				</div>
 				<div className="space-y-3 sm:space-y-4">

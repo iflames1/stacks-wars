@@ -12,7 +12,10 @@ export default async function LexiWarsPage({
 	const lobbyId = (await params).lobbyId;
 
 	const userId = await getClaimFromJwt<string>("sub");
-	const jsonLobby = await apiRequest<JsonLobby>({ path: `room/${lobbyId}` });
+	const jsonLobby = await apiRequest<JsonLobby>({
+		path: `room/${lobbyId}`,
+		cache: "no-store",
+	});
 
 	const lobby = transLobby(jsonLobby);
 	const contract = lobby.contractAddress;

@@ -143,11 +143,12 @@ export default function Lobby({
 		[router, lobbyId, userId]
 	);
 
-	const { sendMessage, readyState } = useLobbySocket({
-		roomId: lobbyId,
-		userId,
-		onMessage: handleMessage,
-	});
+	const { sendMessage, readyState, reconnecting, forceReconnect } =
+		useLobbySocket({
+			roomId: lobbyId,
+			userId,
+			onMessage: handleMessage,
+		});
 
 	useEffect(() => {
 		if (isParticipant && !joined) {
@@ -159,7 +160,12 @@ export default function Lobby({
 
 	return (
 		<>
-			<ConnectionStatus readyState={readyState} latency={latency} />
+			<ConnectionStatus
+				readyState={readyState}
+				latency={latency}
+				reconnecting={reconnecting}
+				onReconnect={forceReconnect}
+			/>
 			<div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3 mt-4 sm:mt-6">
 				{/* Main Content */}
 				<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
