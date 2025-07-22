@@ -14,6 +14,7 @@ import { JoinState, LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { leaveGamePool } from "@/lib/actions/leaveGamePool";
+import { useRouter } from "next/navigation";
 
 interface JoinLobbyFormProps {
 	lobby: Lobby;
@@ -40,6 +41,8 @@ export default function JoinLobbyForm({
 	const isParticipant = players.some((p) => p.id === userId);
 	const isCreator = userId === lobby.creatorId;
 
+	const router = useRouter();
+
 	useEffect(() => {
 		if (isParticipant) setJoined(true);
 	}, [isParticipant]);
@@ -49,8 +52,11 @@ export default function JoinLobbyForm({
 
 		try {
 			if (joined) {
-				if (isCreator) {
-					toast.error("You can't leave the lobby as the creator");
+				if (isCreator && players.length > 1) {
+					toast.error("You can't leave the lobby with participants", {
+						description:
+							"Please remove all participants before leaving.",
+					});
 					return;
 				}
 				if (lobby.contractAddress) {
@@ -75,6 +81,9 @@ export default function JoinLobbyForm({
 				await sendMessage({ type: "leaveroom" });
 				setJoined(false);
 				toast.info("You left the lobby");
+				if (isCreator) {
+					router.replace(`/lobby`);
+				}
 				return;
 			}
 
@@ -86,7 +95,6 @@ export default function JoinLobbyForm({
 			}
 
 			if (joinState === "allowed") {
-				// ⛏ Check if this lobby has a pool contract
 				if (pool) {
 					const contract =
 						pool.contractAddress as `${string}.${string}`;
@@ -142,7 +150,7 @@ export default function JoinLobbyForm({
 						</>
 					) : joined ? (
 						isCreator ? (
-							"Creator can't leave"
+							"Leave and Delete Lobby"
 						) : (
 							"Leave Lobby"
 						)

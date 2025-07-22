@@ -203,18 +203,16 @@ export default function Lobby({
 								</div>
 							}
 						>
-							{userId !== lobby.creatorId && (
-								<JoinLobbyForm
-									lobby={lobby}
-									players={participantList}
-									pool={pool}
-									joinState={joinState}
-									lobbyId={lobbyId}
-									userId={userId}
-									userWalletAddress={userWalletAddress}
-									sendMessage={sendMessage}
-								/>
-							)}
+							<JoinLobbyForm
+								lobby={lobby}
+								players={participantList}
+								pool={pool}
+								joinState={joinState}
+								lobbyId={lobbyId}
+								userId={userId}
+								userWalletAddress={userWalletAddress}
+								sendMessage={sendMessage}
+							/>
 						</Suspense>
 						<GamePreview game={game} />
 					</div>
