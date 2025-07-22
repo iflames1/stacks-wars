@@ -1,12 +1,10 @@
 "use client";
-//import BackToGames from "@/components/back-to-games";
 import GameHeader from "./game-header";
 import GameRule from "./game-rule";
 import GameTimer from "./game-timer";
 import TurnIndicator from "./turn-indicator";
 import LexiInputForm from "./lexi-input-form";
 import GameOverModal from "./game-over-modal";
-//import Keyboard from "./keyboard";
 import { FormEvent, useCallback, useState } from "react";
 import {
 	LexiWarsServerMessage,
@@ -18,6 +16,9 @@ import { toast } from "sonner";
 import { truncateAddress } from "@/lib/utils";
 import ClaimRewardModal from "./claim-reward-modal";
 import ConnectionStatus from "@/components/connection-status";
+import { useRouter } from "next/navigation";
+import Loading from "../loading";
+import Back from "./back";
 
 interface LexiWarsProps {
 	lobbyId: string;
@@ -27,7 +28,6 @@ interface LexiWarsProps {
 
 export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
-	//const [layoutName, setLayoutName] = useState<string>("default");
 
 	const [currentTurn, setCurrentTurn] = useState<Participant | null>(null);
 	const [rule, setRule] = useState<string>(
@@ -41,9 +41,22 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [isClaimed, setIsClaimed] = useState(false);
 	const [latency, setLatency] = useState<number | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [gameStarted, setGameStarted] = useState<boolean>(false);
+	const [startCountdown, setStartCountdown] = useState<number>(10);
+	const [messageReceived, setMessageReceived] = useState<boolean>(false);
+	const [gameOver, setGameOver] = useState<boolean>(false);
+
+	const router = useRouter();
 
 	const handleMessage = useCallback(
 		(message: LexiWarsServerMessage) => {
+			if (
+				message.type !== "startfailed" &&
+				message.type !== "start" &&
+				message.type !== "pong"
+			) {
+				setMessageReceived(true);
+			}
 			switch (message.type) {
 				case "turn":
 					setCurrentTurn(transParticipant(message.current_turn));
@@ -83,6 +96,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					break;
 				case "gameover":
 					toast.info(`🏁 Game Over!`);
+					setGameOver(true);
 					break;
 				case "finalstanding":
 					setFinalStanding(message.standing);
@@ -96,11 +110,21 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 				case "pong":
 					setLatency(message.pong);
 					break;
+				case "start":
+					setStartCountdown(message.time);
+					setGameStarted(message.started);
+					break;
+				case "startfailed":
+					toast.error("Failed to start the game.", {
+						description: "Not enough players connected.",
+					});
+					router.replace(`/lobby/${lobbyId}`);
+					break;
 				default:
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[userId]
+		[userId, lobbyId, router]
 	);
 
 	const { sendMessage, readyState, reconnecting, forceReconnect } =
@@ -123,33 +147,15 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		}
 	};
 
-	{
-		/*const handleShift = () => {
-		const newLayoutName = layoutName === "default" ? "shift" : "default";
-		setLayoutName(newLayoutName);
-	};
-
-	const handleKeyboardInput = (key: string) => {
-		if (key === "{bksp}") {
-			setWord((prev) => prev.slice(0, -1));
-		} else if (key === "{shift}") {
-			handleShift();
-		} else if (key === "{enter}") {
-			handleSubmit();
-		} else {
-			setWord((prev) => prev + key);
-		}
-	};*/
+	if (!gameStarted && !messageReceived) {
+		return <Loading startCountdown={startCountdown} />;
 	}
-
-	//const isTouchDevice =
-	//	typeof window !== "undefined" && "ontouchstart" in window;
 
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
 			<div className="max-w-3xl mx-auto p-4 sm:p-6 ">
 				<div className="flex justify-between">
-					{/*<BackToGames />*/}
+					<Back gameOver={gameOver} />
 					<ConnectionStatus
 						className="mb-4 sm:mb-6"
 						readyState={readyState}

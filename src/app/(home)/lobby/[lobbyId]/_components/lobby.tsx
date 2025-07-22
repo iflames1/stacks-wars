@@ -93,9 +93,9 @@ export default function Lobby({
 
 					if (message.ready_players) {
 						if (message.ready_players.includes(userId)) {
-							router.push(`/lexi-wars/${lobbyId}`);
+							router.replace(`/lexi-wars/${lobbyId}`);
 						} else {
-							router.push(`/lobby`);
+							router.replace(`/lobby`);
 						}
 					}
 					if (message.state === "waiting") {

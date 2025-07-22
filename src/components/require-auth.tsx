@@ -1,4 +1,3 @@
-import React from "react";
 import ConnectWallet from "./home/connect-wallet";
 
 export default function RequireAuth() {
