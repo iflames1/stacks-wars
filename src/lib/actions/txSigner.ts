@@ -26,11 +26,13 @@ const getSignerPrivateKey = async () => {
 
 export const generateSignature = async (
 	amount: number,
-	claimerAddress: string
+	claimerAddress: string,
+	contractAddress: `${string}.${string}`
 ) => {
 	const message = tupleCV({
 		amount: uintCV(amount),
 		winner: principalCV(claimerAddress),
+		contract: principalCV(contractAddress),
 	});
 	const serialized = serializeCV(message); // Serializes the tuple
 	const buffer = Buffer.from(serialized, "hex");
