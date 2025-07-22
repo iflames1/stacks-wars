@@ -18,6 +18,7 @@ import ClaimRewardModal from "./claim-reward-modal";
 import ConnectionStatus from "@/components/connection-status";
 import { useRouter } from "next/navigation";
 import Loading from "../loading";
+import Back from "./back";
 
 interface LexiWarsProps {
 	lobbyId: string;
@@ -43,6 +44,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [gameStarted, setGameStarted] = useState<boolean>(false);
 	const [startCountdown, setStartCountdown] = useState<number>(10);
 	const [messageReceived, setMessageReceived] = useState<boolean>(false);
+	const [gameOver, setGameOver] = useState<boolean>(false);
 
 	const router = useRouter();
 
@@ -94,6 +96,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					break;
 				case "gameover":
 					toast.info(`🏁 Game Over!`);
+					setGameOver(true);
 					break;
 				case "finalstanding":
 					setFinalStanding(message.standing);
@@ -152,7 +155,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
 			<div className="max-w-3xl mx-auto p-4 sm:p-6 ">
 				<div className="flex justify-between">
-					{/*<BackToGames />*/}
+					<Back gameOver={gameOver} />
 					<ConnectionStatus
 						className="mb-4 sm:mb-6"
 						readyState={readyState}
