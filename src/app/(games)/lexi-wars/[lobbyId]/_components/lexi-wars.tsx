@@ -5,7 +5,7 @@ import GameTimer from "./game-timer";
 import TurnIndicator from "./turn-indicator";
 import LexiInputForm from "./lexi-input-form";
 import GameOverModal from "./game-over-modal";
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
 	LexiWarsServerMessage,
 	PlayerStanding,
@@ -45,6 +45,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [startCountdown, setStartCountdown] = useState<number>(10);
 	const [messageReceived, setMessageReceived] = useState<boolean>(false);
 	const [gameOver, setGameOver] = useState<boolean>(false);
+	const [alreadyStarted, setAlreadyStarted] = useState<boolean>(false);
 
 	const router = useRouter();
 
@@ -120,19 +121,43 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					});
 					router.replace(`/lobby/${lobbyId}`);
 					break;
+				case "alreadystarted":
+					setAlreadyStarted(true);
+					break;
 				default:
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[userId, lobbyId, router]
+		[userId, router, lobbyId]
 	);
 
-	const { sendMessage, readyState, reconnecting, forceReconnect } =
-		useLexiWarsSocket({
-			lobbyId,
-			userId,
-			onMessage: handleMessage,
-		});
+	const {
+		sendMessage,
+		readyState,
+		reconnecting,
+		forceReconnect,
+		disconnect,
+	} = useLexiWarsSocket({
+		lobbyId,
+		userId,
+		onMessage: handleMessage,
+	});
+
+	useEffect(() => {
+		if (alreadyStarted) {
+			disconnect();
+
+			if (contract) {
+				toast.error("Failed to join game: Game already started", {
+					description: "Leave the lobby to withdraw your entry fee.",
+				});
+				router.replace(`/lobby/${lobbyId}`);
+			} else {
+				toast.error("Failed to join game: Game already started");
+				router.replace(`/lobby`);
+			}
+		}
+	}, [alreadyStarted, disconnect, contract, lobbyId, router]);
 
 	const handleSubmit = async (e?: FormEvent) => {
 		setIsLoading(true);

@@ -1,5 +1,5 @@
 "use client";
-import { Loader } from "lucide-react";
+import { ArrowLeft, Loader } from "lucide-react";
 import LobbyDetails from "./lobby-details";
 import LobbyStats from "./lobby-stats";
 import Participants from "./participants";
@@ -24,6 +24,9 @@ import { toast } from "sonner";
 import { truncateAddress } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import ConnectionStatus from "@/components/connection-status";
+import ShareLinkButton from "./share-link-button";
+import Link from "next/link";
+import Loading from "@/app/(games)/lexi-wars/[lobbyId]/loading";
 
 interface LobbyProps {
 	lobby: LobbyType;
@@ -60,7 +63,9 @@ export default function Lobby({
 
 	const handleMessage = useCallback(
 		(message: LobbyServerMessage) => {
-			console.log("WS message received:", message);
+			if (!(message.type === "pong")) {
+				console.log("WS message received:", message);
+			}
 
 			switch (message.type) {
 				case "playerjoined":
@@ -158,66 +163,82 @@ export default function Lobby({
 		}
 	}, [isParticipant, joined]);
 
+	if (lobbyState === "inprogress" && countdown === 0) {
+		return <Loading />;
+	}
+
 	return (
-		<>
-			<ConnectionStatus
-				readyState={readyState}
-				latency={latency}
-				reconnecting={reconnecting}
-				onReconnect={forceReconnect}
-			/>
-			<div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3 mt-4 sm:mt-6">
-				{/* Main Content */}
-				<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
-					{/* Stats Cards */}
-					<LobbyStats
-						lobby={lobby}
-						players={participantList}
-						pool={pool}
-					/>
-					{/* Lobby Details */}
-					<LobbyDetails
-						lobby={lobby}
-						pool={pool}
-						players={participantList}
-						countdown={countdown}
-						lobbyState={lobbyState}
-						sendMessage={sendMessage}
-						userId={userId}
-					/>
-					<Participants
-						lobby={lobby}
-						pool={pool}
-						players={participantList}
-						pendingPlayers={pendingPlayers}
-						userId={userId}
-						sendMessage={sendMessage}
-					/>
+		<section className="bg-gradient-to-b from-primary/10 to-primary/30">
+			<div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-6 ">
+				<div className="flex items-center justify-between ">
+					<Link
+						href="/lobby"
+						className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+					>
+						<ArrowLeft className="h-4 w-4" />
+						<span>Back to Lobby</span>
+					</Link>
+					<ShareLinkButton lobbyId={lobbyId} />
 				</div>
-				<div className="space-y-4 sm:space-y-6">
-					<div className="lg:sticky lg:top-6 flex flex-col gap-4">
-						<Suspense
-							fallback={
-								<div className="flex justify-center items-center py-6 sm:py-8">
-									<Loader className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
-								</div>
-							}
-						>
-							<JoinLobbyForm
-								lobby={lobby}
-								players={participantList}
-								pool={pool}
-								joinState={joinState}
-								lobbyId={lobbyId}
-								userId={userId}
-								userWalletAddress={userWalletAddress}
-								sendMessage={sendMessage}
-							/>
-						</Suspense>
-						<GamePreview game={game} />
+				<ConnectionStatus
+					readyState={readyState}
+					latency={latency}
+					reconnecting={reconnecting}
+					onReconnect={forceReconnect}
+				/>
+				<div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3 mt-4 sm:mt-6">
+					{/* Main Content */}
+					<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
+						{/* Stats Cards */}
+						<LobbyStats
+							lobby={lobby}
+							players={participantList}
+							pool={pool}
+						/>
+						{/* Lobby Details */}
+						<LobbyDetails
+							lobby={lobby}
+							pool={pool}
+							players={participantList}
+							countdown={countdown}
+							lobbyState={lobbyState}
+							sendMessage={sendMessage}
+							userId={userId}
+						/>
+						<Participants
+							lobby={lobby}
+							pool={pool}
+							players={participantList}
+							pendingPlayers={pendingPlayers}
+							userId={userId}
+							sendMessage={sendMessage}
+						/>
+					</div>
+					<div className="space-y-4 sm:space-y-6">
+						<div className="lg:sticky lg:top-6 flex flex-col gap-4">
+							<Suspense
+								fallback={
+									<div className="flex justify-center items-center py-6 sm:py-8">
+										<Loader className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
+									</div>
+								}
+							>
+								<JoinLobbyForm
+									lobby={lobby}
+									players={participantList}
+									pool={pool}
+									joinState={joinState}
+									lobbyId={lobbyId}
+									userId={userId}
+									userWalletAddress={userWalletAddress}
+									sendMessage={sendMessage}
+								/>
+							</Suspense>
+							<GamePreview game={game} />
+						</div>
 					</div>
 				</div>
 			</div>
-		</>
+		</section>
 	);
 }

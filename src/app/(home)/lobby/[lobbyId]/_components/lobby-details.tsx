@@ -113,7 +113,7 @@ export default function LobbyDetails({
 				</div>
 
 				{/* Countdown Timer */}
-				{lobbyState === "inprogress" && (
+				{(lobbyState === "inprogress" || timeLeft < 15) && (
 					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted space-x-2 flex items-center justify-center">
 						<Timer className="h-5 w-5 text-muted-foreground" />
 						<span className="text-lg sm:text-xl font-semibold text-primary">
