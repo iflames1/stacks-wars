@@ -17,7 +17,9 @@ export type LexiWarsServerMessage =
 	| { type: "gameover" }
 	| { type: "finalstanding"; standing: PlayerStanding[] }
 	| { type: "prize"; amount: number }
-	| { type: "pong"; ts: number; pong: number };
+	| { type: "pong"; ts: number; pong: number }
+	| { type: "start"; time: number; started: boolean }
+	| { type: "startfailed" };
 
 export type LexiWarsClientMessage =
 	| { type: "wordentry"; word: string }
