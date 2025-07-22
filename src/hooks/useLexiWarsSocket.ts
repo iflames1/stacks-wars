@@ -19,7 +19,8 @@ export type LexiWarsServerMessage =
 	| { type: "prize"; amount: number }
 	| { type: "pong"; ts: number; pong: number }
 	| { type: "start"; time: number; started: boolean }
-	| { type: "startfailed" };
+	| { type: "startfailed" }
+	| { type: "alreadystarted" };
 
 export type LexiWarsClientMessage =
 	| { type: "wordentry"; word: string }

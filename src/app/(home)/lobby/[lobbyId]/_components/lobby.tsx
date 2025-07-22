@@ -60,7 +60,9 @@ export default function Lobby({
 
 	const handleMessage = useCallback(
 		(message: LobbyServerMessage) => {
-			console.log("WS message received:", message);
+			if (!(message.type === "pong")) {
+				console.log("WS message received:", message);
+			}
 
 			switch (message.type) {
 				case "playerjoined":

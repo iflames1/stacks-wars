@@ -80,6 +80,11 @@ export default function CreateLobbyForm({
 		entryAmount: number;
 		txId: string;
 	} | null>(null);
+	const [joined, setJoined] = useState<{
+		contractAddress: `${string}.${string}`;
+		txId: string;
+		entryAmount: number;
+	} | null>(null);
 	const prevAmountRef = useRef<number | undefined>(undefined);
 
 	const form = useForm<FormData>({
@@ -105,6 +110,7 @@ export default function CreateLobbyForm({
 		if (deployedContract && amountChanged) {
 			console.log("⚠️ Amount changed, resetting deployed contract");
 			setDeployedContract(null);
+			setJoined(null);
 		}
 
 		prevAmountRef.current = amount;
@@ -166,24 +172,43 @@ export default function CreateLobbyForm({
 					setDeployedContract(contractInfo);
 				}
 
-				const joinTx = await joinGamePool(
-					contractInfo.contractAddress,
-					contractInfo.entryAmount
-				);
-				if (!joinTx.txid) {
-					throw new Error(
-						"Failed to join game pool: missing transaction ID"
-					);
-				}
-				try {
-					await waitForTxConfirmed(joinTx.txid);
-					console.log("✅ Join Transaction confirmed!");
-				} catch (err) {
-					console.error("❌ TX failed or aborted:", err);
-					throw err;
-				}
+				let joinInfo = joined;
+				let tx_id: string;
 
-				const tx_id = joinTx.txid;
+				if (
+					joinInfo &&
+					joinInfo.contractAddress === contractInfo.contractAddress
+				) {
+					console.log("✅ Using existing join transaction");
+					tx_id = joinInfo.txId;
+				} else {
+					const joinTx = await joinGamePool(
+						contractInfo.contractAddress,
+						contractInfo.entryAmount
+					);
+
+					if (!joinTx.txid) {
+						throw new Error(
+							"Failed to join game pool: missing transaction ID"
+						);
+					}
+
+					try {
+						await waitForTxConfirmed(joinTx.txid);
+						console.log("✅ Join Transaction confirmed!");
+					} catch (err) {
+						console.error("❌ TX failed or aborted:", err);
+						throw err;
+					}
+
+					joinInfo = {
+						contractAddress: contractInfo.contractAddress,
+						txId: joinTx.txid,
+						entryAmount: contractInfo.entryAmount,
+					};
+					setJoined(joinInfo);
+					tx_id = joinTx.txid;
+				}
 
 				apiParams = {
 					path: "room",
@@ -217,6 +242,10 @@ export default function CreateLobbyForm({
 				};
 			}
 			const lobbyId = await apiRequest<string>(apiParams);
+
+			setDeployedContract(null);
+			setJoined(null);
+
 			toast.info("Please wait while we redirect you to your lobby");
 			router.replace(`/lobby/${lobbyId}`);
 		} catch (error) {

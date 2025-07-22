@@ -75,6 +75,7 @@ export default function ClaimRewardModal({
 
 			setIsClaimed(true);
 			toast.success("Reward claimed successfully!");
+			setShowPrizeModal(false);
 		} catch (error) {
 			console.error("Error claiming reward:", error);
 			toast.error("Failed to claim reward. Please try again later.");
