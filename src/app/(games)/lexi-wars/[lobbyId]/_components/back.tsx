@@ -39,7 +39,7 @@ export default function Back({ gameOver }: { gameOver: boolean }) {
 							<span>Quit game</span>
 						</Button>
 					</DialogTrigger>
-					<DialogContent>
+					<DialogContent className="bg-gradient-to-b from-primary/90 to-primary/70 border-0 text-white">
 						<DialogHeader>
 							<DialogTitle>
 								Are you sure you want to quit?
