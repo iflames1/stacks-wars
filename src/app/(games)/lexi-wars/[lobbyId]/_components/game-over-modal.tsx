@@ -58,6 +58,7 @@ export default function GameOverModal({
 			<DialogContent
 				className="sm:max-w-md bg-gradient-to-b from-primary/90 to-primary/70 border-0 text-white"
 				hideClose
+				disableOutsideClose
 			>
 				<DialogHeader className="text-center">
 					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 p-2">

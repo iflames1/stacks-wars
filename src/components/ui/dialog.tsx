@@ -7,9 +7,30 @@ import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function Dialog({
+	disableOutsideClose = false,
 	...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
-	return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+}: React.ComponentProps<typeof DialogPrimitive.Root> & {
+	disableOutsideClose?: boolean;
+}) {
+	return (
+		<DialogPrimitive.Root data-slot="dialog" {...props}>
+			{React.Children.map(props.children, (child) => {
+				if (
+					React.isValidElement(child) &&
+					child.type === DialogContent &&
+					disableOutsideClose
+				) {
+					return React.cloneElement(
+						child as React.ReactElement<DialogContentProps>,
+						{
+							disableOutsideClose: true,
+						}
+					);
+				}
+				return child;
+			})}
+		</DialogPrimitive.Root>
+	);
 }
 
 function DialogTrigger({
@@ -49,14 +70,27 @@ function DialogOverlay({
 interface DialogContentProps
 	extends React.ComponentProps<typeof DialogPrimitive.Content> {
 	hideClose?: boolean;
+	disableOutsideClose?: boolean;
 }
 
 function DialogContent({
 	className,
 	children,
 	hideClose = false,
+	disableOutsideClose = false,
 	...props
 }: DialogContentProps) {
+	const interactOutsideHandler = disableOutsideClose
+		? (e: Event) => {
+				if (typeof (e as PointerEvent).preventDefault === "function") {
+					(e as PointerEvent).preventDefault();
+				}
+			}
+		: undefined;
+	const escapeKeyDownHandler = disableOutsideClose
+		? (e: KeyboardEvent) => e.preventDefault()
+		: undefined;
+
 	return (
 		<DialogPortal data-slot="dialog-portal">
 			<DialogOverlay />
@@ -66,6 +100,8 @@ function DialogContent({
 					"bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
 					className
 				)}
+				onInteractOutside={interactOutsideHandler}
+				onEscapeKeyDown={escapeKeyDownHandler}
 				{...props}
 			>
 				{children}
