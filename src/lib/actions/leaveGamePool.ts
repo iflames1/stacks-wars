@@ -10,7 +10,11 @@ export const leaveGamePool = async (
 	amount = amount * 1_000_000;
 
 	try {
-		const signature = await generateSignature(amount, walletAddress);
+		const signature = await generateSignature(
+			amount,
+			walletAddress,
+			contract
+		);
 
 		const stxPostCondition: StxPostCondition = {
 			type: "stx-postcondition",
