@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { notFound } from "next/navigation";
 import {
 	GameType,
 	JsonGameType,
@@ -14,6 +13,7 @@ import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import Lobby from "./_components/lobby";
 import ShareLinkButton from "./_components/share-link-button";
 import RequireAuth from "@/components/require-auth";
+import NotFound from "@/app/not-found";
 
 export default async function LobbyDetailPage({
 	params,
@@ -39,7 +39,7 @@ export default async function LobbyDetailPage({
 	const lobby: LobbyExtended = transLobbyExtended(jsonLobby);
 
 	if (!lobby) {
-		notFound();
+		return <NotFound />;
 	}
 
 	const jsonGame = await apiRequest<JsonGameType>({
