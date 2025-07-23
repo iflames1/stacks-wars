@@ -105,9 +105,12 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					setFinalStanding(message.standing);
 					break;
 				case "prize":
-					if (message.amount && message.amount > 0) {
+					if (message.amount > 0) {
 						setPrizeAmount(message.amount);
 						setShowPrizeModal(true);
+						setIsClaimed(false);
+					} else {
+						setIsClaimed(true);
 					}
 					break;
 				case "pong":
@@ -163,7 +166,9 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 
 	useEffect(() => {
 		const shouldDisconnect =
-			finalStanding && gameOver && (contract ? prizeAmount : true);
+			finalStanding &&
+			gameOver &&
+			(contract ? prizeAmount !== null : true);
 
 		if (shouldDisconnect) {
 			console.log("🔌 Game completed with prizes, disconnecting...");
@@ -235,7 +240,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					contractAddress={contract}
 					isClaimed={isClaimed}
 				/>
-				{rank && prizeAmount && (
+				{prizeAmount && (
 					<ClaimRewardModal
 						showPrizeModal={showPrizeModal}
 						setShowPrizeModal={setShowPrizeModal}

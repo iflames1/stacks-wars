@@ -19,7 +19,7 @@ interface ClaimRewardModalProps {
 	showPrizeModal: boolean;
 	setShowPrizeModal: (show: boolean) => void;
 	setIsClaimed: (claimed: boolean) => void;
-	rank: string;
+	rank: string | null;
 	prizeAmount: number;
 	lobbyId: string;
 	contractAddress: string | null;
@@ -96,7 +96,11 @@ export default function ClaimRewardModal({
 						🏆 Claim Your Prize!
 					</DialogTitle>
 					<DialogDescription className="text-center">
-						Your rank: <strong>{rank}</strong> <br />
+						{rank && (
+							<span>
+								Your rank: <strong>{rank}</strong> <br />
+							</span>
+						)}
 						Reward: <strong>{prizeAmount} STX</strong>
 					</DialogDescription>
 				</DialogHeader>
