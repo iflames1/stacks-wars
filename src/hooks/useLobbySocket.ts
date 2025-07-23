@@ -42,8 +42,6 @@ export type LobbyClientMessage =
 	  };
 
 export type LobbyServerMessage =
-	| { type: "playerjoined"; players: JsonParticipant[] }
-	| { type: "playerleft"; players: JsonParticipant[] }
 	| { type: "playerupdated"; players: JsonParticipant[] }
 	| {
 			type: "playerkicked";

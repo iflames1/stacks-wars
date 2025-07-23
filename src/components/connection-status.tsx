@@ -94,7 +94,7 @@ export default function ConnectionStatus({
 						className={`flex items-center gap-2 text-xs text-green-500 ${className}`}
 					>
 						{getConnectionIcon()}
-						<span>connecting</span>
+						<span>connecting...</span>
 					</div>
 				);
 			}
