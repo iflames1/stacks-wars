@@ -13,7 +13,7 @@ interface LobbyDetailsProps {
 	lobby: Lobby;
 	pool: Pool | null;
 	players: Participant[];
-	countdown?: number;
+	countdown: number | null;
 	lobbyState: lobbyStatus;
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
 	userId: string;
@@ -29,7 +29,6 @@ export default function LobbyDetails({
 	userId,
 }: LobbyDetailsProps) {
 	//const participationPercentage = (players.length / lobby.maxPlayers) * 100;
-	const timeLeft = countdown ?? 30;
 	const [loading, setLoading] = useState<boolean>(false);
 
 	const handleLobbyState = async (state: lobbyStatus) => {
@@ -49,14 +48,14 @@ export default function LobbyDetails({
 	const buttonLabel =
 		lobbyState === "waiting"
 			? "Start Game"
-			: lobbyState === "inprogress" && timeLeft > 0
+			: lobbyState === "inprogress" && countdown && countdown > 0
 				? "Wait"
-				: "Ended";
+				: "Loading...";
 
 	const isDisabled =
 		loading ||
 		lobbyState === "finished" ||
-		(lobbyState === "inprogress" && timeLeft === 0);
+		(lobbyState === "inprogress" && countdown === 0);
 
 	return (
 		<Card className="overflow-hidden bg-primary/10">
@@ -113,11 +112,12 @@ export default function LobbyDetails({
 				</div>
 
 				{/* Countdown Timer */}
-				{(lobbyState === "inprogress" || timeLeft < 15) && (
+				{(lobbyState === "inprogress" ||
+					(countdown && countdown < 15)) && (
 					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted space-x-2 flex items-center justify-center">
 						<Timer className="h-5 w-5 text-muted-foreground" />
 						<span className="text-lg sm:text-xl font-semibold text-primary">
-							Game starting in {timeLeft} seconds
+							Game starting in {countdown} seconds
 						</span>
 					</div>
 				)}

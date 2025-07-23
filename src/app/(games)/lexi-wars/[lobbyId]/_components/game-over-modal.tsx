@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Trophy } from "lucide-react";
 
 interface GameOverModalProps {
-	standing: PlayerStanding[] | undefined;
+	standing: PlayerStanding[] | null;
 	userId: string;
 	contractAddress: string | null;
 	isClaimed: boolean;
@@ -31,10 +31,7 @@ export default function GameOverModal({
 	const router = useRouter();
 
 	useEffect(() => {
-		const shouldOpen =
-			standing &&
-			standing.length > 0 &&
-			(contractAddress ? isClaimed : true);
+		const shouldOpen = standing && (contractAddress ? isClaimed : true);
 
 		if (shouldOpen) {
 			setOpen(true);
@@ -42,7 +39,7 @@ export default function GameOverModal({
 				setCountdown((prev) => {
 					if (prev <= 1) {
 						clearInterval(timer);
-						router.push("/lobby");
+						router.replace("/lobby");
 						return 0;
 					}
 					return prev - 1;

@@ -49,13 +49,14 @@ export default function Lobby({
 	const [joined, setJoined] = useState(false);
 	const [participantList, setParticipantList] =
 		useState<Participant[]>(players);
-	const [countdown, setCountdown] = useState<number>(15);
+	const [countdown, setCountdown] = useState<number | null>(null);
 	const [lobbyState, setLobbyState] = useState<lobbyStatus>(
 		lobby.lobbyStatus
 	);
 	const [pendingPlayers, setPendingPlayers] = useState<PendingJoin[]>([]);
 	const [joinState, setJoinState] = useState<JoinState>("idle");
 	const [latency, setLatency] = useState<number | null>(null);
+	const [readyPlayers, setReadyPlayers] = useState<string[] | null>(null);
 
 	const router = useRouter();
 
@@ -68,12 +69,6 @@ export default function Lobby({
 			}
 
 			switch (message.type) {
-				case "playerjoined":
-					setParticipantList(message.players.map(transParticipant));
-					break;
-				case "playerleft":
-					setParticipantList(message.players.map(transParticipant));
-					break;
 				case "playerupdated":
 					setParticipantList(message.players.map(transParticipant));
 					break;
@@ -84,7 +79,6 @@ export default function Lobby({
 							truncateAddress(message.wallet_address)
 						} was kicked from the lobby.`
 					);
-					router.refresh();
 					break;
 				case "notifykicked":
 					toast.info("You were kicked from the lobby.");
@@ -95,17 +89,7 @@ export default function Lobby({
 					break;
 				case "gamestate":
 					setLobbyState(message.state);
-
-					if (message.ready_players) {
-						if (message.ready_players.includes(userId)) {
-							router.replace(`/lexi-wars/${lobbyId}`);
-						} else {
-							router.replace(`/lobby`);
-						}
-					}
-					if (message.state === "waiting") {
-						setCountdown(15);
-					}
+					setReadyPlayers(message.ready_players);
 					break;
 				case "pendingplayers":
 					setPendingPlayers(message.pending_players);
@@ -145,15 +129,20 @@ export default function Lobby({
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[router, lobbyId, userId]
+		[router, userId]
 	);
 
-	const { sendMessage, readyState, reconnecting, forceReconnect } =
-		useLobbySocket({
-			roomId: lobbyId,
-			userId,
-			onMessage: handleMessage,
-		});
+	const {
+		sendMessage,
+		readyState,
+		reconnecting,
+		forceReconnect,
+		disconnect,
+	} = useLobbySocket({
+		roomId: lobbyId,
+		userId,
+		onMessage: handleMessage,
+	});
 
 	useEffect(() => {
 		if (isParticipant && !joined) {
@@ -162,6 +151,28 @@ export default function Lobby({
 			setJoined(false);
 		}
 	}, [isParticipant, joined]);
+
+	useEffect(() => {
+		if (readyPlayers && countdown === 0 && lobbyState === "inprogress") {
+			disconnect();
+			if (readyPlayers.includes(userId)) {
+				router.replace(`/lexi-wars/${lobbyId}`);
+			} else {
+				router.replace(`/lobby`);
+			}
+			console.log("🔌 Lobby in progress, disconnecting...");
+		} else if (lobbyState === "waiting") {
+			//setCountdown(15);
+		}
+	}, [
+		readyPlayers,
+		countdown,
+		lobbyState,
+		userId,
+		router,
+		lobbyId,
+		disconnect,
+	]);
 
 	if (lobbyState === "inprogress" && countdown === 0) {
 		return <Loading />;

@@ -35,7 +35,9 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	);
 	const [countdown, setCountdown] = useState<number>(30);
 	const [rank, setRank] = useState<string | null>(null);
-	const [finalStanding, setFinalStanding] = useState<PlayerStanding[]>();
+	const [finalStanding, setFinalStanding] = useState<PlayerStanding[] | null>(
+		null
+	);
 	const [showPrizeModal, setShowPrizeModal] = useState(false);
 	const [prizeAmount, setPrizeAmount] = useState<number | null>(null);
 	const [isClaimed, setIsClaimed] = useState(false);
@@ -103,9 +105,12 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					setFinalStanding(message.standing);
 					break;
 				case "prize":
-					if (message.amount && message.amount > 0) {
+					if (message.amount > 0) {
 						setPrizeAmount(message.amount);
 						setShowPrizeModal(true);
+						setIsClaimed(false);
+					} else {
+						setIsClaimed(true);
 					}
 					break;
 				case "pong":
@@ -158,6 +163,18 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 			}
 		}
 	}, [alreadyStarted, disconnect, contract, lobbyId, router]);
+
+	useEffect(() => {
+		const shouldDisconnect =
+			finalStanding &&
+			gameOver &&
+			(contract ? prizeAmount !== null : true);
+
+		if (shouldDisconnect) {
+			console.log("🔌 Game completed with prizes, disconnecting...");
+			disconnect();
+		}
+	}, [finalStanding, gameOver, prizeAmount, contract, disconnect]);
 
 	const handleSubmit = async (e?: FormEvent) => {
 		setIsLoading(true);
@@ -223,7 +240,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					contractAddress={contract}
 					isClaimed={isClaimed}
 				/>
-				{rank && prizeAmount && (
+				{prizeAmount && (
 					<ClaimRewardModal
 						showPrizeModal={showPrizeModal}
 						setShowPrizeModal={setShowPrizeModal}
