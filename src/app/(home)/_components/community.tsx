@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PiTelegramLogo } from "react-icons/pi";
 import { FaXTwitter } from "react-icons/fa6";
-import { RxDiscordLogo } from "react-icons/rx";
+//import { RxDiscordLogo } from "react-icons/rx";
 
 export default function Community() {
 	return (
@@ -16,17 +16,17 @@ export default function Community() {
 					</Link>
 				</Button>
 				<Button asChild size="lg">
-					<Link href="" rel="noopener noreferrer">
+					<Link href="https://t.me/stackswars">
 						<PiTelegramLogo />
 						Telegram
 					</Link>
 				</Button>
-				<Button asChild size="lg">
+				{/*<Button asChild size="lg">
 					<Link href="" rel="noopener noreferrer">
 						<RxDiscordLogo />
 						Discord
 					</Link>
-				</Button>
+				</Button>*/}
 			</div>
 		</section>
 	);
