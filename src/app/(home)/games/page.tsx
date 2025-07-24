@@ -6,7 +6,6 @@ export default async function GamesPage() {
 	const jsonGames = await apiRequest<JsonGameType[]>({
 		path: "/games",
 		auth: false,
-		cache: "force-cache",
 	});
 	const games: GameType[] = await Promise.all(jsonGames.map(transGameType));
 
