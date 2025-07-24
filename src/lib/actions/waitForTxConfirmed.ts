@@ -13,6 +13,24 @@ export const waitForTxConfirmed = async (txId: string): Promise<void> => {
 		rejectPromise = reject;
 	});
 
+	// Helper function to check for specific error codes
+	const isExpectedError = (reason: string | undefined): boolean => {
+		if (!reason) return false;
+
+		// More precise error code checking
+		// Look for exact matches of error codes, accounting for different formats
+		const errorPatterns = [
+			/\bu5\b/i, // ERR_ALREADY_JOINED - word boundary ensures exact match
+			/\bu9\b/i, // ERR_REWARD_ALREADY_CLAIMED - case insensitive
+			/\(err u5\)/i, // Format: (err u5)
+			/\(err u9\)/i, // Format: (err u9)
+			/err-u5/i, // Format: err-u5
+			/err-u9/i, // Format: err-u9
+		];
+
+		return errorPatterns.some((pattern) => pattern.test(reason));
+	};
+
 	const pollTx = async () => {
 		const check = async () => {
 			const res = await fetch(
@@ -30,15 +48,33 @@ export const waitForTxConfirmed = async (txId: string): Promise<void> => {
 				wsUnsub();
 				return true;
 			}
+
 			if (
 				data.tx_status === "abort_by_response" ||
 				data.tx_status === "abort_by_post_condition"
 			) {
-				rejectPromise(new Error("Transaction failed or was aborted"));
+				const reason = data.tx_result?.repr;
+				console.log("📋 Transaction aborted, reason:", reason);
+
+				if (isExpectedError(reason)) {
+					console.log(
+						"✅ Expected error (already joined/claimed), treating as success"
+					);
+					resolvePromise(); // Treat as success
+				} else {
+					console.log("❌ Unexpected transaction failure");
+					rejectPromise(
+						new Error(
+							`Transaction failed or was aborted: ${reason || "unknown reason"}`
+						)
+					);
+				}
+
 				controller.abort();
 				wsUnsub();
 				return true;
 			}
+
 			return false;
 		};
 
@@ -69,13 +105,33 @@ export const waitForTxConfirmed = async (txId: string): Promise<void> => {
 				controller.abort();
 				resolvePromise();
 			}
+
 			if (
 				event.tx_status === "abort_by_response" ||
 				event.tx_status === "abort_by_post_condition"
 			) {
+				const reason = event.tx_result?.repr;
+				console.log(
+					"📋 WebSocket: Transaction aborted, reason:",
+					reason
+				);
+
+				if (isExpectedError(reason)) {
+					console.log(
+						"✅ WebSocket: Expected error (already joined/claimed), treating as success"
+					);
+					resolvePromise(); // Don't reject, allow flow to pass
+				} else {
+					console.log("❌ WebSocket: Unexpected transaction failure");
+					rejectPromise(
+						new Error(
+							`Transaction failed or was aborted: ${reason || "unknown reason"}`
+						)
+					);
+				}
+
 				sub.unsubscribe();
 				controller.abort();
-				rejectPromise(new Error("Transaction failed or was aborted"));
 			}
 		});
 
