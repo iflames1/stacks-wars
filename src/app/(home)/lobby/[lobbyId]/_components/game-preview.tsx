@@ -6,8 +6,8 @@ import {
 	CardFooter,
 } from "@/components/ui/card";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { ChevronRight } from "lucide-react";
+//import { Button } from "@/components/ui/button";
+//import { ChevronRight } from "lucide-react";
 import { GameType } from "@/types/schema";
 
 export default function GamePreview({ game }: { game: GameType }) {
@@ -30,14 +30,14 @@ export default function GamePreview({ game }: { game: GameType }) {
 			</CardContent>
 			<CardFooter className="flex justify-between p-3 sm:p-4 bg-muted/30">
 				<p className="text-xs sm:text-sm font-medium">{game.name}</p>
-				<Button
+				{/*<Button
 					variant="ghost"
 					size="sm"
 					className="h-7 sm:h-8 text-xs sm:text-sm gap-1 px-2 sm:px-3"
 				>
 					Game details
 					<ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
-				</Button>
+				</Button>*/}
 			</CardFooter>
 		</Card>
 	);
