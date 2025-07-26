@@ -120,7 +120,7 @@ export default function Chat() {
 					</DialogTrigger>
 
 					<DialogContent
-						className="sm:max-w-lg w-full max-h-[85vh] p-0 gap-0 rounded-xl overflow-hidden border-primary/30"
+						className="p-0 gap-0 rounded-xl overflow-hidden border-primary/30"
 						hideClose
 					>
 						<DialogHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-6 py-4 border-b border-primary/30">
@@ -174,11 +174,11 @@ export default function Chat() {
 
 						<div className="flex flex-col bg-background/95 backdrop-blur-sm">
 							<ScrollArea
-								className="h-[400px] w-full px-4 py-3"
+								className="h-72 w-full px-4 py-3"
 								ref={viewportRef}
 							>
 								{!chatPermitted ? (
-									<div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
+									<div className="flex flex-col items-center justify-center h-full min-h-72 gap-4">
 										<div className="bg-primary/10 p-6 rounded-full">
 											<FiMessageCircle className="h-12 w-12 text-primary" />
 										</div>
@@ -193,7 +193,7 @@ export default function Chat() {
 										</div>
 									</div>
 								) : messages.length === 0 ? (
-									<div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
+									<div className="flex flex-col items-center justify-center h-full min-h-72 gap-4">
 										<div className="bg-primary/10 p-6 rounded-full">
 											<FiMessageCircle className="h-12 w-12 text-primary" />
 										</div>
