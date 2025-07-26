@@ -13,15 +13,26 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { SendHorizonal, MessageCircle, Users } from "lucide-react";
+import {
+	SendHorizonal,
+	MessageCircle,
+	Users,
+	Wifi,
+	WifiOff,
+} from "lucide-react";
 import { cn, truncateAddress } from "@/lib/utils";
 import { JsonChatMessage } from "@/hooks/useChatSocket";
 import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Chat() {
 	const [open, setOpen] = useState(false);
 	const [input, setInput] = useState("");
-	const scrollAreaRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const {
@@ -39,14 +50,12 @@ export default function Chat() {
 		setContextOpen(open);
 	}, [open, setContextOpen]);
 
+	const viewportRef = useRef<HTMLDivElement>(null);
+
 	useEffect(() => {
-		if (scrollAreaRef.current) {
-			const scrollContainer = scrollAreaRef.current.querySelector(
-				"[data-radix-scroll-area-viewport]"
-			);
-			if (scrollContainer) {
-				scrollContainer.scrollTop = scrollContainer.scrollHeight;
-			}
+		const el = viewportRef.current;
+		if (el) {
+			el.scrollTop = el.scrollHeight;
 		}
 	}, [messages]);
 
@@ -79,79 +88,126 @@ export default function Chat() {
 		return sender.display_name || truncateAddress(sender.wallet_address);
 	};
 
+	const getInitials = (name: string) => {
+		return name
+			.split(" ")
+			.map((part) => part[0])
+			.join("")
+			.toUpperCase()
+			.slice(0, 2);
+	};
+
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				<Button
 					variant="outline"
-					className="fixed bottom-6 right-6 z-50 rounded-full p-4 shadow-lg bg-gradient-to-r from-primary/10 to-primary/20 border-primary/20 hover:from-primary/20 hover:to-primary/30 backdrop-blur-sm"
+					className="fixed bottom-6 right-6 z-50 rounded-full p-4 shadow-lg bg-gradient-to-r from-primary/10 to-primary/20 border-primary/20 hover:from-primary/20 hover:to-primary/30 backdrop-blur-sm group"
 				>
-					<MessageCircle className="size-6 text-primary" />
-					{unreadCount > 0 && (
-						<Badge
-							variant="destructive"
-							className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs font-semibold"
-						>
-							{unreadCount > 99 ? "99+" : unreadCount}
-						</Badge>
-					)}
+					<div className="relative">
+						<MessageCircle className="size-6 text-primary group-hover:scale-110 transition-transform" />
+						{unreadCount > 0 && (
+							<Badge
+								variant="destructive"
+								className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs font-semibold animate-pulse"
+							>
+								{unreadCount > 99 ? "99+" : unreadCount}
+							</Badge>
+						)}
+					</div>
 					<span className="sr-only">
 						Open chat {unreadCount > 0 && `(${unreadCount} unread)`}
 					</span>
 				</Button>
 			</DialogTrigger>
 
-			<DialogContent className="sm:max-w-lg w-full max-h-[85vh] p-0 gap-0">
-				<DialogHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-6 py-4 border-b border-primary/20">
-					<div className="flex items-center gap-3">
-						<Users className="h-5 w-5" />
-						<div>
-							<DialogTitle className="text-lg font-semibold">
-								Game Chat
-							</DialogTitle>
-							<DialogDescription className="text-sm text-primary-foreground/80">
-								{messages.length} messages •{" "}
-								{new Set(messages.map((m) => m.sender.id)).size}{" "}
-								players
-								{readyState !== WebSocket.OPEN && (
-									<span className="ml-2 text-primary-foreground/60">
-										•{" "}
-										{reconnecting
-											? "reconnecting..."
-											: "disconnected"}
-									</span>
-								)}
-							</DialogDescription>
+			<DialogContent
+				className="sm:max-w-lg w-full max-h-[85vh] p-0 gap-0 rounded-xl overflow-hidden border-primary/30"
+				hideClose
+			>
+				<DialogHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-6 py-4 border-b border-primary/30">
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-3">
+							<Users className="h-5 w-5" />
+							<div>
+								<DialogTitle className="text-lg font-semibold">
+									Game Chat
+								</DialogTitle>
+								<DialogDescription className="text-sm text-primary-foreground/80">
+									{messages.length} messages •{" "}
+									{
+										new Set(
+											messages.map((m) => m.sender.id)
+										).size
+									}{" "}
+									players
+								</DialogDescription>
+							</div>
 						</div>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<div className="flex items-center gap-1 text-sm">
+									{readyState === WebSocket.OPEN ? (
+										<Wifi className="h-4 w-4 text-green-300" />
+									) : (
+										<WifiOff className="h-4 w-4 text-amber-300" />
+									)}
+									<span>
+										{readyState === WebSocket.OPEN
+											? "Connected"
+											: reconnecting
+												? "Reconnecting..."
+												: "Disconnected"}
+									</span>
+								</div>
+							</TooltipTrigger>
+							<TooltipContent>
+								{readyState === WebSocket.OPEN
+									? "Connection is active"
+									: reconnecting
+										? "Attempting to reconnect..."
+										: "Chat is disconnected"}
+							</TooltipContent>
+						</Tooltip>
 					</div>
 				</DialogHeader>
 
-				<div className="flex flex-col h-[500px]">
+				<div className="flex flex-col bg-background/95 backdrop-blur-sm">
 					<ScrollArea
-						ref={scrollAreaRef}
-						className="flex-1 px-4 py-3"
+						className="h-[400px] w-full px-4 py-3"
+						ref={viewportRef}
 					>
 						{!chatPermitted ? (
-							<div className="flex items-center justify-center h-full">
-								<div className="text-center space-y-2">
-									<MessageCircle className="h-12 w-12 text-muted-foreground mx-auto" />
-									<p className="text-muted-foreground">
-										You have to Join the lobby to access the
-										chat.
+							<div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
+								<div className="bg-primary/10 p-6 rounded-full">
+									<MessageCircle className="h-12 w-12 text-primary" />
+								</div>
+								<div className="text-center space-y-1">
+									<h3 className="text-lg font-medium">
+										Chat Restricted
+									</h3>
+									<p className="text-muted-foreground max-w-md">
+										You need to join the lobby to
+										participate in the chat.
 									</p>
 								</div>
 							</div>
 						) : messages.length === 0 ? (
-							<div className="flex items-center justify-center h-full">
-								<div className="text-center space-y-2">
-									<MessageCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+							<div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
+								<div className="bg-primary/10 p-6 rounded-full">
+									<MessageCircle className="h-12 w-12 text-primary" />
+								</div>
+								<div className="text-center space-y-1">
+									<h3 className="text-lg font-medium">
+										No messages yet
+									</h3>
 									<p className="text-muted-foreground">
-										No messages yet. Start the conversation!
+										Be the first to start the conversation!
 									</p>
 								</div>
 							</div>
 						) : (
-							<div className="space-y-4">
+							<div className="space-y-3 pb-2">
 								{messages.map((msg, index) => {
 									const isOwnMessage =
 										msg.sender.id === userId;
@@ -159,52 +215,102 @@ export default function Chat() {
 										index === 0 ||
 										messages[index - 1].sender.id !==
 											msg.sender.id;
+
+									const isLastFromSender =
+										index === messages.length - 1 ||
+										messages[index + 1].sender.id !==
+											msg.sender.id;
+
 									return (
 										<div
 											key={msg.id}
 											className={cn(
-												"flex flex-col",
+												"flex gap-2",
 												isOwnMessage
-													? "items-end"
-													: "items-start"
+													? "justify-end"
+													: "justify-start"
 											)}
 										>
-											{showSenderInfo &&
-												!isOwnMessage && (
-													<div className="flex items-center gap-2 mb-1 px-1">
-														<div className="w-2 h-2 rounded-full bg-primary/60"></div>
-														<span className="text-xs font-medium text-foreground">
+											{!isOwnMessage && (
+												<div className="flex-shrink-0">
+													{showSenderInfo ? (
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<Avatar className="h-8 w-8">
+																	<AvatarImage
+																		src={""}
+																		alt={getDisplayName(
+																			msg.sender
+																		)}
+																	/>
+																	<AvatarFallback className="bg-primary/10 text-primary">
+																		{getInitials(
+																			getDisplayName(
+																				msg.sender
+																			)
+																		)}
+																	</AvatarFallback>
+																</Avatar>
+															</TooltipTrigger>
+															<TooltipContent>
+																{getDisplayName(
+																	msg.sender
+																)}
+															</TooltipContent>
+														</Tooltip>
+													) : (
+														<div className="h-8 w-8" /> // Spacer for alignment
+													)}
+												</div>
+											)}
+
+											<div
+												className={cn(
+													"flex flex-col",
+													isOwnMessage
+														? "items-end"
+														: "items-start",
+													"max-w-[85%]"
+												)}
+											>
+												{showSenderInfo &&
+													!isOwnMessage && (
+														<span className="text-xs font-medium text-foreground mb-1">
 															{getDisplayName(
 																msg.sender
 															)}
 														</span>
-														<span className="text-xs text-foreground/60">
-															{formatTimestamp(
-																msg.timestamp
-															)}
-														</span>
-													</div>
-												)}
-
-											<div
-												className={cn(
-													"max-w-[85%] rounded-xl px-4 py-2 text-sm shadow-sm",
-													"break-words whitespace-pre-wrap",
-													isOwnMessage
-														? "bg-primary text-primary-foreground rounded-br-md"
-														: "bg-muted/80 text-foreground rounded-bl-md border border-primary/10"
-												)}
-											>
-												{msg.text}
-											</div>
-
-											{isOwnMessage && showSenderInfo && (
-												<span className="text-xs text-foreground/60 mt-1 px-1">
-													{formatTimestamp(
-														msg.timestamp
 													)}
-												</span>
-											)}
+
+												<div
+													className={cn(
+														"rounded-xl px-4 py-2 text-sm shadow-sm",
+														"break-words whitespace-pre-wrap",
+														isOwnMessage
+															? "bg-primary text-primary-foreground rounded-br-none"
+															: "bg-muted text-foreground rounded-bl-none border border-muted-foreground/10"
+													)}
+												>
+													{msg.text}
+												</div>
+
+												{isLastFromSender && (
+													<span
+														className={cn(
+															"text-xs text-muted-foreground mt-1 px-1",
+															isOwnMessage
+																? "text-right"
+																: "text-left"
+														)}
+													>
+														{formatTimestamp(
+															msg.timestamp
+														)}
+													</span>
+												)}
+											</div>
 										</div>
 									);
 								})}
@@ -213,13 +319,13 @@ export default function Chat() {
 					</ScrollArea>
 
 					{chatPermitted && (
-						<div className="border-t border-primary/20 bg-primary/5 p-4">
+						<div className="border-t border-primary/20 bg-background p-4">
 							<form
 								onSubmit={(e) => {
 									e.preventDefault();
 									handleSend();
 								}}
-								className="flex items-center gap-3"
+								className="flex items-end gap-3"
 							>
 								<div className="flex-1 relative">
 									<Input
@@ -230,35 +336,56 @@ export default function Chat() {
 										}
 										placeholder={
 											readyState === WebSocket.OPEN
-												? "Type your message... (Enter to send)"
+												? "Type your message..."
 												: "Connecting to chat..."
 										}
 										disabled={readyState !== WebSocket.OPEN}
-										className="pr-12 bg-background/80 border-primary/20 focus:border-primary/40 focus:ring-primary/20"
+										className="pr-12 bg-background border-primary/30 focus:border-primary/50 focus:ring-primary/20"
 										maxLength={500}
+										onKeyDown={(e) => {
+											if (
+												e.key === "Enter" &&
+												!e.shiftKey
+											) {
+												e.preventDefault();
+												handleSend();
+											}
+										}}
 									/>
 									<div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
 										{input.length}/500
 									</div>
 								</div>
-								<Button
-									type="submit"
-									size="icon"
-									disabled={
-										!input.trim() ||
-										readyState !== WebSocket.OPEN
-									}
-									className="bg-primary hover:bg-primary/90 shrink-0"
-								>
-									<SendHorizonal className="h-4 w-4" />
-									<span className="sr-only">
-										Send message
-									</span>
-								</Button>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											type="submit"
+											size="icon"
+											disabled={
+												!input.trim() ||
+												readyState !== WebSocket.OPEN
+											}
+											className="bg-primary hover:bg-primary/90 shrink-0 h-10 w-10"
+										>
+											<SendHorizonal className="h-4 w-4" />
+											<span className="sr-only">
+												Send message
+											</span>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{readyState !== WebSocket.OPEN
+											? "Connecting..."
+											: !input.trim()
+												? "Enter a message"
+												: "Send message"}
+									</TooltipContent>
+								</Tooltip>
 							</form>
 
-							<div className="text-xs text-muted-foreground/60 mt-2 text-center">
-								Press Enter to send • Shift+Enter for new line
+							<div className="text-xs text-muted-foreground/60 mt-2 flex justify-between">
+								<span>Press Enter to send</span>
+								<span>Shift+Enter for new line</span>
 							</div>
 						</div>
 					)}
