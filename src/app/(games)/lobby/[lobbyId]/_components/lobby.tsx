@@ -250,6 +250,8 @@ export default function Lobby({
 									userId={userId}
 									userWalletAddress={userWalletAddress}
 									sendMessage={sendMessage}
+									disconnect={disconnect}
+									chatDisconnect={disconnectChat}
 								/>
 							</Suspense>
 							<GamePreview game={game} />

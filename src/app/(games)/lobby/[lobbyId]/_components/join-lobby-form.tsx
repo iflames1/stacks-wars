@@ -25,6 +25,8 @@ interface JoinLobbyFormProps {
 	userId: string;
 	userWalletAddress: string;
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
+	disconnect: () => void;
+	chatDisconnect: () => void;
 }
 
 export default function JoinLobbyForm({
@@ -35,6 +37,8 @@ export default function JoinLobbyForm({
 	userId,
 	userWalletAddress,
 	sendMessage,
+	disconnect,
+	chatDisconnect,
 }: JoinLobbyFormProps) {
 	const [joined, setJoined] = useState(false);
 	const [loading, setLoading] = useState(false);
@@ -82,6 +86,8 @@ export default function JoinLobbyForm({
 				setJoined(false);
 				toast.info("You left the lobby");
 				if (isCreator) {
+					disconnect();
+					chatDisconnect();
 					router.replace(`/lobby`);
 				}
 				return;
