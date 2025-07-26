@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { JsonParticipant, JsonUser, lobbyStatus } from "@/types/schema";
 
 interface UseLobbySocketProps {
-	roomId: string;
+	lobbyId: string;
 	onMessage?: (data: LobbyServerMessage) => void;
 	userId: string;
 }
@@ -77,7 +77,7 @@ interface QueuedMessage {
 }
 
 export function useLobbySocket({
-	roomId,
+	lobbyId,
 	userId,
 	onMessage,
 }: UseLobbySocketProps) {
@@ -163,13 +163,13 @@ export function useLobbySocket({
 	}, [sendMessage]);
 
 	const connectSocket = useCallback(() => {
-		if (!roomId || !userId) return;
+		if (!lobbyId || !userId) return;
 		if (socketRef.current) return; // already connecting or connected
 
 		console.log("🟢 Connecting LobbySocket...");
 
 		const ws = new WebSocket(
-			`${process.env.NEXT_PUBLIC_WS_URL}/ws/room/${roomId}?user_id=${userId}`
+			`${process.env.NEXT_PUBLIC_WS_URL}/ws/room/${lobbyId}?user_id=${userId}`
 		);
 
 		socketRef.current = ws;
@@ -242,7 +242,7 @@ export function useLobbySocket({
 				socketRef.current = null;
 			}
 		};
-	}, [roomId, userId, processMessageQueue, schedulePing]);
+	}, [lobbyId, userId, processMessageQueue, schedulePing]);
 
 	useEffect(() => {
 		connectSocket();

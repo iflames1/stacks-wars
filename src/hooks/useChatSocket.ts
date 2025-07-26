@@ -33,22 +33,32 @@ interface QueuedMessage {
 	reject: (error: Error) => void;
 }
 
-interface UseLexiWarsSocketProps {
+interface UseChatSocketProps {
 	lobbyId: string;
 	userId: string;
-	onMessage?: (msg: ChatServerMessage) => void;
+}
+
+export interface UseChatSocketType {
+	sendMessage: (data: ChatClientMessage) => Promise<void>;
+	disconnectChat: () => void;
+	readyState: WebSocket["readyState"];
+	error: null | Event;
+	reconnecting: boolean;
+	forceReconnect: () => void;
+	messages: JsonChatMessage[];
+	unreadCount: number;
+	chatPermitted: boolean;
+	setOpen: (open: boolean) => void; // optional, if you want to control
 }
 
 export function useChatSocket({
 	lobbyId,
 	userId,
-	onMessage,
-}: UseLexiWarsSocketProps) {
+}: UseChatSocketProps): UseChatSocketType {
 	const socketRef = useRef<WebSocket | null>(null);
 	const reconnectAttempts = useRef(0);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const manuallyDisconnectedRef = useRef(false);
-	const messageHandlerRef = useRef<typeof onMessage | null>(null);
 	const messageQueue = useRef<QueuedMessage[]>([]);
 	const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const pingInProgress = useRef(false);
@@ -58,6 +68,10 @@ export function useChatSocket({
 	);
 	const [error, setError] = useState<null | Event>(null);
 	const [reconnecting, setReconnecting] = useState(false);
+	const [messages, setMessages] = useState<JsonChatMessage[]>([]);
+	const [chatPermitted, setChatPermitted] = useState(false);
+	const [unreadCount, setUnreadCount] = useState(0);
+	const [open, setOpen] = useState(false); // optional, if you want to control visibility here
 
 	const maxReconnectAttempts = 5;
 
@@ -78,10 +92,6 @@ export function useChatSocket({
 			}
 		}
 	}, []);
-
-	useEffect(() => {
-		messageHandlerRef.current = onMessage;
-	}, [onMessage]);
 
 	const sendMessage = useCallback(
 		(data: ChatClientMessage): Promise<void> => {
@@ -153,7 +163,30 @@ export function useChatSocket({
 			try {
 				const raw = typeof event.data === "string" ? event.data : "";
 				const data = JSON.parse(raw) as ChatServerMessage;
-				messageHandlerRef.current?.(data);
+
+				switch (data.type) {
+					case "permitchat":
+						setChatPermitted(data.allowed);
+						if (!data.allowed) setMessages([]);
+						break;
+					case "chat":
+						setMessages((prev) => [...prev, data.message]);
+						if (!open && data.message.sender.id !== userId) {
+							setUnreadCount((prev) => prev + 1);
+						}
+						break;
+					case "chathistory":
+						setMessages(data.messages);
+						break;
+					case "pong":
+						// Optional latency tracking
+						break;
+					case "error":
+						console.error("Chat error:", data.message);
+						break;
+					default:
+						console.warn("Unknown chat message type", data);
+				}
 			} catch (err) {
 				console.error("❌ Failed to parse Chat message", err);
 			}
@@ -204,7 +237,7 @@ export function useChatSocket({
 				socketRef.current = null;
 			}
 		};
-	}, [lobbyId, userId, processMessageQueue, schedulePing]);
+	}, [lobbyId, userId, schedulePing, processMessageQueue, open]);
 
 	useEffect(() => {
 		connectSocket();
@@ -217,7 +250,7 @@ export function useChatSocket({
 		};
 	}, [connectSocket]);
 
-	const disconnect = useCallback(() => {
+	const disconnectChat = useCallback(() => {
 		manuallyDisconnectedRef.current = true;
 		pingInProgress.current = false;
 
@@ -267,10 +300,14 @@ export function useChatSocket({
 
 	return {
 		sendMessage,
-		disconnect,
+		disconnectChat,
 		readyState,
 		error,
 		reconnecting,
 		forceReconnect,
+		messages,
+		unreadCount,
+		chatPermitted,
+		setOpen, // optionally expose this too
 	};
 }
