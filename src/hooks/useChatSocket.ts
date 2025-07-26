@@ -240,6 +240,13 @@ export function useChatSocket({
 		};
 	}, [lobbyId, userId, schedulePing, processMessageQueue, open]);
 
+	const setOpenWithUnreadReset = useCallback((newOpen: boolean) => {
+		setOpen(newOpen);
+		if (newOpen) {
+			setUnreadCount(0);
+		}
+	}, []);
+
 	useEffect(() => {
 		connectSocket();
 
@@ -310,6 +317,6 @@ export function useChatSocket({
 		unreadCount,
 		chatPermitted,
 		userId,
-		setOpen,
+		setOpen: setOpenWithUnreadReset,
 	};
 }
