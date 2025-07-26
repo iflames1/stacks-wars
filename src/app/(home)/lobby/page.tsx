@@ -4,7 +4,11 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 //import { getAvailableLobbies, getLobbies } from "@/lib/services/lobby";
 import { apiRequest } from "@/lib/api";
-import { JsonLobby, Lobby, transLobby } from "@/types/schema";
+import {
+	JsonLobbyExtended,
+	LobbyExtended,
+	transLobbyExtended,
+} from "@/types/schema";
 
 export default async function PoolsPage({
 	searchParams,
@@ -13,12 +17,13 @@ export default async function PoolsPage({
 }) {
 	const params = await searchParams;
 	const error = params.error;
-	const jsonLobbies = await apiRequest<JsonLobby[]>({
-		path: "/rooms?page=1&state=waiting,inprogress",
-		auth: false,
-	});
 
-	const lobbies: Lobby[] = jsonLobbies.map(transLobby);
+	const jsonLobbies = await apiRequest<JsonLobbyExtended[]>({
+		path: `/rooms/extended?page=1&state=waiting,inprogress`,
+		auth: false,
+		tag: "lobby",
+	});
+	const lobbies: LobbyExtended[] = jsonLobbies.map(transLobbyExtended);
 
 	if (!lobbies) {
 		return <div>No lobbies found</div>;
@@ -51,12 +56,12 @@ export default async function PoolsPage({
 							</Link>
 						</Button>
 					</div>
-					<div className="mt-6 p-4 bg-yellow-500/10 border-2 border-yellow-500/20 rounded-lg">
+					{/*<div className="mt-6 p-4 bg-yellow-500/10 border-2 border-yellow-500/20 rounded-lg">
 						<p className="text-yellow-500 text-sm font-medium flex items-center gap-2">
 							🚧 This feature is currently under development.
 							Check back soon for updates!
 						</p>
-					</div>
+					</div>*/}
 					<div className="grid gap-6 pt-8 md:grid-cols-2 lg:grid-cols-3">
 						<ActiveLobbies lobbies={lobbies} />
 					</div>
