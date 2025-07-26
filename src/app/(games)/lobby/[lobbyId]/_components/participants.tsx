@@ -107,12 +107,7 @@ export default function Participants({
 								{isUpdating && (
 									<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 								)}
-								<span className="hidden xs:inline">
-									{isReady ? "Unready" : "Ready"}
-								</span>
-								<span className="xs:hidden">
-									{isReady ? "❌" : "✅"}
-								</span>
+								{isReady ? "Unready" : "Ready"}
 							</Button>
 						)}
 				</div>
@@ -217,12 +212,7 @@ export default function Participants({
 														{isKicking && (
 															<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 														)}
-														<span className="hidden xs:inline">
-															Kick
-														</span>
-														<span className="xs:hidden">
-															❌
-														</span>
+														Kick
 													</Button>
 												)}
 										</div>
@@ -281,12 +271,7 @@ export default function Participants({
 															{isHandlingJoin && (
 																<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 															)}
-															<span className="hidden xs:inline">
-																Accept
-															</span>
-															<span className="xs:hidden">
-																✅
-															</span>
+															Accept
 														</Button>
 														<Button
 															size="sm"
@@ -306,12 +291,7 @@ export default function Participants({
 															{isHandlingJoin && (
 																<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 															)}
-															<span className="hidden xs:inline">
-																Decline
-															</span>
-															<span className="xs:hidden">
-																❌
-															</span>
+															Decline
 														</Button>
 													</div>
 												)}
