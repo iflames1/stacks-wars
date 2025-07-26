@@ -101,7 +101,7 @@ export default function Chat() {
 				</Button>
 			</DialogTrigger>
 
-			<DialogContent className="sm:max-w-lg w-full max-h-[85vh] p-0 gap-0 bg-primary/50">
+			<DialogContent className="sm:max-w-lg w-full max-h-[85vh] p-0 gap-0">
 				<DialogHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-6 py-4 border-b border-primary/20">
 					<div className="flex items-center gap-3">
 						<Users className="h-5 w-5" />
@@ -109,7 +109,7 @@ export default function Chat() {
 							<DialogTitle className="text-lg font-semibold">
 								Game Chat
 							</DialogTitle>
-							<p className="text-sm text-primary-foreground/80">
+							<DialogDescription className="text-sm text-primary-foreground/80">
 								{messages.length} messages •{" "}
 								{new Set(messages.map((m) => m.sender.id)).size}{" "}
 								players
@@ -121,12 +121,12 @@ export default function Chat() {
 											: "disconnected"}
 									</span>
 								)}
-							</p>
+							</DialogDescription>
 						</div>
 					</div>
 				</DialogHeader>
 
-				<DialogDescription className="flex flex-col h-[500px]">
+				<div className="flex flex-col h-[500px]">
 					<ScrollArea
 						ref={scrollAreaRef}
 						className="flex-1 px-4 py-3"
@@ -262,7 +262,7 @@ export default function Chat() {
 							</div>
 						</div>
 					)}
-				</DialogDescription>
+				</div>
 			</DialogContent>
 		</Dialog>
 	);

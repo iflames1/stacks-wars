@@ -49,7 +49,7 @@ export interface UseChatSocketType {
 	unreadCount: number;
 	chatPermitted: boolean;
 	userId: string;
-	setOpen: (open: boolean) => void; // optional, if you want to control
+	setOpen: (open: boolean) => void;
 }
 
 export function useChatSocket({
@@ -72,7 +72,7 @@ export function useChatSocket({
 	const [messages, setMessages] = useState<JsonChatMessage[]>([]);
 	const [chatPermitted, setChatPermitted] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
-	const [open, setOpen] = useState(false); // optional, if you want to control visibility here
+	const [open, setOpen] = useState(false);
 
 	const maxReconnectAttempts = 5;
 
@@ -310,6 +310,6 @@ export function useChatSocket({
 		unreadCount,
 		chatPermitted,
 		userId,
-		setOpen, // optionally expose this too
+		setOpen,
 	};
 }

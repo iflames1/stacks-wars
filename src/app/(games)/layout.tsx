@@ -6,11 +6,9 @@ import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 
 interface LayoutProps {
 	children: Readonly<React.ReactNode>;
-	params: Promise<{ lobbyId: string }>;
 }
 
-export default async function Layout({ children, params }: LayoutProps) {
-	const lobbyId = (await params).lobbyId;
+export default async function Layout({ children }: LayoutProps) {
 	const userId = await getClaimFromJwt<string>("sub");
 
 	if (!userId) {
@@ -20,7 +18,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 	return (
 		<ConnectUserProvider>
 			<main className="flex-1 bg-primary/10">
-				<ChatSocketProvider lobbyId={lobbyId} userId={userId}>
+				<ChatSocketProvider userId={userId}>
 					{children}
 					<Chat />
 				</ChatSocketProvider>

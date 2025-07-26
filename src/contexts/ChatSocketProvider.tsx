@@ -1,5 +1,6 @@
 "use client";
 import { useChatSocket, UseChatSocketType } from "@/hooks/useChatSocket";
+import { useParams } from "next/navigation";
 import { createContext, useContext } from "react";
 
 const ChatSocketContext = createContext<UseChatSocketType | undefined>(
@@ -8,15 +9,12 @@ const ChatSocketContext = createContext<UseChatSocketType | undefined>(
 
 interface ChatProviderProps {
 	children: Readonly<React.ReactNode>;
-	lobbyId: string;
 	userId: string;
 }
 
-export const ChatSocketProvider = ({
-	lobbyId,
-	userId,
-	children,
-}: ChatProviderProps) => {
+export const ChatSocketProvider = ({ userId, children }: ChatProviderProps) => {
+	const params = useParams();
+	const lobbyId = typeof params.lobbyId === "string" ? params.lobbyId : "";
 	const socketData = useChatSocket({ lobbyId, userId });
 	return (
 		<ChatSocketContext.Provider value={socketData}>
