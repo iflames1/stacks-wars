@@ -66,7 +66,7 @@ export default function Lobby({
 	const handleMessage = useCallback(
 		(message: LobbyServerMessage) => {
 			if (!(message.type === "pong")) {
-				console.log("WS message received:", message);
+				console.log("WS Lobby message received:", message);
 			}
 
 			switch (message.type) {

@@ -22,7 +22,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 			<main className="flex-1 bg-primary/10">
 				<ChatSocketProvider lobbyId={lobbyId} userId={userId}>
 					{children}
-					<Chat userId={userId} />
+					<Chat />
 				</ChatSocketProvider>
 			</main>
 		</ConnectUserProvider>

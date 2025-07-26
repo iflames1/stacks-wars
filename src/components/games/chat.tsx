@@ -7,6 +7,7 @@ import {
 	DialogTrigger,
 	DialogHeader,
 	DialogTitle,
+	DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,7 +18,7 @@ import { cn, truncateAddress } from "@/lib/utils";
 import { JsonChatMessage } from "@/hooks/useChatSocket";
 import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
 
-export default function Chat({ userId }: { userId: string }) {
+export default function Chat() {
 	const [open, setOpen] = useState(false);
 	const [input, setInput] = useState("");
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -31,6 +32,7 @@ export default function Chat({ userId }: { userId: string }) {
 		unreadCount,
 		chatPermitted,
 		setOpen: setContextOpen,
+		userId,
 	} = useChatSocketContext();
 
 	useEffect(() => {
@@ -124,7 +126,7 @@ export default function Chat({ userId }: { userId: string }) {
 					</div>
 				</DialogHeader>
 
-				<div className="flex flex-col h-[500px]">
+				<DialogDescription className="flex flex-col h-[500px]">
 					<ScrollArea
 						ref={scrollAreaRef}
 						className="flex-1 px-4 py-3"
@@ -260,7 +262,7 @@ export default function Chat({ userId }: { userId: string }) {
 							</div>
 						</div>
 					)}
-				</div>
+				</DialogDescription>
 			</DialogContent>
 		</Dialog>
 	);

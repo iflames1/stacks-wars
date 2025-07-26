@@ -48,6 +48,7 @@ export interface UseChatSocketType {
 	messages: JsonChatMessage[];
 	unreadCount: number;
 	chatPermitted: boolean;
+	userId: string;
 	setOpen: (open: boolean) => void; // optional, if you want to control
 }
 
@@ -308,6 +309,7 @@ export function useChatSocket({
 		messages,
 		unreadCount,
 		chatPermitted,
+		userId,
 		setOpen, // optionally expose this too
 	};
 }
