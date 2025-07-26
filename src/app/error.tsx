@@ -27,7 +27,7 @@ export default function GlobalError({
 	};
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-destructive/20">
+		<div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-primary/30">
 			<div className="text-center space-y-8 px-4">
 				{/* Error Code */}
 				<div className="space-y-2">

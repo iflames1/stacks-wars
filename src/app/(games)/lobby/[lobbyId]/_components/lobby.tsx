@@ -27,6 +27,7 @@ import ConnectionStatus from "@/components/connection-status";
 import ShareLinkButton from "./share-link-button";
 import Link from "next/link";
 import Loading from "@/app/(games)/lexi-wars/[lobbyId]/loading";
+import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
 
 interface LobbyProps {
 	lobby: LobbyType;
@@ -65,7 +66,7 @@ export default function Lobby({
 	const handleMessage = useCallback(
 		(message: LobbyServerMessage) => {
 			if (!(message.type === "pong")) {
-				console.log("WS message received:", message);
+				console.log("WS Lobby message received:", message);
 			}
 
 			switch (message.type) {
@@ -139,10 +140,12 @@ export default function Lobby({
 		forceReconnect,
 		disconnect,
 	} = useLobbySocket({
-		roomId: lobbyId,
+		lobbyId,
 		userId,
 		onMessage: handleMessage,
 	});
+
+	const { disconnectChat } = useChatSocketContext();
 
 	useEffect(() => {
 		if (isParticipant && !joined) {
@@ -163,6 +166,9 @@ export default function Lobby({
 			console.log("🔌 Lobby in progress, disconnecting...");
 		} else if (lobbyState === "waiting") {
 			//setCountdown(15);
+		} else if (lobbyState === "finished") {
+			disconnectChat();
+			console.log("🔌 Game finished, disconnecting chat...");
 		}
 	}, [
 		readyPlayers,
@@ -172,6 +178,7 @@ export default function Lobby({
 		router,
 		lobbyId,
 		disconnect,
+		disconnectChat,
 	]);
 
 	if (lobbyState === "inprogress" && countdown === 0) {

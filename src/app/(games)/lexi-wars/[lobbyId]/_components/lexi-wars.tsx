@@ -19,6 +19,7 @@ import ConnectionStatus from "@/components/connection-status";
 import { useRouter } from "next/navigation";
 import Loading from "../loading";
 import Back from "./back";
+import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
 
 interface LexiWarsProps {
 	lobbyId: string;
@@ -164,6 +165,8 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		}
 	}, [alreadyStarted, disconnect, contract, lobbyId, router]);
 
+	const { disconnectChat } = useChatSocketContext();
+
 	useEffect(() => {
 		const shouldDisconnect =
 			finalStanding &&
@@ -173,8 +176,16 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		if (shouldDisconnect) {
 			console.log("🔌 Game completed with prizes, disconnecting...");
 			disconnect();
+			disconnectChat();
 		}
-	}, [finalStanding, gameOver, prizeAmount, contract, disconnect]);
+	}, [
+		finalStanding,
+		gameOver,
+		prizeAmount,
+		contract,
+		disconnect,
+		disconnectChat,
+	]);
 
 	const handleSubmit = async (e?: FormEvent) => {
 		setIsLoading(true);

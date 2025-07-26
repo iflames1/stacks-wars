@@ -1,101 +1,78 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { JsonParticipant, JsonUser, lobbyStatus } from "@/types/schema";
+import { JsonParticipant } from "@/types/schema";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-interface UseLobbySocketProps {
-	lobbyId: string;
-	onMessage?: (data: LobbyServerMessage) => void;
-	userId: string;
+export interface PlayerStanding {
+	player: JsonParticipant;
+	rank: number;
 }
 
-export type PlayerStatus = "ready" | "notready";
+export interface JsonChatMessage {
+	id: string;
+	text: string;
+	sender: JsonParticipant;
+	timestamp: string;
+}
 
-export type JoinState = "idle" | "pending" | "allowed" | "rejected";
+export type ChatServerMessage =
+	| { type: "permitchat"; allowed: boolean }
+	| { type: "chat"; message: JsonChatMessage }
+	| { type: "chathistory"; messages: JsonChatMessage[] }
+	| { type: "pong"; ts: number; pong: number }
+	| { type: "error"; message: string };
 
-export type PendingJoin = {
-	user: JsonUser;
-	state: JoinState;
-};
-
-export type LobbyClientMessage =
-	| { type: "updateplayerstate"; new_state: PlayerStatus }
-	| { type: "updategamestate"; new_state: lobbyStatus }
-	| { type: "leaveroom" }
-	| {
-			type: "kickplayer";
-			player_id: string;
-			wallet_address: string;
-			display_name: string | null;
-	  }
-	| { type: "requestjoin" }
-	| {
-			type: "permitjoin";
-			user_id: string;
-			allow: boolean;
-	  }
-	| {
-			type: "joinlobby";
-			tx_id: string | undefined;
-	  }
+export type ChatClientMessage =
+	| { type: "chat"; text: string }
 	| {
 			type: "ping";
 			ts: number;
 	  };
 
-export type LobbyServerMessage =
-	| { type: "playerupdated"; players: JsonParticipant[] }
-	| {
-			type: "playerkicked";
-			player_id: string;
-			wallet_address: string;
-			display_name: string | null;
-	  }
-	| { type: "notifykicked" }
-	| { type: "countdown"; time: number }
-	| {
-			type: "gamestate";
-			state: lobbyStatus;
-			ready_players: string[] | null;
-	  }
-	| {
-			type: "pendingplayers";
-			pending_players: PendingJoin[];
-	  }
-	| { type: "playersnotready"; players: JsonParticipant[] }
-	| { type: "allowed" }
-	| { type: "rejected" }
-	| { type: "pending" }
-	| {
-			type: "error";
-			message: string;
-	  }
-	| { type: "pong"; ts: number; pong: number };
-
 interface QueuedMessage {
-	data: LobbyClientMessage;
+	data: ChatClientMessage;
 	resolve: () => void;
 	reject: (error: Error) => void;
 }
 
-export function useLobbySocket({
+interface UseChatSocketProps {
+	lobbyId: string;
+	userId: string;
+}
+
+export interface UseChatSocketType {
+	sendMessage: (data: ChatClientMessage) => Promise<void>;
+	disconnectChat: () => void;
+	readyState: WebSocket["readyState"];
+	error: null | Event;
+	reconnecting: boolean;
+	forceReconnect: () => void;
+	messages: JsonChatMessage[];
+	unreadCount: number;
+	chatPermitted: boolean;
+	userId: string;
+	setOpen: (open: boolean) => void;
+}
+
+export function useChatSocket({
 	lobbyId,
 	userId,
-	onMessage,
-}: UseLobbySocketProps) {
+}: UseChatSocketProps): UseChatSocketType {
 	const socketRef = useRef<WebSocket | null>(null);
 	const reconnectAttempts = useRef(0);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const manuallyDisconnectedRef = useRef(false);
-	const messageHandlerRef = useRef<typeof onMessage | null>(null);
 	const messageQueue = useRef<QueuedMessage[]>([]);
 	const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const pingInProgress = useRef(false);
-	const PING_INTERVAL = 5000; // 5 seconds
-
+	const PING_INTERVAL = 10000; // 10 seconds
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
 		WebSocket.CLOSED
 	);
 	const [error, setError] = useState<null | Event>(null);
 	const [reconnecting, setReconnecting] = useState(false);
+	const [messages, setMessages] = useState<JsonChatMessage[]>([]);
+	const [chatPermitted, setChatPermitted] = useState(false);
+	const [unreadCount, setUnreadCount] = useState(0);
+	const [open, setOpen] = useState(false);
 
 	const maxReconnectAttempts = 5;
 
@@ -117,12 +94,8 @@ export function useLobbySocket({
 		}
 	}, []);
 
-	useEffect(() => {
-		messageHandlerRef.current = onMessage;
-	}, [onMessage]);
-
 	const sendMessage = useCallback(
-		(data: LobbyClientMessage): Promise<void> => {
+		(data: ChatClientMessage): Promise<void> => {
 			return new Promise((resolve, reject) => {
 				const socket = socketRef.current;
 				if (socket?.readyState === WebSocket.OPEN) {
@@ -133,7 +106,7 @@ export function useLobbySocket({
 						reject(error as Error);
 					}
 				} else {
-					console.log("⏳ Queuing message (socket not ready)");
+					console.log("⏳ Queuing Chat message (socket not ready)");
 					messageQueue.current.push({ data, resolve, reject });
 				}
 			});
@@ -148,7 +121,7 @@ export function useLobbySocket({
 		try {
 			await sendMessage({ type: "ping", ts: Date.now() });
 		} catch (error) {
-			console.error("❌ Ping failed:", error);
+			console.error("❌ Chat Ping failed:", error);
 		} finally {
 			pingInProgress.current = false;
 
@@ -166,16 +139,16 @@ export function useLobbySocket({
 		if (!lobbyId || !userId) return;
 		if (socketRef.current) return; // already connecting or connected
 
-		console.log("🟢 Connecting LobbySocket...");
+		console.log("🟢 Connecting ChatSocket...");
 
 		const ws = new WebSocket(
-			`${process.env.NEXT_PUBLIC_WS_URL}/ws/room/${lobbyId}?user_id=${userId}`
+			`${process.env.NEXT_PUBLIC_WS_URL}/ws/chat/${lobbyId}?user_id=${userId}`
 		);
 
 		socketRef.current = ws;
 
 		ws.onopen = () => {
-			console.log("✅ LobbySocket connected");
+			console.log("✅ Chat connected");
 			setReadyState(ws.readyState);
 			setError(null);
 			setReconnecting(false);
@@ -190,15 +163,38 @@ export function useLobbySocket({
 		ws.onmessage = (event) => {
 			try {
 				const raw = typeof event.data === "string" ? event.data : "";
-				const data = JSON.parse(raw) as LobbyServerMessage;
-				messageHandlerRef.current?.(data);
+				const data = JSON.parse(raw) as ChatServerMessage;
+
+				switch (data.type) {
+					case "permitchat":
+						setChatPermitted(data.allowed);
+						if (!data.allowed) setMessages([]);
+						break;
+					case "chat":
+						setMessages((prev) => [...prev, data.message]);
+						if (!open && data.message.sender.id !== userId) {
+							setUnreadCount((prev) => prev + 1);
+						}
+						break;
+					case "chathistory":
+						setMessages(data.messages);
+						break;
+					case "pong":
+						// Optional latency tracking
+						break;
+					case "error":
+						console.error("Chat error:", data.message);
+						break;
+					default:
+						console.warn("Unknown chat message type", data);
+				}
 			} catch (err) {
-				console.error("❌ Failed to parse WS message", err);
+				console.error("❌ Failed to parse Chat message", err);
 			}
 		};
 
 		ws.onclose = (event) => {
-			console.warn("🛑 LobbySocket closed:", event.code, event.reason);
+			console.warn("🛑 Chat closed:", event.code, event.reason);
 			setReadyState(WebSocket.CLOSED);
 			socketRef.current = null;
 			pingInProgress.current = false;
@@ -214,7 +210,7 @@ export function useLobbySocket({
 			) {
 				reconnectAttempts.current++;
 				const timeout = Math.pow(2, reconnectAttempts.current) * 1000;
-				console.log(`♻️ Reconnecting in ${timeout / 1000}s...`);
+				console.log(`♻️ Chat Reconnecting in ${timeout / 1000}s...`);
 
 				setReconnecting(true);
 				reconnectTimeoutRef.current = setTimeout(() => {
@@ -232,7 +228,7 @@ export function useLobbySocket({
 		};
 
 		ws.onerror = (err) => {
-			console.error("⚠️ LobbySocket error:", err);
+			console.error("⚠️ Chat error:", err);
 			setError(err);
 			setReadyState(WebSocket.CLOSED);
 
@@ -242,7 +238,7 @@ export function useLobbySocket({
 				socketRef.current = null;
 			}
 		};
-	}, [lobbyId, userId, processMessageQueue, schedulePing]);
+	}, [lobbyId, userId, schedulePing, processMessageQueue, open]);
 
 	useEffect(() => {
 		connectSocket();
@@ -255,7 +251,7 @@ export function useLobbySocket({
 		};
 	}, [connectSocket]);
 
-	const disconnect = useCallback(() => {
+	const disconnectChat = useCallback(() => {
 		manuallyDisconnectedRef.current = true;
 		pingInProgress.current = false;
 
@@ -305,10 +301,15 @@ export function useLobbySocket({
 
 	return {
 		sendMessage,
-		disconnect,
+		disconnectChat,
 		readyState,
 		error,
 		reconnecting,
 		forceReconnect,
+		messages,
+		unreadCount,
+		chatPermitted,
+		userId,
+		setOpen,
 	};
 }
