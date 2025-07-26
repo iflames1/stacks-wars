@@ -85,10 +85,10 @@ export default function Participants({
 	return (
 		<Card className="overflow-hidden bg-primary/10">
 			<CardHeader className="bg-muted/30 p-4 pb-3 sm:p-6 sm:pb-4">
-				<div className="flex items-center justify-between">
-					<CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-						<Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-						Current Participants
+				<div className="flex items-center justify-between min-w-0">
+					<CardTitle className="flex items-center gap-2 text-base sm:text-lg min-w-0 flex-1">
+						<Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
+						<span className="truncate">Current Participants</span>
 					</CardTitle>
 					{userId !== lobby.creatorId &&
 						!lobby.contractAddress &&
@@ -102,18 +102,20 @@ export default function Participants({
 										isReady ? "notready" : "ready"
 									)
 								}
+								className="shrink-0 ml-2"
 							>
 								{isUpdating && (
 									<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 								)}
-								{isReady ? "Unready" : "Ready"}
+								<span className="hidden xs:inline">
+									{isReady ? "Unready" : "Ready"}
+								</span>
+								<span className="xs:hidden">
+									{isReady ? "❌" : "✅"}
+								</span>
 							</Button>
 						)}
 				</div>
-				<p className="text-xs text-muted-foreground mt-2">
-					{/*After the game has started, participants who aren&apos;t
-					ready will be dropped*/}
-				</p>
 			</CardHeader>
 			<CardContent className="p-4 sm:p-6">
 				{players.length > 0 ? (
@@ -128,62 +130,70 @@ export default function Participants({
 								return (
 									<div
 										key={index}
-										className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+										className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors min-w-0"
 									>
-										<div className="flex items-center gap-2 sm:gap-3">
-											<div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center">
+										<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+											<div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
 												<UserIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
 											</div>
-											<div className="overflow-hidden">
-												<div className="flex items-center gap-2">
-													<p className="text-sm sm:text-base font-medium truncate max-w-[120px] xs:max-w-[160px] sm:max-w-[200px] md:max-w-[300px]">
+											<div className="min-w-0 flex-1">
+												<div className="flex items-center gap-2 flex-wrap">
+													<p className="text-sm sm:text-base font-medium truncate min-w-0">
 														{player.username ||
 															truncateAddress(
 																player.walletAddress
 															)}
 													</p>
-													{isCreator && (
-														<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-															Creator
-														</span>
-													)}
-													{isSelf && (
-														<span className="text-xs px-2 py-0.5 rounded-full bg-accent/90">
-															You
-														</span>
-													)}
-													<span
-														className={`text-xs px-2 py-0.5 rounded-full ${
-															player.playerStatus ===
+													<div className="flex items-center gap-1 flex-wrap shrink-0">
+														{isCreator && (
+															<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary whitespace-nowrap">
+																Creator
+															</span>
+														)}
+														{isSelf && (
+															<span className="text-xs px-2 py-0.5 rounded-full bg-accent/90 whitespace-nowrap">
+																You
+															</span>
+														)}
+														<span
+															className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
+																player.playerStatus ===
+																"ready"
+																	? "bg-green-500/10 text-green-500"
+																	: "bg-yellow-500/10 text-yellow-500"
+															}`}
+														>
+															{player.playerStatus ===
 															"ready"
-																? "bg-green-500/10 text-green-500"
-																: "bg-yellow-500/10 text-yellow-500"
-														}`}
-													>
-														{player.playerStatus ===
-														"ready"
-															? "Ready"
-															: "Not Ready"}
-													</span>
+																? "Ready"
+																: "Not Ready"}
+														</span>
+													</div>
 												</div>
 											</div>
 										</div>
-										<div className="text-right flex flex-col">
+										<div className="shrink-0 ml-2 flex flex-col items-end gap-1">
 											{player.txId && pool && (
 												<>
-													<span className="text-sm sm:text-base font-bold">
+													<span className="text-sm sm:text-base font-bold whitespace-nowrap">
 														{pool.entryAmount} STX
 													</span>
 													<Button
 														variant={"link"}
 														asChild
-														className="!p-0 text-right"
+														className="!p-0 text-right h-auto text-xs"
 													>
 														<Link
 															href={`${EXPLORER_BASE_URL}txid/${player.txId}?chain=testnet`}
 															target="_blank"
+															className="truncate max-w-[80px] sm:max-w-none"
 														>
-															View in explorer
+															<span className="hidden sm:inline">
+																View in explorer
+															</span>
+															<span className="sm:hidden">
+																Explorer
+															</span>
 														</Link>
 													</Button>
 												</>
@@ -207,7 +217,12 @@ export default function Participants({
 														{isKicking && (
 															<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 														)}
-														Kick
+														<span className="hidden xs:inline">
+															Kick
+														</span>
+														<span className="xs:hidden">
+															❌
+														</span>
 													</Button>
 												)}
 										</div>
@@ -225,14 +240,14 @@ export default function Participants({
 										return (
 											<div
 												key={pendingplayer.user.id}
-												className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors"
+												className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors min-w-0"
 											>
-												<div className="flex items-center gap-2 sm:gap-3">
-													<div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center">
+												<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+													<div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
 														<UserIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
 													</div>
-													<div>
-														<p className="text-sm sm:text-base font-medium">
+													<div className="min-w-0 flex-1">
+														<p className="text-sm sm:text-base font-medium truncate">
 															{pendingplayer.user
 																.display_name ||
 																truncateAddress(
@@ -247,7 +262,7 @@ export default function Participants({
 													</div>
 												</div>
 												{userId === lobby.creatorId && (
-													<div className="flex gap-2">
+													<div className="flex gap-2 shrink-0 ml-2">
 														<Button
 															size="sm"
 															variant="outline"
@@ -266,7 +281,12 @@ export default function Participants({
 															{isHandlingJoin && (
 																<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 															)}
-															Accept
+															<span className="hidden xs:inline">
+																Accept
+															</span>
+															<span className="xs:hidden">
+																✅
+															</span>
 														</Button>
 														<Button
 															size="sm"
@@ -286,7 +306,12 @@ export default function Participants({
 															{isHandlingJoin && (
 																<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 															)}
-															Decline
+															<span className="hidden xs:inline">
+																Decline
+															</span>
+															<span className="xs:hidden">
+																❌
+															</span>
 														</Button>
 													</div>
 												)}
@@ -305,7 +330,7 @@ export default function Participants({
 						<h3 className="text-base sm:text-lg font-medium mb-1">
 							No participants yet
 						</h3>
-						<p className="text-xs sm:text-sm text-muted-foreground max-w-xs">
+						<p className="text-xs sm:text-sm text-muted-foreground max-w-xs break-words">
 							Trust me something is wrong if you see this. Where
 							da creator at?
 						</p>

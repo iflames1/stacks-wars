@@ -125,17 +125,39 @@ export default function JoinLobbyForm({
 		}
 	};
 
+	const getButtonText = () => {
+		if (loading || joinState === "pending") {
+			return joined ? "Leaving..." : "Processing...";
+		}
+
+		if (joined) {
+			return isCreator ? "Leave and Delete Lobby" : "Leave Lobby";
+		}
+
+		switch (joinState) {
+			case "allowed":
+				return "Join Lobby";
+			case "idle":
+			case "rejected":
+				return "Request to Join";
+			default:
+				return "Unknown State";
+		}
+	};
+
 	return (
-		<Card className="bg-primary/10">
-			<CardHeader>
-				<CardTitle>{joined ? "Leave Lobby" : "Join Lobby"}</CardTitle>
-				<CardDescription>
+		<Card className="bg-primary/10 overflow-hidden">
+			<CardHeader className="pb-3">
+				<CardTitle className="truncate">
+					{joined ? "Leave Lobby" : "Join Lobby"}
+				</CardTitle>
+				<CardDescription className="break-words">
 					{joined
 						? "You're currently in this lobby"
 						: "Join this lobby to participate in the game"}
 				</CardDescription>
 			</CardHeader>
-			<CardFooter>
+			<CardFooter className="pt-3">
 				<Button
 					className="w-full"
 					size="lg"
@@ -143,24 +165,10 @@ export default function JoinLobbyForm({
 					onClick={handleClick}
 					disabled={loading || (!joined && joinState === "pending")}
 				>
-					{loading || joinState === "pending" ? (
-						<>
-							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-							{joined ? "Leaving..." : "Processing..."}
-						</>
-					) : joined ? (
-						isCreator ? (
-							"Leave and Delete Lobby"
-						) : (
-							"Leave Lobby"
-						)
-					) : joinState === "allowed" ? (
-						"Join Lobby"
-					) : joinState === "idle" || joinState === "rejected" ? (
-						"Request to Join"
-					) : (
-						"huh?"
+					{(loading || joinState === "pending") && (
+						<Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
 					)}
+					<span className="truncate">{getButtonText()}</span>
 				</Button>
 			</CardFooter>
 		</Card>
