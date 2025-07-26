@@ -28,6 +28,7 @@ import { FiMessageCircle } from "react-icons/fi";
 export default function Chat() {
 	const [open, setOpen] = useState(false);
 	const [input, setInput] = useState("");
+	const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const {
@@ -59,6 +60,76 @@ export default function Chat() {
 		if (open && inputRef.current) {
 			inputRef.current.focus();
 		}
+	}, [open]);
+
+	// Detect mobile keyboard
+	useEffect(() => {
+		if (!open) return;
+
+		const handleResize = () => {
+			// Method 1: Using visualViewport (most reliable)
+			if (window.visualViewport) {
+				const keyboardHeight =
+					window.innerHeight - window.visualViewport.height;
+				setIsKeyboardOpen(keyboardHeight > 100); // Reduced threshold
+				return;
+			}
+
+			// Method 2: Fallback for browsers without visualViewport
+			// Check if window height is significantly smaller than screen height
+			// Note: This is less reliable as it can't distinguish keyboard from other resizes
+			const isMobile =
+				/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+					navigator.userAgent
+				);
+			const currentHeight = window.innerHeight;
+			const isPortrait = window.innerHeight > window.innerWidth;
+
+			// Only apply this check on mobile devices in portrait mode
+			if (isMobile && isPortrait) {
+				// Compare to stored initial height if available
+				const isLikelyKeyboard =
+					currentHeight <
+					(window as typeof window & { initialHeight?: number })
+						.initialHeight! *
+						0.7;
+				setIsKeyboardOpen(isLikelyKeyboard);
+			} else {
+				setIsKeyboardOpen(false);
+			}
+		};
+		if (
+			open &&
+			!(window as typeof window & { initialHeight?: number })
+				.initialHeight
+		) {
+			(
+				window as typeof window & { initialHeight?: number }
+			).initialHeight = window.innerHeight;
+		}
+
+		// Set up event listeners
+		if (window.visualViewport) {
+			window.visualViewport.addEventListener("resize", handleResize);
+		}
+		window.addEventListener("resize", handleResize);
+
+		return () => {
+			if (window.visualViewport) {
+				window.visualViewport.removeEventListener(
+					"resize",
+					handleResize
+				);
+			}
+			delete (window as typeof window & { initialHeight?: number })
+				.initialHeight;
+			window.removeEventListener("resize", handleResize);
+			// Remove window.initialHeight if it exists
+			if ("initialHeight" in window) {
+				delete (window as typeof window & { initialHeight?: number })
+					.initialHeight;
+			}
+		};
 	}, [open]);
 
 	const handleSend = async () => {
@@ -120,7 +191,12 @@ export default function Chat() {
 					</DialogTrigger>
 
 					<DialogContent
-						className="p-0 gap-0 rounded-xl overflow-hidden border-primary/30"
+						className={cn(
+							"p-0 gap-0 rounded-xl overflow-hidden border-primary/30 transition-all duration-300",
+							isKeyboardOpen
+								? "fixed inset-x-0 bottom-0 w-full rounded-b-none"
+								: "sm:max-w-lg w-full max-h-[85vh]"
+						)}
 						hideClose
 					>
 						<DialogHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-6 py-4 border-b border-primary/30">
@@ -172,13 +248,25 @@ export default function Chat() {
 							</div>
 						</DialogHeader>
 
-						<div className="flex flex-col bg-background/95 backdrop-blur-sm">
+						<div className="flex flex-col bg-background/95 backdrop-blur-sm h-full">
 							<ScrollArea
-								className="h-72 w-full px-4 py-3"
+								className={cn(
+									"w-full px-4 py-3",
+									isKeyboardOpen
+										? "h-[calc(100vh-220px)]"
+										: "h-[400px]"
+								)}
 								ref={viewportRef}
 							>
 								{!chatPermitted ? (
-									<div className="flex flex-col items-center justify-center h-full min-h-72 gap-4">
+									<div
+										className={cn(
+											"flex flex-col items-center justify-center h-full gap-4",
+											isKeyboardOpen
+												? "min-h-[120px]"
+												: "min-h-72"
+										)}
+									>
 										<div className="bg-primary/10 p-6 rounded-full">
 											<FiMessageCircle className="h-12 w-12 text-primary" />
 										</div>
@@ -193,7 +281,14 @@ export default function Chat() {
 										</div>
 									</div>
 								) : messages.length === 0 ? (
-									<div className="flex flex-col items-center justify-center h-full min-h-72 gap-4">
+									<div
+										className={cn(
+											"flex flex-col items-center justify-center h-full gap-4",
+											isKeyboardOpen
+												? "min-h-[120px]"
+												: "min-h-72"
+										)}
+									>
 										<div className="bg-primary/10 p-6 rounded-full">
 											<FiMessageCircle className="h-12 w-12 text-primary" />
 										</div>
@@ -322,7 +417,14 @@ export default function Chat() {
 							</ScrollArea>
 
 							{chatPermitted && (
-								<div className="border-t border-primary/20 bg-background p-4">
+								<div
+									className={cn(
+										"border-t border-primary/20 bg-background p-4",
+										isKeyboardOpen
+											? "pb-[env(safe-area-inset-bottom)]"
+											: ""
+									)}
+								>
 									<form
 										onSubmit={(e) => {
 											e.preventDefault();
@@ -391,10 +493,14 @@ export default function Chat() {
 										</Tooltip>
 									</form>
 
-									<div className="text-xs text-muted-foreground/60 mt-2 flex justify-between">
-										<span>Press Enter to send</span>
-										<span>Shift+Enter for new line</span>
-									</div>
+									{!isKeyboardOpen && (
+										<div className="text-xs text-muted-foreground/60 mt-2 flex justify-between">
+											<span>Press Enter to send</span>
+											<span>
+												Shift+Enter for new line
+											</span>
+										</div>
+									)}
 								</div>
 							)}
 						</div>
