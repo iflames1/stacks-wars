@@ -28,9 +28,7 @@ import { FiMessageCircle } from "react-icons/fi";
 export default function Chat() {
 	const [open, setOpen] = useState(false);
 	const [input, setInput] = useState("");
-	const [isMobileKeyboardOpen, setIsMobileKeyboardOpen] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
-	const chatContainerRef = useRef<HTMLDivElement>(null);
 
 	const {
 		sendMessage,
@@ -62,37 +60,6 @@ export default function Chat() {
 			inputRef.current.focus();
 		}
 	}, [open]);
-
-	// Handle mobile keyboard visibility
-	useEffect(() => {
-		const handleResize = () => {
-			if (!chatContainerRef.current) return;
-
-			const isKeyboardOpen = window.visualViewport?.height
-				? window.visualViewport.height < window.innerHeight
-				: false;
-
-			setIsMobileKeyboardOpen(isKeyboardOpen);
-
-			if (isKeyboardOpen && viewportRef.current) {
-				viewportRef.current.scrollTop =
-					viewportRef.current.scrollHeight;
-			}
-		};
-
-		if (typeof window !== "undefined" && window.visualViewport) {
-			window.visualViewport.addEventListener("resize", handleResize);
-		}
-
-		return () => {
-			if (typeof window !== "undefined" && window.visualViewport) {
-				window.visualViewport.removeEventListener(
-					"resize",
-					handleResize
-				);
-			}
-		};
-	}, []);
 
 	const handleSend = async () => {
 		if (!input.trim() || !chatPermitted) return;
@@ -153,12 +120,8 @@ export default function Chat() {
 					</DialogTrigger>
 
 					<DialogContent
-						className={cn(
-							"sm:max-w-lg w-full max-h-[85vh] p-0 gap-0 rounded-xl overflow-hidden border-primary/30",
-							isMobileKeyboardOpen ? "fixed bottom-0" : ""
-						)}
+						className="p-0 gap-0 rounded-xl overflow-hidden border-primary/30"
 						hideClose
-						ref={chatContainerRef}
 					>
 						<DialogHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-6 py-4 border-b border-primary/30">
 							<div className="flex items-center justify-between">
@@ -211,16 +174,11 @@ export default function Chat() {
 
 						<div className="flex flex-col bg-background/95 backdrop-blur-sm">
 							<ScrollArea
-								className={cn(
-									"w-full px-4 py-3",
-									isMobileKeyboardOpen
-										? "h-[calc(100vh-200px)]"
-										: "h-[400px]"
-								)}
+								className="h-72 w-full px-4 py-3"
 								ref={viewportRef}
 							>
 								{!chatPermitted ? (
-									<div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
+									<div className="flex flex-col items-center justify-center h-full min-h-72 gap-4">
 										<div className="bg-primary/10 p-6 rounded-full">
 											<FiMessageCircle className="h-12 w-12 text-primary" />
 										</div>
@@ -235,7 +193,7 @@ export default function Chat() {
 										</div>
 									</div>
 								) : messages.length === 0 ? (
-									<div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
+									<div className="flex flex-col items-center justify-center h-full min-h-72 gap-4">
 										<div className="bg-primary/10 p-6 rounded-full">
 											<FiMessageCircle className="h-12 w-12 text-primary" />
 										</div>
@@ -364,14 +322,7 @@ export default function Chat() {
 							</ScrollArea>
 
 							{chatPermitted && (
-								<div
-									className={cn(
-										"border-t border-primary/20 bg-background p-4",
-										isMobileKeyboardOpen
-											? "pb-[env(safe-area-inset-bottom)]"
-											: ""
-									)}
-								>
+								<div className="border-t border-primary/20 bg-background p-4">
 									<form
 										onSubmit={(e) => {
 											e.preventDefault();
