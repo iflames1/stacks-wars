@@ -1,17 +1,25 @@
 import Image from "next/image";
 
+interface LoadingProps {
+	startCountdown?: number;
+	title?: string;
+	img?: string;
+	description?: string;
+}
+
 export default function Loading({
 	startCountdown,
-}: {
-	startCountdown?: number;
-}) {
+	img,
+	title,
+	description,
+}: LoadingProps) {
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
 			<div className="max-w-3xl mx-auto p-4 sm:p-6">
 				<div className="min-h-[70vh] flex flex-col items-center justify-center space-y-8">
 					<div className="animate-bounce">
 						<Image
-							src="/logos/lexi-wars.png"
+							src={img ? img : "/logos/lexi-wars.png"}
 							alt="Lexi Wars"
 							width={300}
 							height={300}
@@ -24,7 +32,7 @@ export default function Loading({
 					<div className="text-center space-y-4">
 						<div className="space-y-2">
 							<h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-								Preparing Battle Arena
+								{title ? title : "Preparing Battle Arena"}
 							</h2>
 							{startCountdown && (
 								<p className="text-lg sm:text-xl text-muted-foreground">
@@ -40,12 +48,18 @@ export default function Loading({
 						{/* Game Tip */}
 						<div className="mt-8 p-4 bg-primary/10 rounded-lg border border-primary/20 max-w-md mx-auto">
 							<p className="text-sm text-muted-foreground">
-								<span className="font-semibold text-primary">
-									💡 Game Tip:
-								</span>
-								<br />
-								Always look at the turn indicator to know when
-								it&apos;s your turn
+								{description ? (
+									description
+								) : (
+									<>
+										<span className="font-semibold text-primary">
+											💡 Game Tip:
+										</span>
+										<br />
+										Always look at the turn indicator to
+										know when it&apos;s your turn
+									</>
+								)}
 							</p>
 						</div>
 					</div>

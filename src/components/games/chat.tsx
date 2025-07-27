@@ -254,7 +254,7 @@ export default function Chat() {
 									"w-full px-4 py-3",
 									isKeyboardOpen
 										? "h-[calc(100vh-220px)]"
-										: "h-[400px]"
+										: "h-72"
 								)}
 								ref={viewportRef}
 							>
