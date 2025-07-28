@@ -1,6 +1,25 @@
 import { JsonParticipant } from "@/types/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Device } from "mediasoup-client";
+import {
+	MediaKind,
+	RtpCapabilities,
+	RtpParameters,
+	DtlsParameters,
+	Transport,
+	Producer,
+	Consumer,
+} from "mediasoup-client/types";
+
+// Extend Window interface to include custom method
+declare global {
+	interface Window {
+		createAudioElementForParticipant?: (
+			participantId: string,
+			stream: MediaStream
+		) => void;
+	}
+}
 
 export interface PlayerStanding {
 	player: JsonParticipant;
@@ -21,19 +40,66 @@ export interface VoiceParticipant {
 	is_speaking: boolean;
 }
 
+export interface IceCandidate {
+	foundation: string;
+	ip: string;
+	port: number;
+	priority: number;
+	protocol: "udp" | "tcp";
+	type: "host" | "srflx" | "prflx" | "relay";
+	address: string;
+	tcpType?: "active" | "passive" | "so" | undefined;
+}
+
+export interface IceParameters {
+	usernameFragment: string;
+	password: string;
+	iceLite?: boolean;
+}
+
+export interface TransportOptionsType {
+	id: string;
+	dtlsParameters: DtlsParameters;
+	iceParameters: IceParameters;
+	iceCandidates: IceCandidate[];
+}
+
 export type ChatServerMessage =
 	| { type: "permitchat"; allowed: boolean }
 	| { type: "chat"; message: JsonChatMessage }
 	| { type: "chathistory"; messages: JsonChatMessage[] }
 	| { type: "pong"; ts: number; pong: number }
 	| { type: "error"; message: string }
-	| { type: "voicepermit"; allowed: boolean }
+	// Voice messages
+	| {
+			type: "voiceinit";
+			consumer_transport_options: TransportOptionsType;
+			producer_transport_options: TransportOptionsType;
+			router_rtp_capabilities: RtpCapabilities;
+	  }
+	| { type: "connectedproducertransport" }
+	| { type: "produced"; id: string }
+	| { type: "connectedconsumertransport" }
+	| {
+			type: "consumed";
+			id: string;
+			producer_id: string;
+			kind: MediaKind;
+			rtp_parameters: RtpParameters;
+	  }
 	| { type: "voiceparticipants"; participants: VoiceParticipant[] }
 	| { type: "voiceparticipantupdate"; participant: VoiceParticipant };
 
 export type ChatClientMessage =
 	| { type: "chat"; text: string }
 	| { type: "ping"; ts: number }
+	// Voice messages
+	| { type: "voiceinit"; rtp_capabilities: RtpCapabilities }
+	| { type: "connectproducertransport"; dtls_parameters: DtlsParameters }
+	| { type: "connectconsumertransport"; dtls_parameters: DtlsParameters }
+	| { type: "produce"; kind: MediaKind; rtp_parameters: RtpParameters }
+	| { type: "consume"; producer_id: string }
+	| { type: "consumerresume"; id: string }
 	| { type: "mic"; enabled: boolean }
 	| { type: "mute"; muted: boolean };
 
@@ -48,14 +114,10 @@ interface UseChatSocketProps {
 	userId: string;
 }
 
-export interface VoiceState {
-	micEnabled: boolean;
-	isMuted: boolean;
-	isRecording: boolean;
-	isPlaying: boolean;
-	participants: VoiceParticipant[];
-	voicePermitted: boolean;
-}
+// Type for transport response callbacks
+type TransportConnectCallback = () => void;
+type ProduceCallback = (data: { id: string }) => void;
+type ResponseCallback = TransportConnectCallback | ProduceCallback;
 
 export interface UseChatSocketType {
 	sendMessage: (data: ChatClientMessage) => Promise<void>;
@@ -70,12 +132,20 @@ export interface UseChatSocketType {
 	userId: string;
 	setOpen: (open: boolean) => void;
 
-	// Voice chat methods and state
-	voiceState: VoiceState;
+	// Voice functions
+	initializeVoice: () => Promise<void>;
 	toggleMic: () => Promise<void>;
 	toggleMute: () => Promise<void>;
-	startRecording: () => Promise<void>;
-	stopRecording: () => void;
+	disconnectVoice: () => void;
+
+	// Voice states
+	voiceInitialized: boolean;
+	voiceConnected: boolean;
+	micEnabled: boolean;
+	isMuted: boolean;
+	voiceParticipants: VoiceParticipant[];
+	localStream: MediaStream | null;
+	voiceError: string | null;
 }
 
 export function useChatSocket({
@@ -91,13 +161,18 @@ export function useChatSocket({
 	const pingInProgress = useRef(false);
 	const PING_INTERVAL = 10000; // 10 seconds
 
-	// Audio refs
-	const mediasoupDeviceRef = useRef<Device | null>(null);
+	// Voice refs with proper typing
+	const deviceRef = useRef<Device | null>(null);
+	const producerTransportRef = useRef<Transport | null>(null);
+	const consumerTransportRef = useRef<Transport | null>(null);
+	const producersRef = useRef<Map<string, Producer>>(new Map());
+	const consumersRef = useRef<Map<string, Consumer>>(new Map());
 	const localStreamRef = useRef<MediaStream | null>(null);
-	const audioContextRef = useRef<AudioContext | null>(null);
-	const gainNodeRef = useRef<GainNode | null>(null);
+	const waitingForResponseRef = useRef<Map<string, ResponseCallback>>(
+		new Map()
+	);
 
-	// Basic state
+	// Chat states
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
 		WebSocket.CLOSED
 	);
@@ -108,108 +183,35 @@ export function useChatSocket({
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [open, setOpen] = useState(false);
 
-	// Voice state
-	const [voiceState, setVoiceState] = useState<VoiceState>({
-		micEnabled: false,
-		isMuted: false,
-		isRecording: false,
-		isPlaying: false,
-		participants: [],
-		voicePermitted: false,
-	});
+	// Voice states
+	const [voiceInitialized, setVoiceInitialized] = useState(false);
+	const [voiceConnected, setVoiceConnected] = useState(false);
+	const [micEnabled, setMicEnabled] = useState(false);
+	const [isMuted, setIsMuted] = useState(true);
+	const [voiceParticipants, setVoiceParticipants] = useState<
+		VoiceParticipant[]
+	>([]);
+	const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+	const [voiceError, setVoiceError] = useState<string | null>(null);
 
 	const maxReconnectAttempts = 5;
 
-	// Initialize mediasoup device
-	const initializeMediasoupDevice = useCallback(async () => {
-		if (!mediasoupDeviceRef.current) {
-			try {
-				const device = new Device();
-				mediasoupDeviceRef.current = device;
-				console.log("📱 Mediasoup device initialized");
-			} catch (error) {
-				console.error(
-					"❌ Failed to initialize mediasoup device:",
-					error
-				);
+	const processMessageQueue = useCallback(() => {
+		if (socketRef.current?.readyState === WebSocket.OPEN) {
+			while (messageQueue.current.length > 0) {
+				const queuedMessage = messageQueue.current.shift();
+				if (queuedMessage) {
+					try {
+						socketRef.current.send(
+							JSON.stringify(queuedMessage.data)
+						);
+						queuedMessage.resolve();
+					} catch (error) {
+						queuedMessage.reject(error as Error);
+					}
+				}
 			}
 		}
-	}, []);
-
-	// Initialize audio context
-	const initializeAudioContext = useCallback(async () => {
-		if (!audioContextRef.current) {
-			try {
-				audioContextRef.current = new (window.AudioContext ||
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					(window as any).webkitAudioContext)();
-				gainNodeRef.current = audioContextRef.current.createGain();
-				gainNodeRef.current.connect(
-					audioContextRef.current.destination
-				);
-				console.log("🎵 Audio context initialized");
-			} catch (error) {
-				console.error("❌ Failed to initialize audio context:", error);
-			}
-		}
-	}, []);
-
-	// Start recording (get user media)
-	const startRecording = useCallback(async () => {
-		if (!voiceState.voicePermitted) {
-			console.warn("⚠️ Voice not permitted");
-			return;
-		}
-
-		try {
-			await initializeAudioContext();
-			await initializeMediasoupDevice();
-
-			// Get user media
-			const stream = await navigator.mediaDevices.getUserMedia({
-				audio: {
-					echoCancellation: true,
-					noiseSuppression: true,
-					autoGainControl: true,
-				},
-			});
-
-			localStreamRef.current = stream;
-
-			setVoiceState((prev) => ({
-				...prev,
-				isRecording: true,
-			}));
-
-			console.log("🎤 Recording started");
-
-			// Note: In a full implementation, you would create a mediasoup producer here
-			// and send the stream to the server
-		} catch (error) {
-			console.error("❌ Failed to start recording:", error);
-			throw error;
-		}
-	}, [
-		voiceState.voicePermitted,
-		initializeAudioContext,
-		initializeMediasoupDevice,
-	]);
-
-	// Stop recording
-	const stopRecording = useCallback(() => {
-		if (localStreamRef.current) {
-			localStreamRef.current.getTracks().forEach((track) => {
-				track.stop();
-			});
-			localStreamRef.current = null;
-		}
-
-		setVoiceState((prev) => ({
-			...prev,
-			isRecording: false,
-		}));
-
-		console.log("🛑 Recording stopped");
 	}, []);
 
 	const sendMessage = useCallback(
@@ -232,87 +234,334 @@ export function useChatSocket({
 		[]
 	);
 
-	// Toggle microphone
-	const toggleMic = useCallback(async () => {
-		const newMicEnabled = !voiceState.micEnabled;
-
-		setVoiceState((prev) => ({
-			...prev,
-			micEnabled: newMicEnabled,
-		}));
-
-		// Send mic state to server
+	const initializeVoice = useCallback(async () => {
 		try {
-			await sendMessage({ type: "mic", enabled: newMicEnabled });
-
-			// Start/stop recording based on mic state
-			if (newMicEnabled && !voiceState.isRecording) {
-				await startRecording();
-			} else if (!newMicEnabled && voiceState.isRecording) {
-				stopRecording();
+			if (!deviceRef.current) {
+				deviceRef.current = new Device();
 			}
+
+			// Request microphone access
+			const stream = await navigator.mediaDevices.getUserMedia({
+				audio: true,
+				video: false,
+			});
+
+			localStreamRef.current = stream;
+			setLocalStream(stream);
+			setVoiceInitialized(true);
+			setVoiceError(null);
+
+			console.log("🎤 Voice initialized with microphone access");
 		} catch (error) {
-			console.error("❌ Failed to toggle mic:", error);
-			// Revert state on error
-			setVoiceState((prev) => ({
-				...prev,
-				micEnabled: !newMicEnabled,
-			}));
+			console.error("❌ Failed to initialize voice:", error);
+			setVoiceError("Failed to access microphone");
+			throw error;
 		}
-	}, [
-		voiceState.micEnabled,
-		voiceState.isRecording,
-		startRecording,
-		stopRecording,
-		sendMessage,
-	]);
+	}, []);
 
-	// Toggle mute (affects what user hears)
-	const toggleMute = useCallback(async () => {
-		const newMuted = !voiceState.isMuted;
+	const handleVoiceInit = useCallback(
+		async (data: {
+			consumer_transport_options: TransportOptionsType;
+			producer_transport_options: TransportOptionsType;
+			router_rtp_capabilities: RtpCapabilities;
+		}) => {
+			try {
+				if (!deviceRef.current) {
+					deviceRef.current = new Device();
+				}
 
-		setVoiceState((prev) => ({
-			...prev,
-			isMuted: newMuted,
-		}));
+				// Load device with router RTP capabilities
+				await deviceRef.current.load({
+					routerRtpCapabilities: data.router_rtp_capabilities,
+				});
 
-		// Mute/unmute audio output
-		if (gainNodeRef.current) {
-			gainNodeRef.current.gain.setValueAtTime(
-				newMuted ? 0 : 1,
-				audioContextRef.current?.currentTime || 0
-			);
-		}
+				// Send client RTP capabilities
+				await sendMessage({
+					type: "voiceinit",
+					rtp_capabilities: deviceRef.current.rtpCapabilities,
+				});
 
-		// Send mute state to server
-		try {
-			await sendMessage({ type: "mute", muted: newMuted });
-		} catch (error) {
-			console.error("❌ Failed to toggle mute:", error);
-			// Revert state on error
-			setVoiceState((prev) => ({
-				...prev,
-				isMuted: !newMuted,
-			}));
-		}
-	}, [sendMessage, voiceState.isMuted]);
+				// Create producer transport
+				producerTransportRef.current =
+					deviceRef.current.createSendTransport(
+						data.producer_transport_options
+					);
 
-	const processMessageQueue = useCallback(() => {
-		if (socketRef.current?.readyState === WebSocket.OPEN) {
-			while (messageQueue.current.length > 0) {
-				const queuedMessage = messageQueue.current.shift();
-				if (queuedMessage) {
-					try {
-						socketRef.current.send(
-							JSON.stringify(queuedMessage.data)
+				producerTransportRef.current.on(
+					"connect",
+					({ dtlsParameters }, success, errback) => {
+						sendMessage({
+							type: "connectproducertransport",
+							dtls_parameters: dtlsParameters,
+						})
+							.then(() => {
+								const callback: TransportConnectCallback =
+									() => {
+										success();
+										console.log(
+											"🔗 Producer transport connected"
+										);
+									};
+
+								waitingForResponseRef.current.set(
+									"connectedproducertransport",
+									callback
+								);
+							})
+							.catch((error) => {
+								console.error(
+									"Failed to send connect producer transport message:",
+									error
+								);
+								errback(error);
+							});
+					}
+				);
+
+				producerTransportRef.current.on(
+					"produce",
+					({ kind, rtpParameters }, success, errback) => {
+						sendMessage({
+							type: "produce",
+							kind,
+							rtp_parameters: rtpParameters,
+						})
+							.then(() => {
+								const callback: ProduceCallback = ({
+									id,
+								}: {
+									id: string;
+								}) => {
+									success({ id });
+									console.log(
+										`🎵 ${kind} producer created: ${id}`
+									);
+								};
+
+								waitingForResponseRef.current.set(
+									"produced",
+									callback
+								);
+							})
+							.catch((error) => {
+								console.error(
+									"Failed to send produce message:",
+									error
+								);
+								errback(error);
+							});
+					}
+				);
+
+				// Create consumer transport
+				consumerTransportRef.current =
+					deviceRef.current.createRecvTransport(
+						data.consumer_transport_options
+					);
+
+				consumerTransportRef.current.on(
+					"connect",
+					({ dtlsParameters }, success, errback) => {
+						sendMessage({
+							type: "connectconsumertransport",
+							dtls_parameters: dtlsParameters,
+						})
+							.then(() => {
+								const callback: TransportConnectCallback =
+									() => {
+										success();
+										console.log(
+											"🔗 Consumer transport connected"
+										);
+									};
+
+								waitingForResponseRef.current.set(
+									"connectedconsumertransport",
+									callback
+								);
+							})
+							.catch((error) => {
+								console.error(
+									"Failed to send connect consumer transport message:",
+									error
+								);
+								errback(error);
+							});
+					}
+				);
+
+				// If we have a local stream, start producing
+				if (localStreamRef.current && producerTransportRef.current) {
+					for (const track of localStreamRef.current.getTracks()) {
+						const producer =
+							await producerTransportRef.current.produce({
+								track,
+							});
+						producersRef.current.set(producer.id, producer);
+						console.log(
+							`🎤 Producer created for ${track.kind}: ${producer.id}`
 						);
-						queuedMessage.resolve();
-					} catch (error) {
-						queuedMessage.reject(error as Error);
 					}
 				}
+
+				setVoiceConnected(true);
+				console.log("✅ Voice chat initialized");
+			} catch (error) {
+				console.error("❌ Failed to handle voice init:", error);
+				setVoiceError("Failed to initialize voice chat");
 			}
+		},
+		[sendMessage]
+	);
+
+	// In your useChatSocket hook, update the handleVoiceConsumed function:
+
+	const handleVoiceConsumed = useCallback(
+		async (data: {
+			id: string;
+			producer_id: string;
+			kind: MediaKind;
+			rtp_parameters: RtpParameters;
+		}) => {
+			try {
+				if (!consumerTransportRef.current) {
+					console.error("❌ Consumer transport not available");
+					return;
+				}
+
+				const consumer = await consumerTransportRef.current.consume({
+					id: data.id,
+					producerId: data.producer_id,
+					kind: data.kind,
+					rtpParameters: data.rtp_parameters,
+				});
+
+				consumersRef.current.set(consumer.id, consumer);
+
+				// Resume the consumer
+				await sendMessage({
+					type: "consumerresume",
+					id: consumer.id,
+				});
+
+				// Create audio stream from consumer track if it's audio
+				if (data.kind === "audio" && consumer.track) {
+					const stream = new MediaStream([consumer.track]);
+
+					// Find which participant this consumer belongs to
+					// You might need to track producer_id -> participant_id mapping
+					// For now, using producer_id as participant identifier
+					const participantId = data.producer_id;
+
+					// Emit event or call callback to create audio element
+					// You can expose this through a callback prop or custom event
+					if (window.createAudioElementForParticipant) {
+						window.createAudioElementForParticipant(
+							participantId,
+							stream
+						);
+					}
+				}
+
+				console.log(
+					`🔊 Consumer created for ${data.kind}: ${consumer.id}`
+				);
+			} catch (error) {
+				console.error("❌ Failed to handle voice consumed:", error);
+			}
+		},
+		[sendMessage]
+	);
+
+	const toggleMic = useCallback(async () => {
+		try {
+			const newMicState = !micEnabled;
+			setMicEnabled(newMicState);
+
+			// Enable/disable audio tracks
+			if (localStreamRef.current) {
+				localStreamRef.current.getAudioTracks().forEach((track) => {
+					track.enabled = newMicState;
+				});
+			}
+
+			await sendMessage({
+				type: "mic",
+				enabled: newMicState,
+			});
+
+			console.log(
+				`🎤 Microphone ${newMicState ? "enabled" : "disabled"}`
+			);
+		} catch (error) {
+			console.error("❌ Failed to toggle mic:", error);
+			setVoiceError("Failed to toggle microphone");
 		}
+	}, [micEnabled, sendMessage]);
+
+	const toggleMute = useCallback(async () => {
+		try {
+			const newMuteState = !isMuted;
+			setIsMuted(newMuteState);
+
+			await sendMessage({
+				type: "mute",
+				muted: newMuteState,
+			});
+
+			console.log(`🔇 ${newMuteState ? "Muted" : "Unmuted"}`);
+		} catch (error) {
+			console.error("❌ Failed to toggle mute:", error);
+			setVoiceError("Failed to toggle mute");
+		}
+	}, [isMuted, sendMessage]);
+
+	const disconnectVoice = useCallback(() => {
+		// Stop local stream
+		if (localStreamRef.current) {
+			localStreamRef.current.getTracks().forEach((track) => track.stop());
+			localStreamRef.current = null;
+			setLocalStream(null);
+		}
+
+		// Close producers
+		producersRef.current.forEach((producer) => {
+			producer.close();
+		});
+		producersRef.current.clear();
+
+		// Close consumers
+		consumersRef.current.forEach((consumer) => {
+			consumer.close();
+		});
+		consumersRef.current.clear();
+
+		// Close transports
+		if (producerTransportRef.current) {
+			producerTransportRef.current.close();
+			producerTransportRef.current = null;
+		}
+
+		if (consumerTransportRef.current) {
+			consumerTransportRef.current.close();
+			consumerTransportRef.current = null;
+		}
+
+		// Reset device
+		deviceRef.current = null;
+
+		// Clear waiting callbacks
+		waitingForResponseRef.current.clear();
+
+		// Reset states
+		setVoiceInitialized(false);
+		setVoiceConnected(false);
+		setMicEnabled(false);
+		setIsMuted(true);
+		setVoiceParticipants([]);
+		setVoiceError(null);
+
+		console.log("🔇 Voice chat disconnected");
 	}, []);
 
 	const schedulePing = useCallback(async () => {
@@ -369,7 +618,10 @@ export function useChatSocket({
 				switch (data.type) {
 					case "permitchat":
 						setChatPermitted(data.allowed);
-						if (!data.allowed) setMessages([]);
+						if (!data.allowed) {
+							setMessages([]);
+							disconnectVoice(); // Disconnect voice if chat not permitted
+						}
 						break;
 					case "chat":
 						setMessages((prev) => [...prev, data.message]);
@@ -385,38 +637,46 @@ export function useChatSocket({
 						break;
 					case "error":
 						console.error("Chat error:", data.message);
+						setVoiceError(data.message);
 						break;
-					case "voicepermit":
-						setVoiceState((prev) => ({
-							...prev,
-							voicePermitted: data.allowed,
-						}));
-						if (!data.allowed) {
-							// Stop recording if voice permission is revoked
-							stopRecording();
-							setVoiceState((prev) => ({
-								...prev,
-								micEnabled: false,
-								isMuted: false,
-								participants: [],
-							}));
+
+					// Voice message handlers
+					case "voiceinit":
+						handleVoiceInit(data);
+						break;
+					case "connectedproducertransport":
+					case "connectedconsumertransport":
+					case "produced":
+						{
+							const callback = waitingForResponseRef.current.get(
+								data.type
+							);
+							if (callback) {
+								waitingForResponseRef.current.delete(data.type);
+								if (data.type === "produced" && "id" in data) {
+									(callback as ProduceCallback)({
+										id: data.id,
+									});
+								} else {
+									(callback as TransportConnectCallback)();
+								}
+							}
 						}
 						break;
+					case "consumed":
+						handleVoiceConsumed(data);
+						break;
 					case "voiceparticipants":
-						setVoiceState((prev) => ({
-							...prev,
-							participants: data.participants,
-						}));
+						setVoiceParticipants(data.participants);
 						break;
 					case "voiceparticipantupdate":
-						setVoiceState((prev) => ({
-							...prev,
-							participants: prev.participants.map((p) =>
+						setVoiceParticipants((prev) =>
+							prev.map((p) =>
 								p.player.id === data.participant.player.id
 									? data.participant
 									: p
-							),
-						}));
+							)
+						);
 						break;
 					default:
 						console.warn("Unknown chat message type", data);
@@ -432,8 +692,8 @@ export function useChatSocket({
 			socketRef.current = null;
 			pingInProgress.current = false;
 
-			// Stop recording on disconnect
-			stopRecording();
+			// Disconnect voice on socket close
+			disconnectVoice();
 
 			if (pingIntervalRef.current) {
 				clearTimeout(pingIntervalRef.current);
@@ -468,9 +728,6 @@ export function useChatSocket({
 			setError(err);
 			setReadyState(WebSocket.CLOSED);
 
-			// Stop recording on error
-			stopRecording();
-
 			// Close the broken socket to trigger reconnection
 			if (socketRef.current) {
 				socketRef.current.close();
@@ -483,7 +740,9 @@ export function useChatSocket({
 		schedulePing,
 		processMessageQueue,
 		open,
-		stopRecording,
+		handleVoiceInit,
+		handleVoiceConsumed,
+		disconnectVoice,
 	]);
 
 	const setOpenWithUnreadReset = useCallback((newOpen: boolean) => {
@@ -499,18 +758,16 @@ export function useChatSocket({
 		return () => {
 			if (reconnectTimeoutRef.current)
 				clearTimeout(reconnectTimeoutRef.current);
-			stopRecording();
+
+			disconnectVoice();
 			socketRef.current?.close();
 			socketRef.current = null;
 		};
-	}, [connectSocket, stopRecording]);
+	}, [connectSocket, disconnectVoice]);
 
 	const disconnectChat = useCallback(() => {
 		manuallyDisconnectedRef.current = true;
 		pingInProgress.current = false;
-
-		// Stop recording
-		stopRecording();
 
 		if (reconnectTimeoutRef.current)
 			clearTimeout(reconnectTimeoutRef.current);
@@ -519,6 +776,8 @@ export function useChatSocket({
 			clearTimeout(pingIntervalRef.current);
 			pingIntervalRef.current = null;
 		}
+
+		disconnectVoice();
 
 		// Reject all queued messages
 		while (messageQueue.current.length > 0) {
@@ -532,7 +791,7 @@ export function useChatSocket({
 		socketRef.current = null;
 		setReadyState(WebSocket.CLOSED);
 		messageQueue.current = [];
-	}, [stopRecording]);
+	}, [disconnectVoice]);
 
 	const forceReconnect = useCallback(() => {
 		// Clear any existing timeouts
@@ -541,14 +800,13 @@ export function useChatSocket({
 			reconnectTimeoutRef.current = null;
 		}
 
-		// Stop recording
-		stopRecording();
-
 		// Close existing connection
 		if (socketRef.current) {
 			socketRef.current.close();
 			socketRef.current = null;
 		}
+
+		disconnectVoice();
 
 		// Reset reconnection attempts and flags
 		reconnectAttempts.current = 0;
@@ -557,7 +815,7 @@ export function useChatSocket({
 
 		// Reconnect immediately
 		connectSocket();
-	}, [connectSocket, stopRecording]);
+	}, [connectSocket, disconnectVoice]);
 
 	return {
 		sendMessage,
@@ -572,11 +830,19 @@ export function useChatSocket({
 		userId,
 		setOpen: setOpenWithUnreadReset,
 
-		// Voice chat
-		voiceState,
+		// Voice functions
+		initializeVoice,
 		toggleMic,
 		toggleMute,
-		startRecording,
-		stopRecording,
+		disconnectVoice,
+
+		// Voice states
+		voiceInitialized,
+		voiceConnected,
+		micEnabled,
+		isMuted,
+		voiceParticipants,
+		localStream,
+		voiceError,
 	};
 }
