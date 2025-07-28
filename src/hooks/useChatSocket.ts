@@ -1,5 +1,6 @@
 import { JsonParticipant } from "@/types/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Device } from "mediasoup-client";
 
 export interface PlayerStanding {
 	player: JsonParticipant;
@@ -13,19 +14,28 @@ export interface JsonChatMessage {
 	timestamp: string;
 }
 
+export interface VoiceParticipant {
+	player: JsonParticipant;
+	mic_enabled: boolean;
+	is_muted: boolean;
+	is_speaking: boolean;
+}
+
 export type ChatServerMessage =
 	| { type: "permitchat"; allowed: boolean }
 	| { type: "chat"; message: JsonChatMessage }
 	| { type: "chathistory"; messages: JsonChatMessage[] }
 	| { type: "pong"; ts: number; pong: number }
-	| { type: "error"; message: string };
+	| { type: "error"; message: string }
+	| { type: "voicepermit"; allowed: boolean }
+	| { type: "voiceparticipants"; participants: VoiceParticipant[] }
+	| { type: "voiceparticipantupdate"; participant: VoiceParticipant };
 
 export type ChatClientMessage =
 	| { type: "chat"; text: string }
-	| {
-			type: "ping";
-			ts: number;
-	  };
+	| { type: "ping"; ts: number }
+	| { type: "mic"; enabled: boolean }
+	| { type: "mute"; muted: boolean };
 
 interface QueuedMessage {
 	data: ChatClientMessage;
@@ -36,6 +46,15 @@ interface QueuedMessage {
 interface UseChatSocketProps {
 	lobbyId: string;
 	userId: string;
+}
+
+export interface VoiceState {
+	micEnabled: boolean;
+	isMuted: boolean;
+	isRecording: boolean;
+	isPlaying: boolean;
+	participants: VoiceParticipant[];
+	voicePermitted: boolean;
 }
 
 export interface UseChatSocketType {
@@ -50,6 +69,13 @@ export interface UseChatSocketType {
 	chatPermitted: boolean;
 	userId: string;
 	setOpen: (open: boolean) => void;
+
+	// Voice chat methods and state
+	voiceState: VoiceState;
+	toggleMic: () => Promise<void>;
+	toggleMute: () => Promise<void>;
+	startRecording: () => Promise<void>;
+	stopRecording: () => void;
 }
 
 export function useChatSocket({
@@ -64,6 +90,14 @@ export function useChatSocket({
 	const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const pingInProgress = useRef(false);
 	const PING_INTERVAL = 10000; // 10 seconds
+
+	// Audio refs
+	const mediasoupDeviceRef = useRef<Device | null>(null);
+	const localStreamRef = useRef<MediaStream | null>(null);
+	const audioContextRef = useRef<AudioContext | null>(null);
+	const gainNodeRef = useRef<GainNode | null>(null);
+
+	// Basic state
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
 		WebSocket.CLOSED
 	);
@@ -74,24 +108,108 @@ export function useChatSocket({
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [open, setOpen] = useState(false);
 
+	// Voice state
+	const [voiceState, setVoiceState] = useState<VoiceState>({
+		micEnabled: false,
+		isMuted: false,
+		isRecording: false,
+		isPlaying: false,
+		participants: [],
+		voicePermitted: false,
+	});
+
 	const maxReconnectAttempts = 5;
 
-	const processMessageQueue = useCallback(() => {
-		if (socketRef.current?.readyState === WebSocket.OPEN) {
-			while (messageQueue.current.length > 0) {
-				const queuedMessage = messageQueue.current.shift();
-				if (queuedMessage) {
-					try {
-						socketRef.current.send(
-							JSON.stringify(queuedMessage.data)
-						);
-						queuedMessage.resolve();
-					} catch (error) {
-						queuedMessage.reject(error as Error);
-					}
-				}
+	// Initialize mediasoup device
+	const initializeMediasoupDevice = useCallback(async () => {
+		if (!mediasoupDeviceRef.current) {
+			try {
+				const device = new Device();
+				mediasoupDeviceRef.current = device;
+				console.log("📱 Mediasoup device initialized");
+			} catch (error) {
+				console.error(
+					"❌ Failed to initialize mediasoup device:",
+					error
+				);
 			}
 		}
+	}, []);
+
+	// Initialize audio context
+	const initializeAudioContext = useCallback(async () => {
+		if (!audioContextRef.current) {
+			try {
+				audioContextRef.current = new (window.AudioContext ||
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					(window as any).webkitAudioContext)();
+				gainNodeRef.current = audioContextRef.current.createGain();
+				gainNodeRef.current.connect(
+					audioContextRef.current.destination
+				);
+				console.log("🎵 Audio context initialized");
+			} catch (error) {
+				console.error("❌ Failed to initialize audio context:", error);
+			}
+		}
+	}, []);
+
+	// Start recording (get user media)
+	const startRecording = useCallback(async () => {
+		if (!voiceState.voicePermitted) {
+			console.warn("⚠️ Voice not permitted");
+			return;
+		}
+
+		try {
+			await initializeAudioContext();
+			await initializeMediasoupDevice();
+
+			// Get user media
+			const stream = await navigator.mediaDevices.getUserMedia({
+				audio: {
+					echoCancellation: true,
+					noiseSuppression: true,
+					autoGainControl: true,
+				},
+			});
+
+			localStreamRef.current = stream;
+
+			setVoiceState((prev) => ({
+				...prev,
+				isRecording: true,
+			}));
+
+			console.log("🎤 Recording started");
+
+			// Note: In a full implementation, you would create a mediasoup producer here
+			// and send the stream to the server
+		} catch (error) {
+			console.error("❌ Failed to start recording:", error);
+			throw error;
+		}
+	}, [
+		voiceState.voicePermitted,
+		initializeAudioContext,
+		initializeMediasoupDevice,
+	]);
+
+	// Stop recording
+	const stopRecording = useCallback(() => {
+		if (localStreamRef.current) {
+			localStreamRef.current.getTracks().forEach((track) => {
+				track.stop();
+			});
+			localStreamRef.current = null;
+		}
+
+		setVoiceState((prev) => ({
+			...prev,
+			isRecording: false,
+		}));
+
+		console.log("🛑 Recording stopped");
 	}, []);
 
 	const sendMessage = useCallback(
@@ -113,6 +231,89 @@ export function useChatSocket({
 		},
 		[]
 	);
+
+	// Toggle microphone
+	const toggleMic = useCallback(async () => {
+		const newMicEnabled = !voiceState.micEnabled;
+
+		setVoiceState((prev) => ({
+			...prev,
+			micEnabled: newMicEnabled,
+		}));
+
+		// Send mic state to server
+		try {
+			await sendMessage({ type: "mic", enabled: newMicEnabled });
+
+			// Start/stop recording based on mic state
+			if (newMicEnabled && !voiceState.isRecording) {
+				await startRecording();
+			} else if (!newMicEnabled && voiceState.isRecording) {
+				stopRecording();
+			}
+		} catch (error) {
+			console.error("❌ Failed to toggle mic:", error);
+			// Revert state on error
+			setVoiceState((prev) => ({
+				...prev,
+				micEnabled: !newMicEnabled,
+			}));
+		}
+	}, [
+		voiceState.micEnabled,
+		voiceState.isRecording,
+		startRecording,
+		stopRecording,
+		sendMessage,
+	]);
+
+	// Toggle mute (affects what user hears)
+	const toggleMute = useCallback(async () => {
+		const newMuted = !voiceState.isMuted;
+
+		setVoiceState((prev) => ({
+			...prev,
+			isMuted: newMuted,
+		}));
+
+		// Mute/unmute audio output
+		if (gainNodeRef.current) {
+			gainNodeRef.current.gain.setValueAtTime(
+				newMuted ? 0 : 1,
+				audioContextRef.current?.currentTime || 0
+			);
+		}
+
+		// Send mute state to server
+		try {
+			await sendMessage({ type: "mute", muted: newMuted });
+		} catch (error) {
+			console.error("❌ Failed to toggle mute:", error);
+			// Revert state on error
+			setVoiceState((prev) => ({
+				...prev,
+				isMuted: !newMuted,
+			}));
+		}
+	}, [sendMessage, voiceState.isMuted]);
+
+	const processMessageQueue = useCallback(() => {
+		if (socketRef.current?.readyState === WebSocket.OPEN) {
+			while (messageQueue.current.length > 0) {
+				const queuedMessage = messageQueue.current.shift();
+				if (queuedMessage) {
+					try {
+						socketRef.current.send(
+							JSON.stringify(queuedMessage.data)
+						);
+						queuedMessage.resolve();
+					} catch (error) {
+						queuedMessage.reject(error as Error);
+					}
+				}
+			}
+		}
+	}, []);
 
 	const schedulePing = useCallback(async () => {
 		if (pingInProgress.current || !socketRef.current) return;
@@ -185,6 +386,38 @@ export function useChatSocket({
 					case "error":
 						console.error("Chat error:", data.message);
 						break;
+					case "voicepermit":
+						setVoiceState((prev) => ({
+							...prev,
+							voicePermitted: data.allowed,
+						}));
+						if (!data.allowed) {
+							// Stop recording if voice permission is revoked
+							stopRecording();
+							setVoiceState((prev) => ({
+								...prev,
+								micEnabled: false,
+								isMuted: false,
+								participants: [],
+							}));
+						}
+						break;
+					case "voiceparticipants":
+						setVoiceState((prev) => ({
+							...prev,
+							participants: data.participants,
+						}));
+						break;
+					case "voiceparticipantupdate":
+						setVoiceState((prev) => ({
+							...prev,
+							participants: prev.participants.map((p) =>
+								p.player.id === data.participant.player.id
+									? data.participant
+									: p
+							),
+						}));
+						break;
 					default:
 						console.warn("Unknown chat message type", data);
 				}
@@ -198,6 +431,9 @@ export function useChatSocket({
 			setReadyState(WebSocket.CLOSED);
 			socketRef.current = null;
 			pingInProgress.current = false;
+
+			// Stop recording on disconnect
+			stopRecording();
 
 			if (pingIntervalRef.current) {
 				clearTimeout(pingIntervalRef.current);
@@ -232,13 +468,23 @@ export function useChatSocket({
 			setError(err);
 			setReadyState(WebSocket.CLOSED);
 
+			// Stop recording on error
+			stopRecording();
+
 			// Close the broken socket to trigger reconnection
 			if (socketRef.current) {
 				socketRef.current.close();
 				socketRef.current = null;
 			}
 		};
-	}, [lobbyId, userId, schedulePing, processMessageQueue, open]);
+	}, [
+		lobbyId,
+		userId,
+		schedulePing,
+		processMessageQueue,
+		open,
+		stopRecording,
+	]);
 
 	const setOpenWithUnreadReset = useCallback((newOpen: boolean) => {
 		setOpen(newOpen);
@@ -253,14 +499,18 @@ export function useChatSocket({
 		return () => {
 			if (reconnectTimeoutRef.current)
 				clearTimeout(reconnectTimeoutRef.current);
+			stopRecording();
 			socketRef.current?.close();
 			socketRef.current = null;
 		};
-	}, [connectSocket]);
+	}, [connectSocket, stopRecording]);
 
 	const disconnectChat = useCallback(() => {
 		manuallyDisconnectedRef.current = true;
 		pingInProgress.current = false;
+
+		// Stop recording
+		stopRecording();
 
 		if (reconnectTimeoutRef.current)
 			clearTimeout(reconnectTimeoutRef.current);
@@ -282,7 +532,7 @@ export function useChatSocket({
 		socketRef.current = null;
 		setReadyState(WebSocket.CLOSED);
 		messageQueue.current = [];
-	}, []);
+	}, [stopRecording]);
 
 	const forceReconnect = useCallback(() => {
 		// Clear any existing timeouts
@@ -290,6 +540,9 @@ export function useChatSocket({
 			clearTimeout(reconnectTimeoutRef.current);
 			reconnectTimeoutRef.current = null;
 		}
+
+		// Stop recording
+		stopRecording();
 
 		// Close existing connection
 		if (socketRef.current) {
@@ -304,7 +557,7 @@ export function useChatSocket({
 
 		// Reconnect immediately
 		connectSocket();
-	}, [connectSocket]);
+	}, [connectSocket, stopRecording]);
 
 	return {
 		sendMessage,
@@ -318,5 +571,12 @@ export function useChatSocket({
 		chatPermitted,
 		userId,
 		setOpen: setOpenWithUnreadReset,
+
+		// Voice chat
+		voiceState,
+		toggleMic,
+		toggleMute,
+		startRecording,
+		stopRecording,
 	};
 }
