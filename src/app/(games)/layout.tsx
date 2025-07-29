@@ -1,4 +1,5 @@
 import Chat from "@/components/games/chat";
+import VoiceChat from "@/components/games/voice-chat";
 import { ChatSocketProvider } from "@/contexts/ChatSocketProvider";
 import { ConnectUserProvider } from "@/contexts/ConnectWalletContext";
 
@@ -12,6 +13,7 @@ export default function Layout({ children }: LayoutProps) {
 			<main className="flex-1 bg-primary/10">
 				<ChatSocketProvider>
 					{children}
+					<VoiceChat />
 					<Chat />
 				</ChatSocketProvider>
 			</main>

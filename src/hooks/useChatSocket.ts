@@ -187,7 +187,7 @@ export function useChatSocket({
 	const [voiceInitialized, setVoiceInitialized] = useState(false);
 	const [voiceConnected, setVoiceConnected] = useState(false);
 	const [micEnabled, setMicEnabled] = useState(false);
-	const [isMuted, setIsMuted] = useState(true);
+	const [isMuted, setIsMuted] = useState(false);
 	const [voiceParticipants, setVoiceParticipants] = useState<
 		VoiceParticipant[]
 	>([]);

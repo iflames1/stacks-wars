@@ -18,7 +18,7 @@ import {
 	Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useChatSocket } from "@/hooks/useChatSocket";
+import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
 
 interface VoiceChatProps {
 	className?: string;
@@ -33,11 +33,6 @@ export function VoiceChat({ className }: VoiceChatProps) {
 	// Ref to track remote audio streams
 	const remoteStreamsRef = useRef<Map<string, MediaStream>>(new Map());
 	const audioContainerRef = useRef<HTMLDivElement>(null);
-
-	const chatSocket = useChatSocket({
-		lobbyId: "5bf95dce-3f2b-42cf-badc-6966663eae9f",
-		userId: "68f14695-ae04-46f7-8954-cd1e7c2a46dd",
-	});
 
 	const {
 		// Voice functions
@@ -56,46 +51,101 @@ export function VoiceChat({ className }: VoiceChatProps) {
 		voiceError,
 		chatPermitted,
 		userId,
-	} = chatSocket;
+	} = useChatSocketContext();
 
 	// Create audio element for remote participant
-	//const createAudioElement = useCallback(
-	//	(participantId: string, stream: MediaStream) => {
-	//		const audio = new Audio();
-	//		audio.srcObject = stream;
-	//		audio.autoplay = true;
-	//		audio.playsInline = true;
-	//		audio.volume = 1.0;
+	const createAudioElement = useCallback(
+		(participantId: string, stream: MediaStream) => {
+			console.log(
+				`🔊 Creating audio element for participant: ${participantId}`
+			);
 
-	//		// Add to DOM (hidden) to ensure proper playback
-	//		if (audioContainerRef.current) {
-	//			audio.style.display = "none";
-	//			audioContainerRef.current.appendChild(audio);
-	//		}
+			const audio = new Audio();
+			audio.srcObject = stream;
+			audio.autoplay = true;
+			audio.volume = 1.0;
+			audio.controls = false;
 
-	//		setAudioElements((prev) => {
-	//			const newMap = new Map(prev);
-	//			// Clean up previous audio element if exists
-	//			const existingAudio = newMap.get(participantId);
-	//			if (existingAudio) {
-	//				existingAudio.pause();
-	//				existingAudio.srcObject = null;
-	//				existingAudio.remove();
-	//			}
-	//			newMap.set(participantId, audio);
-	//			return newMap;
-	//		});
+			// Handle audio element events
+			audio.onloadedmetadata = () => {
+				console.log(`📻 Audio metadata loaded for: ${participantId}`);
+			};
 
-	//		// Store the stream reference
-	//		remoteStreamsRef.current.set(participantId, stream);
+			audio.oncanplay = () => {
+				console.log(`▶️ Audio can play for: ${participantId}`);
+				audio.play().catch((error) => {
+					console.error(
+						`❌ Failed to play audio for ${participantId}:`,
+						error
+					);
+				});
+			};
 
-	//		console.log(
-	//			`🔊 Audio element created for participant: ${participantId}`
-	//		);
-	//		return audio;
-	//	},
-	//	[]
-	//);
+			audio.onerror = (error) => {
+				console.error(`❌ Audio error for ${participantId}:`, error);
+			};
+
+			// Add to DOM (hidden) to ensure proper playback
+			if (audioContainerRef.current) {
+				audio.style.display = "none";
+				audio.id = `voice-audio-${participantId}`;
+				audioContainerRef.current.appendChild(audio);
+			}
+
+			setAudioElements((prev) => {
+				const newMap = new Map(prev);
+				// Clean up previous audio element if exists
+				const existingAudio = newMap.get(participantId);
+				if (existingAudio) {
+					console.log(
+						`🧹 Cleaning up existing audio for: ${participantId}`
+					);
+					existingAudio.pause();
+					existingAudio.srcObject = null;
+					existingAudio.remove();
+				}
+				newMap.set(participantId, audio);
+				return newMap;
+			});
+
+			// Store the stream reference
+			remoteStreamsRef.current.set(participantId, stream);
+
+			console.log(
+				`✅ Audio element created for participant: ${participantId}`
+			);
+			return audio;
+		},
+		[]
+	);
+
+	// Handle new remote streams (this should be called when receiving remote audio)
+	const handleRemoteStream = useCallback(
+		(participantId: string, stream: MediaStream) => {
+			console.log(
+				`🎵 Received remote stream for: ${participantId}`,
+				stream
+			);
+
+			// Check if stream has audio tracks
+			const audioTracks = stream.getAudioTracks();
+			if (audioTracks.length === 0) {
+				console.warn(
+					`⚠️ No audio tracks in stream for: ${participantId}`
+				);
+				return;
+			}
+
+			console.log(
+				`🎤 Audio tracks found for ${participantId}:`,
+				audioTracks.length
+			);
+
+			// Create audio element for this participant
+			createAudioElement(participantId, stream);
+		},
+		[createAudioElement]
+	);
 
 	// Initialize voice chat
 	const handleInitializeVoice = useCallback(async () => {
@@ -133,13 +183,18 @@ export function VoiceChat({ className }: VoiceChatProps) {
 
 	// Handle disconnect
 	const handleDisconnect = useCallback(() => {
+		console.log("🔌 Disconnecting voice chat");
+
 		disconnectVoice();
+
 		// Clean up audio elements
-		audioElements.forEach((audio) => {
+		audioElements.forEach((audio, participantId) => {
+			console.log(`🧹 Cleaning up audio for: ${participantId}`);
 			audio.pause();
 			audio.srcObject = null;
 			audio.remove();
 		});
+
 		setAudioElements(new Map());
 		remoteStreamsRef.current.clear();
 	}, [disconnectVoice, audioElements]);
@@ -157,7 +212,9 @@ export function VoiceChat({ className }: VoiceChatProps) {
 					newMap.set(id, audio);
 				} else {
 					// Clean up audio for participants who left
-					console.log(`🔇 Cleaning up audio for participant: ${id}`);
+					console.log(
+						`🔇 Cleaning up audio for participant who left: ${id}`
+					);
 					audio.pause();
 					audio.srcObject = null;
 					audio.remove();
@@ -167,6 +224,30 @@ export function VoiceChat({ className }: VoiceChatProps) {
 			return newMap;
 		});
 	}, [voiceParticipants]);
+
+	// Monitor voice participants for new remote streams
+	useEffect(() => {
+		voiceParticipants.forEach((participant) => {
+			// Skip own participant
+			if (participant.player.id === userId) return;
+
+			// Check if we already have audio for this participant
+			if (!audioElements.has(participant.player.id)) {
+				console.log(
+					`🔍 New participant without audio: ${participant.player.id}`
+				);
+
+				// In a real implementation, you would get the remote stream from WebRTC
+				// For now, this is a placeholder - you need to implement the actual
+				// stream receiving logic in your useChatSocket hook
+
+				// Example: if participant has a stream property
+				// if (participant.stream) {
+				//     handleRemoteStream(participant.player.id, participant.stream);
+				// }
+			}
+		});
+	}, [voiceParticipants, audioElements, userId, handleRemoteStream]);
 
 	// Auto-initialize voice when chat is permitted and not already initialized
 	useEffect(() => {
@@ -326,6 +407,22 @@ export function VoiceChat({ className }: VoiceChatProps) {
 					)}
 				</div>
 
+				{/* Debug Info */}
+				{process.env.NODE_ENV === "development" && (
+					<div className="text-xs bg-muted/20 p-2 rounded">
+						<div>Audio Elements: {audioElements.size}</div>
+						<div>
+							Remote Streams: {remoteStreamsRef.current.size}
+						</div>
+						<div>
+							Voice Participants: {voiceParticipants.length}
+						</div>
+						<div>
+							Other Participants: {otherParticipants.length}
+						</div>
+					</div>
+				)}
+
 				{/* Current User Status */}
 				{currentUserParticipant && (
 					<>
@@ -342,10 +439,7 @@ export function VoiceChat({ className }: VoiceChatProps) {
 										</span>
 									</div>
 									<span className="text-sm font-medium">
-										{
-											currentUserParticipant.player
-												.wallet_address
-										}
+										{currentUserParticipant.player.id}
 									</span>
 								</div>
 								<div className="flex items-center gap-1">
@@ -381,6 +475,12 @@ export function VoiceChat({ className }: VoiceChatProps) {
 									const hasAudio = audioElements.has(
 										participant.player.id
 									);
+									const audioElement = audioElements.get(
+										participant.player.id
+									);
+									const isPlaying =
+										audioElement && !audioElement.paused;
+
 									return (
 										<div
 											key={participant.player.id}
@@ -395,19 +495,26 @@ export function VoiceChat({ className }: VoiceChatProps) {
 													</span>
 												</div>
 												<span className="text-sm">
-													{
-														participant.player
-															.wallet_address
-													}
+													{participant.player.id}
 												</span>
-												{hasAudio && (
-													<Badge
-														variant="outline"
-														className="text-xs"
-													>
-														🔊
-													</Badge>
-												)}
+												<div className="flex items-center gap-1">
+													{hasAudio && (
+														<Badge
+															variant="outline"
+															className="text-xs"
+														>
+															🔊
+														</Badge>
+													)}
+													{isPlaying && (
+														<Badge
+															variant="outline"
+															className="text-xs bg-green-100"
+														>
+															▶️
+														</Badge>
+													)}
+												</div>
 											</div>
 											<div className="flex items-center gap-1">
 												{participant.mic_enabled ? (
