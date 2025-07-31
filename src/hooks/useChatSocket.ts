@@ -86,9 +86,11 @@ export type ChatServerMessage =
 			producer_id: string;
 			kind: MediaKind;
 			rtp_parameters: RtpParameters;
+			participant_id: string;
 	  }
 	| { type: "voiceparticipants"; participants: VoiceParticipant[] }
-	| { type: "voiceparticipantupdate"; participant: VoiceParticipant };
+	| { type: "voiceparticipantupdate"; participant: VoiceParticipant }
+	| { type: "newproducer"; producer_id: string; participant_id: string };
 
 export type ChatClientMessage =
 	| { type: "chat"; text: string }
@@ -146,6 +148,7 @@ export interface UseChatSocketType {
 	voiceParticipants: VoiceParticipant[];
 	localStream: MediaStream | null;
 	voiceError: string | null;
+	participantStreams: Map<string, MediaStream>;
 }
 
 export function useChatSocket({
@@ -191,6 +194,10 @@ export function useChatSocket({
 	const [voiceParticipants, setVoiceParticipants] = useState<
 		VoiceParticipant[]
 	>([]);
+	const participantStreamsRef = useRef<Map<string, MediaStream>>(new Map());
+	const [participantStreams, setParticipantStreams] = useState<
+		Map<string, MediaStream>
+	>(new Map());
 	const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 	const [voiceError, setVoiceError] = useState<string | null>(null);
 
@@ -266,6 +273,8 @@ export function useChatSocket({
 			router_rtp_capabilities: RtpCapabilities;
 		}) => {
 			try {
+				console.log("🎙️ Handling voice init", data);
+
 				if (!deviceRef.current) {
 					deviceRef.current = new Device();
 				}
@@ -287,9 +296,17 @@ export function useChatSocket({
 						data.producer_transport_options
 					);
 
+				// Create consumer transport
+				consumerTransportRef.current =
+					deviceRef.current.createRecvTransport(
+						data.consumer_transport_options
+					);
+
+				// Set up producer transport events
 				producerTransportRef.current.on(
 					"connect",
 					({ dtlsParameters }, success, errback) => {
+						console.log("🔗 Producer transport connecting...");
 						sendMessage({
 							type: "connectproducertransport",
 							dtls_parameters: dtlsParameters,
@@ -299,7 +316,7 @@ export function useChatSocket({
 									() => {
 										success();
 										console.log(
-											"🔗 Producer transport connected"
+											"✅ Producer transport connected"
 										);
 									};
 
@@ -310,7 +327,7 @@ export function useChatSocket({
 							})
 							.catch((error) => {
 								console.error(
-									"Failed to send connect producer transport message:",
+									"❌ Failed to send connect producer transport message:",
 									error
 								);
 								errback(error);
@@ -321,6 +338,7 @@ export function useChatSocket({
 				producerTransportRef.current.on(
 					"produce",
 					({ kind, rtpParameters }, success, errback) => {
+						console.log(`🎤 Producing ${kind}...`);
 						sendMessage({
 							type: "produce",
 							kind,
@@ -334,7 +352,7 @@ export function useChatSocket({
 								}) => {
 									success({ id });
 									console.log(
-										`🎵 ${kind} producer created: ${id}`
+										`✅ ${kind} producer created: ${id}`
 									);
 								};
 
@@ -345,7 +363,7 @@ export function useChatSocket({
 							})
 							.catch((error) => {
 								console.error(
-									"Failed to send produce message:",
+									`❌ Failed to send produce message:`,
 									error
 								);
 								errback(error);
@@ -353,15 +371,11 @@ export function useChatSocket({
 					}
 				);
 
-				// Create consumer transport
-				consumerTransportRef.current =
-					deviceRef.current.createRecvTransport(
-						data.consumer_transport_options
-					);
-
+				// Set up consumer transport events
 				consumerTransportRef.current.on(
 					"connect",
 					({ dtlsParameters }, success, errback) => {
+						console.log("🔗 Consumer transport connecting...");
 						sendMessage({
 							type: "connectconsumertransport",
 							dtls_parameters: dtlsParameters,
@@ -371,7 +385,7 @@ export function useChatSocket({
 									() => {
 										success();
 										console.log(
-											"🔗 Consumer transport connected"
+											"✅ Consumer transport connected"
 										);
 									};
 
@@ -382,7 +396,7 @@ export function useChatSocket({
 							})
 							.catch((error) => {
 								console.error(
-									"Failed to send connect consumer transport message:",
+									"❌ Failed to send connect consumer transport message:",
 									error
 								);
 								errback(error);
@@ -390,22 +404,38 @@ export function useChatSocket({
 					}
 				);
 
-				// If we have a local stream, start producing
+				// **IMPORTANT: Only create producers if we have a local stream**
 				if (localStreamRef.current && producerTransportRef.current) {
+					console.log("🎵 Creating producers from local stream...");
+
 					for (const track of localStreamRef.current.getTracks()) {
-						const producer =
-							await producerTransportRef.current.produce({
-								track,
-							});
-						producersRef.current.set(producer.id, producer);
 						console.log(
-							`🎤 Producer created for ${track.kind}: ${producer.id}`
+							`🎤 Creating producer for ${track.kind} track`
 						);
+
+						try {
+							const producer =
+								await producerTransportRef.current.produce({
+									track,
+								});
+
+							producersRef.current.set(producer.id, producer);
+							console.log(
+								`✅ Producer created for ${track.kind}: ${producer.id}`
+							);
+						} catch (error) {
+							console.error(
+								`❌ Failed to create producer for ${track.kind}:`,
+								error
+							);
+						}
 					}
+				} else {
+					console.warn("⚠️ No local stream available for producing");
 				}
 
 				setVoiceConnected(true);
-				console.log("✅ Voice chat initialized");
+				console.log("✅ Voice chat fully initialized");
 			} catch (error) {
 				console.error("❌ Failed to handle voice init:", error);
 				setVoiceError("Failed to initialize voice chat");
@@ -414,16 +444,19 @@ export function useChatSocket({
 		[sendMessage]
 	);
 
-	// In your useChatSocket hook, update the handleVoiceConsumed function:
-
 	const handleVoiceConsumed = useCallback(
 		async (data: {
 			id: string;
 			producer_id: string;
 			kind: MediaKind;
 			rtp_parameters: RtpParameters;
+			participant_id: string;
 		}) => {
 			try {
+				console.log(
+					`🔊 Handling consumed for participant: ${data.participant_id}, kind: ${data.kind}`
+				);
+
 				if (!consumerTransportRef.current) {
 					console.error("❌ Consumer transport not available");
 					return;
@@ -447,20 +480,29 @@ export function useChatSocket({
 				// Create audio stream from consumer track if it's audio
 				if (data.kind === "audio" && consumer.track) {
 					const stream = new MediaStream([consumer.track]);
+					const participantId = data.participant_id;
 
-					// Find which participant this consumer belongs to
-					// You might need to track producer_id -> participant_id mapping
-					// For now, using producer_id as participant identifier
-					const participantId = data.producer_id;
+					console.log(
+						`🎵 Creating audio stream for participant: ${participantId}`
+					);
 
-					// Emit event or call callback to create audio element
-					// You can expose this through a callback prop or custom event
+					// Store the stream
+					participantStreamsRef.current.set(participantId, stream);
+					setParticipantStreams(
+						new Map(participantStreamsRef.current)
+					);
+
+					// Create audio element for playback
 					if (window.createAudioElementForParticipant) {
 						window.createAudioElementForParticipant(
 							participantId,
 							stream
 						);
 					}
+
+					console.log(
+						`✅ Audio stream created for participant: ${participantId}`
+					);
 				}
 
 				console.log(
@@ -468,6 +510,30 @@ export function useChatSocket({
 				);
 			} catch (error) {
 				console.error("❌ Failed to handle voice consumed:", error);
+			}
+		},
+		[sendMessage]
+	);
+
+	const handleNewProducer = useCallback(
+		async (data: { producer_id: string; participant_id: string }) => {
+			try {
+				console.log(
+					`🎵 New producer ${data.producer_id} from participant ${data.participant_id}`
+				);
+
+				// Add a small delay to ensure producer is ready on server
+				await new Promise((resolve) => setTimeout(resolve, 50));
+
+				// Automatically consume the new producer
+				await sendMessage({
+					type: "consume",
+					producer_id: data.producer_id,
+				});
+
+				console.log(`📡 Consuming producer ${data.producer_id}`);
+			} catch (error) {
+				console.error("❌ Failed to consume new producer:", error);
 			}
 		},
 		[sendMessage]
@@ -483,6 +549,42 @@ export function useChatSocket({
 				localStreamRef.current.getAudioTracks().forEach((track) => {
 					track.enabled = newMicState;
 				});
+			}
+
+			// If enabling mic and we don't have producers yet, create them
+			if (
+				newMicState &&
+				localStreamRef.current &&
+				producerTransportRef.current
+			) {
+				const hasAudioProducer = Array.from(
+					producersRef.current.values()
+				).some((producer) => producer.track?.kind === "audio");
+
+				if (!hasAudioProducer) {
+					console.log(
+						"🎤 Creating audio producer when enabling mic..."
+					);
+
+					for (const track of localStreamRef.current.getAudioTracks()) {
+						try {
+							const producer =
+								await producerTransportRef.current.produce({
+									track,
+								});
+
+							producersRef.current.set(producer.id, producer);
+							console.log(
+								`✅ Audio producer created: ${producer.id}`
+							);
+						} catch (error) {
+							console.error(
+								"❌ Failed to create audio producer:",
+								error
+							);
+						}
+					}
+				}
 			}
 
 			await sendMessage({
@@ -560,6 +662,13 @@ export function useChatSocket({
 		setIsMuted(true);
 		setVoiceParticipants([]);
 		setVoiceError(null);
+
+		// Clean up participant streams
+		participantStreamsRef.current.forEach((stream) => {
+			stream.getTracks().forEach((track) => track.stop());
+		});
+		participantStreamsRef.current.clear();
+		setParticipantStreams(new Map());
 
 		console.log("🔇 Voice chat disconnected");
 	}, []);
@@ -666,6 +775,9 @@ export function useChatSocket({
 					case "consumed":
 						handleVoiceConsumed(data);
 						break;
+					case "newproducer":
+						handleNewProducer(data);
+						break;
 					case "voiceparticipants":
 						setVoiceParticipants(data.participants);
 						break;
@@ -742,6 +854,7 @@ export function useChatSocket({
 		open,
 		handleVoiceInit,
 		handleVoiceConsumed,
+		handleNewProducer,
 		disconnectVoice,
 	]);
 
@@ -844,5 +957,6 @@ export function useChatSocket({
 		voiceParticipants,
 		localStream,
 		voiceError,
+		participantStreams,
 	};
 }
