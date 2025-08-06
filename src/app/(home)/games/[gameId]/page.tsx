@@ -5,8 +5,8 @@ import CreateLobbyForm from "./_components/create-lobby-form";
 import GameDetails from "./_components/game-details";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SinglePlayer from "./_components/single-player";
-import { JsonGameType, GameType, transGameType } from "@/types/schema";
 import { apiRequest } from "@/lib/api";
+import { GameType } from "@/types/schema/game";
 
 export default async function CreateGame({
 	params,
@@ -15,12 +15,11 @@ export default async function CreateGame({
 }) {
 	const { gameId } = await params;
 
-	const jsonGame = await apiRequest<JsonGameType>({
+	const game = await apiRequest<GameType>({
 		path: `/game/${gameId}`,
 		auth: false,
 		cache: "force-cache",
 	});
-	const game: GameType = await transGameType(jsonGame);
 
 	return (
 		<div className="mx-auto max-w-3xl px-4 py-4 sm:px-6 sm:py-6">

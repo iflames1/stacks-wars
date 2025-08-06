@@ -7,7 +7,6 @@ import {
 	CardDescription,
 	CardFooter,
 } from "@/components/ui/card";
-import { Lobby, Participant, Pool } from "@/types/schema";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { JoinState, LobbyClientMessage } from "@/hooks/useLobbySocket";
@@ -15,11 +14,13 @@ import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { leaveGamePool } from "@/lib/actions/leaveGamePool";
 import { useRouter } from "next/navigation";
+import { Lobby, LobbyPool } from "@/types/schema/lobby";
+import { Player } from "@/types/schema/player";
 
 interface JoinLobbyFormProps {
 	lobby: Lobby;
-	players: Participant[];
-	pool: Pool | null;
+	players: Player[];
+	pool: LobbyPool | null;
 	joinState: JoinState;
 	lobbyId: string;
 	userId: string;
@@ -43,7 +44,7 @@ export default function JoinLobbyForm({
 	const [joined, setJoined] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const isParticipant = players.some((p) => p.id === userId);
-	const isCreator = userId === lobby.creatorId;
+	const isCreator = userId === lobby.creator.id;
 
 	const router = useRouter();
 

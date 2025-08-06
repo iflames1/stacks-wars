@@ -1,11 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Lobby, LobbyPool } from "@/types/schema/lobby";
+import { Player } from "@/types/schema/player";
 import { Gamepad2, Trophy, Users } from "lucide-react";
-import { Lobby, Participant, Pool } from "@/types/schema";
 
 interface LobbyStatsProps {
 	lobby: Lobby;
-	players: Participant[];
-	pool: Pool | null;
+	players: Player[];
+	pool: LobbyPool | null;
 }
 
 export default function LobbyStats({ lobby, players, pool }: LobbyStatsProps) {

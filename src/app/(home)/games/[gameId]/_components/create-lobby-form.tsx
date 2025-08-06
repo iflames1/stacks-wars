@@ -67,10 +67,7 @@ interface CreateLobbyFormProps {
 	gameName: string;
 }
 
-export default function CreateLobbyForm({
-	gameId,
-	gameName,
-}: CreateLobbyFormProps) {
+export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const { isConnecting, isConnected, handleConnect } = useConnectUser();
@@ -211,7 +208,7 @@ export default function CreateLobbyForm({
 				}
 
 				apiParams = {
-					path: "room",
+					path: "/lobby",
 					method: "POST",
 					body: {
 						name: values.name,
@@ -220,7 +217,6 @@ export default function CreateLobbyForm({
 						contract_address: contractInfo.contractAddress,
 						tx_id,
 						game_id: gameId,
-						game_name: gameName,
 					},
 					tag: "lobby",
 					revalidateTag: "lobby",
@@ -228,13 +224,12 @@ export default function CreateLobbyForm({
 				};
 			} else {
 				apiParams = {
-					path: "room",
+					path: "/lobby",
 					method: "POST",
 					body: {
 						name: values.name,
 						description: values.description || null,
 						game_id: gameId,
-						game_name: gameName,
 					},
 					tag: "lobby",
 					revalidateTag: "lobby",

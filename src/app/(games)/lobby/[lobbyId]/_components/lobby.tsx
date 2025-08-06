@@ -7,14 +7,6 @@ import JoinLobbyForm from "./join-lobby-form";
 import GamePreview from "./game-preview";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import {
-	GameType,
-	lobbyStatus,
-	Lobby as LobbyType,
-	Participant,
-	Pool,
-	transParticipant,
-} from "@/types/schema";
-import {
 	JoinState,
 	LobbyServerMessage,
 	PendingJoin,
@@ -28,11 +20,18 @@ import ShareLinkButton from "./share-link-button";
 import Link from "next/link";
 import Loading from "@/app/(games)/lexi-wars/[lobbyId]/loading";
 import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
+import { GameType } from "@/types/schema/game";
+import {
+	LobbyPool,
+	lobbyState,
+	Lobby as LobbyType,
+} from "@/types/schema/lobby";
+import { Player } from "@/types/schema/player";
 
 interface LobbyProps {
 	lobby: LobbyType;
-	players: Participant[];
-	pool: Pool | null;
+	players: Player[];
+	pool: LobbyPool | null;
 	userId: string;
 	userWalletAddress: string;
 	lobbyId: string;
@@ -48,12 +47,9 @@ export default function Lobby({
 	game,
 }: LobbyProps) {
 	const [joined, setJoined] = useState(false);
-	const [participantList, setParticipantList] =
-		useState<Participant[]>(players);
+	const [participantList, setParticipantList] = useState<Player[]>(players);
 	const [countdown, setCountdown] = useState<number | null>(null);
-	const [lobbyState, setLobbyState] = useState<lobbyStatus>(
-		lobby.lobbyStatus
-	);
+	const [lobbyState, setLobbyState] = useState<lobbyState>(lobby.state);
 	const [pendingPlayers, setPendingPlayers] = useState<PendingJoin[]>([]);
 	const [joinState, setJoinState] = useState<JoinState>("idle");
 	const [latency, setLatency] = useState<number | null>(null);
@@ -71,7 +67,7 @@ export default function Lobby({
 
 			switch (message.type) {
 				case "playerupdated":
-					setParticipantList(message.players.map(transParticipant));
+					setParticipantList(message.players);
 					break;
 				case "playerkicked":
 					toast.info(
@@ -100,8 +96,7 @@ export default function Lobby({
 					if (isInPending) setJoinState(isInPending.state);
 					break;
 				case "playersnotready":
-					const notReadyPlayers =
-						message.players.map(transParticipant);
+					const notReadyPlayers = message.players;
 					notReadyPlayers.forEach((p) => {
 						toast.error(
 							`${p.username || truncateAddress(p.walletAddress)} is not ready`
@@ -156,7 +151,7 @@ export default function Lobby({
 	}, [isParticipant, joined]);
 
 	useEffect(() => {
-		if (readyPlayers && countdown === 0 && lobbyState === "inprogress") {
+		if (readyPlayers && countdown === 0 && lobbyState === "inProgress") {
 			disconnect();
 			if (readyPlayers.includes(userId)) {
 				router.replace(`/lexi-wars/${lobbyId}`);
@@ -181,7 +176,7 @@ export default function Lobby({
 		disconnectChat,
 	]);
 
-	if (lobbyState === "inprogress" && countdown === 0) {
+	if (lobbyState === "inProgress" && countdown === 0) {
 		return <Loading />;
 	}
 

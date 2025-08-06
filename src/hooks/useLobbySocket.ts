@@ -1,5 +1,7 @@
+import { lobbyState } from "@/types/schema/lobby";
+import { Player } from "@/types/schema/player";
+import { User } from "@/types/schema/user";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { JsonParticipant, JsonUser, lobbyStatus } from "@/types/schema";
 
 interface UseLobbySocketProps {
 	lobbyId: string;
@@ -12,13 +14,13 @@ export type PlayerStatus = "ready" | "notready";
 export type JoinState = "idle" | "pending" | "allowed" | "rejected";
 
 export type PendingJoin = {
-	user: JsonUser;
+	user: User;
 	state: JoinState;
 };
 
 export type LobbyClientMessage =
 	| { type: "updateplayerstate"; new_state: PlayerStatus }
-	| { type: "updategamestate"; new_state: lobbyStatus }
+	| { type: "updategamestate"; new_state: lobbyState }
 	| { type: "leaveroom" }
 	| {
 			type: "kickplayer";
@@ -42,7 +44,7 @@ export type LobbyClientMessage =
 	  };
 
 export type LobbyServerMessage =
-	| { type: "playerupdated"; players: JsonParticipant[] }
+	| { type: "playerupdated"; players: Player[] }
 	| {
 			type: "playerkicked";
 			player_id: string;
@@ -53,14 +55,14 @@ export type LobbyServerMessage =
 	| { type: "countdown"; time: number }
 	| {
 			type: "gamestate";
-			state: lobbyStatus;
+			state: lobbyState;
 			ready_players: string[] | null;
 	  }
 	| {
 			type: "pendingplayers";
 			pending_players: PendingJoin[];
 	  }
-	| { type: "playersnotready"; players: JsonParticipant[] }
+	| { type: "playersnotready"; players: Player[] }
 	| { type: "allowed" }
 	| { type: "rejected" }
 	| { type: "pending" }

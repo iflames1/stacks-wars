@@ -1,8 +1,8 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Users } from "lucide-react";
-import { LobbyExtended } from "@/types/schema";
 import OpenLobby from "./open-lobby";
 import ActiveLobbyHeader from "./active-lobby-header";
+import { LobbyExtended } from "@/types/schema/lobby";
 
 export default async function ActiveLobbies({
 	lobbies,
@@ -25,7 +25,7 @@ export default async function ActiveLobbies({
 										Game:
 									</span>
 									<span className="font-medium">
-										{lobby.lobby.gameName}
+										{lobby.lobby.game.name}
 									</span>
 								</div>
 								{lobby.pool && (
@@ -45,7 +45,7 @@ export default async function ActiveLobbies({
 									<div className="flex items-center gap-1">
 										<Users className="h-4 w-4 text-muted-foreground" />
 										<span className="font-medium">
-											{lobby.lobby.players}
+											{lobby.lobby.participants}
 											{/*/{lobby.maxPlayers}*/}
 										</span>
 									</div>

@@ -2,16 +2,17 @@ import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { Loader2, User as UserIcon, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Lobby, Participant, Pool } from "@/types/schema";
 import { truncateAddress } from "@/lib/utils";
 import { LobbyClientMessage, PendingJoin } from "@/hooks/useLobbySocket";
 import { useState } from "react";
 import { EXPLORER_BASE_URL } from "@/lib/constants";
+import { Lobby, LobbyPool } from "@/types/schema/lobby";
+import { Player } from "@/types/schema/player";
 
 interface ParticipantProps {
 	lobby: Lobby;
-	pool: Pool | null;
-	players: Participant[];
+	pool: LobbyPool | null;
+	players: Player[];
 	pendingPlayers: PendingJoin[];
 	userId: string;
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
@@ -26,7 +27,7 @@ export default function Participants({
 	sendMessage,
 }: ParticipantProps) {
 	const currentPlayer = players.find((p) => p.id === userId);
-	const isReady = currentPlayer?.playerStatus === "ready";
+	const isReady = currentPlayer?.state === "ready";
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [isKicking, setIsKicking] = useState(false);
 	const [isHandlingJoin, setIsHandlingJoin] = useState(false);
@@ -90,7 +91,7 @@ export default function Participants({
 						<Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
 						<span className="truncate">Current Participants</span>
 					</CardTitle>
-					{userId !== lobby.creatorId &&
+					{userId !== lobby.creator.id &&
 						!lobby.contractAddress &&
 						players.some((p) => p.id === userId) && (
 							<Button
@@ -117,9 +118,10 @@ export default function Participants({
 					<>
 						<div className="space-y-2 sm:space-y-3">
 							{players.map((player, index) => {
-								const isCreator = player.id === lobby.creatorId;
+								const isCreator =
+									player.id === lobby.creator.id;
 								const isSelfCreator =
-									userId === lobby.creatorId;
+									userId === lobby.creator.id;
 								const isSelf = userId === player.id;
 
 								return (
@@ -152,13 +154,13 @@ export default function Participants({
 														)}
 														<span
 															className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
-																player.playerStatus ===
+																player.state ===
 																"ready"
 																	? "bg-green-500/10 text-green-500"
 																	: "bg-yellow-500/10 text-yellow-500"
 															}`}
 														>
-															{player.playerStatus ===
+															{player.state ===
 															"ready"
 																? "Ready"
 																: "Not Ready"}
@@ -239,11 +241,11 @@ export default function Participants({
 													<div className="min-w-0 flex-1">
 														<p className="text-sm sm:text-base font-medium truncate">
 															{pendingplayer.user
-																.display_name ||
+																.displayName ||
 																truncateAddress(
 																	pendingplayer
 																		.user
-																		.wallet_address
+																		.walletAddress
 																)}
 														</p>
 														<p className="text-xs text-muted-foreground">
@@ -251,7 +253,8 @@ export default function Participants({
 														</p>
 													</div>
 												</div>
-												{userId === lobby.creatorId && (
+												{userId ===
+													lobby.creator.id && (
 													<div className="flex gap-2 shrink-0 ml-2">
 														<Button
 															size="sm"

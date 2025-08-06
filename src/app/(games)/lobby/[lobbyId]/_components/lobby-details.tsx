@@ -1,6 +1,5 @@
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { Info, Timer, User, Loader2 } from "lucide-react";
-import { Lobby, lobbyStatus, Participant, Pool } from "@/types/schema";
 import { Button } from "@/components/ui/button";
 import { LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { useState } from "react";
@@ -8,13 +7,15 @@ import { toast } from "sonner";
 import { EXPLORER_BASE_URL } from "@/lib/constants";
 import Link from "next/link";
 import { truncateAddress } from "@/lib/utils";
+import { Lobby, LobbyPool, lobbyState } from "@/types/schema/lobby";
+import { Player } from "@/types/schema/player";
 
 interface LobbyDetailsProps {
 	lobby: Lobby;
-	pool: Pool | null;
-	players: Participant[];
+	pool: LobbyPool | null;
+	players: Player[];
 	countdown: number | null;
-	lobbyState: lobbyStatus;
+	lobbyState: lobbyState;
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
 	userId: string;
 }
@@ -30,7 +31,7 @@ export default function LobbyDetails({
 }: LobbyDetailsProps) {
 	const [loading, setLoading] = useState<boolean>(false);
 
-	const handleLobbyState = async (state: lobbyStatus) => {
+	const handleLobbyState = async (state: lobbyState) => {
 		setLoading(true);
 		try {
 			await sendMessage({
@@ -47,14 +48,14 @@ export default function LobbyDetails({
 	const buttonLabel =
 		lobbyState === "waiting"
 			? "Start Game"
-			: lobbyState === "inprogress" && countdown && countdown > 0
+			: lobbyState === "inProgress" && countdown && countdown > 0
 				? "Wait"
 				: "Loading...";
 
 	const isDisabled =
 		loading ||
 		lobbyState === "finished" ||
-		(lobbyState === "inprogress" && countdown === 0);
+		(lobbyState === "inProgress" && countdown === 0);
 
 	return (
 		<Card className="overflow-hidden bg-primary/10">
@@ -81,7 +82,7 @@ export default function LobbyDetails({
 											const creator = players.find(
 												(player) =>
 													player.id ===
-													lobby.creatorId
+													lobby.creator.id
 											);
 											return (
 												creator?.username ||
@@ -122,7 +123,7 @@ export default function LobbyDetails({
 				</div>
 
 				{/* Countdown Timer */}
-				{(lobbyState === "inprogress" ||
+				{(lobbyState === "inProgress" ||
 					(countdown && countdown < 15)) && (
 					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted">
 						<div className="flex items-center justify-center gap-2 text-center">
@@ -134,7 +135,7 @@ export default function LobbyDetails({
 					</div>
 				)}
 
-				{userId === lobby.creatorId && (
+				{userId === lobby.creator.id && (
 					<Button
 						variant={
 							lobbyState === "waiting" ? "default" : "destructive"
@@ -150,8 +151,8 @@ export default function LobbyDetails({
 									"At least 2 players are required to start the game."
 								);
 							} else if (lobbyState === "waiting")
-								handleLobbyState("inprogress");
-							else if (lobbyState === "inprogress")
+								handleLobbyState("inProgress");
+							else if (lobbyState === "inProgress")
 								handleLobbyState("waiting");
 						}}
 					>
