@@ -9,18 +9,17 @@ import {
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { JoinState, LobbyClientMessage } from "@/hooks/useLobbySocket";
+import { LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { leaveGamePool } from "@/lib/actions/leaveGamePool";
 import { useRouter } from "next/navigation";
-import { Lobby, LobbyPool } from "@/types/schema/lobby";
+import { JoinState, Lobby } from "@/types/schema/lobby";
 import { Player } from "@/types/schema/player";
 
 interface JoinLobbyFormProps {
 	lobby: Lobby;
 	players: Player[];
-	pool: LobbyPool | null;
 	joinState: JoinState;
 	lobbyId: string;
 	userId: string;
@@ -33,7 +32,6 @@ interface JoinLobbyFormProps {
 export default function JoinLobbyForm({
 	lobby,
 	players,
-	pool,
 	joinState,
 	userId,
 	userWalletAddress,
@@ -64,16 +62,13 @@ export default function JoinLobbyForm({
 					});
 					return;
 				}
-				if (lobby.contractAddress) {
-					if (!pool) {
-						throw new Error("No pool found for this lobby");
-					}
+				if (lobby.contractAddress && lobby.entryAmount) {
 					const contract =
 						lobby.contractAddress as `${string}.${string}`;
 					const leaveTxId = await leaveGamePool(
 						userWalletAddress,
 						contract,
-						pool.entryAmount
+						lobby.entryAmount
 					);
 					if (!leaveTxId) {
 						throw new Error(
@@ -83,7 +78,7 @@ export default function JoinLobbyForm({
 
 					await waitForTxConfirmed(leaveTxId);
 				}
-				await sendMessage({ type: "leaveroom" });
+				await sendMessage({ type: "leaveLobby" });
 				setJoined(false);
 				toast.info("You left the lobby");
 				if (isCreator) {
@@ -97,15 +92,15 @@ export default function JoinLobbyForm({
 			if (joinState === "pending") return;
 
 			if (joinState === "idle" || joinState === "rejected") {
-				await sendMessage({ type: "requestjoin" });
+				await sendMessage({ type: "requestJoin" });
 				return;
 			}
 
 			if (joinState === "allowed") {
-				if (pool) {
+				if (lobby.contractAddress && lobby.entryAmount) {
 					const contract =
-						pool.contractAddress as `${string}.${string}`;
-					const amount = pool.entryAmount;
+						lobby.contractAddress as `${string}.${string}`;
+					const amount = lobby.entryAmount;
 
 					const joinTx = await joinGamePool(contract, amount);
 					if (!joinTx.txid) {
@@ -117,11 +112,11 @@ export default function JoinLobbyForm({
 					await waitForTxConfirmed(joinTx.txid);
 
 					await sendMessage({
-						type: "joinlobby",
+						type: "joinLobby",
 						tx_id: joinTx.txid,
 					});
 				} else {
-					await sendMessage({ type: "joinlobby", tx_id: undefined });
+					await sendMessage({ type: "joinLobby", tx_id: undefined });
 				}
 			}
 		} catch (error) {

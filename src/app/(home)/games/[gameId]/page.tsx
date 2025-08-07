@@ -18,7 +18,6 @@ export default async function CreateGame({
 	const game = await apiRequest<GameType>({
 		path: `/game/${gameId}`,
 		auth: false,
-		cache: "force-cache",
 	});
 
 	return (

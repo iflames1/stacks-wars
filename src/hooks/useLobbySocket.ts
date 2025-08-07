@@ -1,5 +1,5 @@
-import { lobbyState } from "@/types/schema/lobby";
-import { Player } from "@/types/schema/player";
+import { lobbyState, PendingJoin } from "@/types/schema/lobby";
+import { Player, PlayerStatus } from "@/types/schema/player";
 import { User } from "@/types/schema/user";
 import { useEffect, useRef, useState, useCallback } from "react";
 
@@ -9,33 +9,22 @@ interface UseLobbySocketProps {
 	userId: string;
 }
 
-export type PlayerStatus = "ready" | "notready";
-
-export type JoinState = "idle" | "pending" | "allowed" | "rejected";
-
-export type PendingJoin = {
-	user: User;
-	state: JoinState;
-};
-
 export type LobbyClientMessage =
-	| { type: "updateplayerstate"; new_state: PlayerStatus }
-	| { type: "updategamestate"; new_state: lobbyState }
-	| { type: "leaveroom" }
+	| { type: "updatePlayerState"; new_state: PlayerStatus }
+	| { type: "updateLobbyState"; new_state: lobbyState }
+	| { type: "leaveLobby" }
 	| {
-			type: "kickplayer";
-			player_id: string;
-			wallet_address: string;
-			display_name: string | null;
+			type: "kickPlayer";
+			playerId: string;
 	  }
-	| { type: "requestjoin" }
+	| { type: "requestJoin" }
 	| {
-			type: "permitjoin";
-			user_id: string;
+			type: "permitJoin";
+			userId: string;
 			allow: boolean;
 	  }
 	| {
-			type: "joinlobby";
+			type: "joinLobby";
 			tx_id: string | undefined;
 	  }
 	| {
@@ -44,25 +33,23 @@ export type LobbyClientMessage =
 	  };
 
 export type LobbyServerMessage =
-	| { type: "playerupdated"; players: Player[] }
+	| { type: "playerUpdated"; players: Player[] }
 	| {
-			type: "playerkicked";
-			player_id: string;
-			wallet_address: string;
-			display_name: string | null;
+			type: "playerKicked";
+			player: User;
 	  }
-	| { type: "notifykicked" }
+	| { type: "notifyKicked" }
 	| { type: "countdown"; time: number }
 	| {
-			type: "gamestate";
+			type: "lobbyState";
 			state: lobbyState;
 			ready_players: string[] | null;
 	  }
 	| {
-			type: "pendingplayers";
+			type: "pendingPlayers";
 			pending_players: PendingJoin[];
 	  }
-	| { type: "playersnotready"; players: Player[] }
+	| { type: "playersNotReady"; players: Player[] }
 	| { type: "allowed" }
 	| { type: "rejected" }
 	| { type: "pending" }

@@ -6,12 +6,7 @@ import Participants from "./participants";
 import JoinLobbyForm from "./join-lobby-form";
 import GamePreview from "./game-preview";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import {
-	JoinState,
-	LobbyServerMessage,
-	PendingJoin,
-	useLobbySocket,
-} from "@/hooks/useLobbySocket";
+import { LobbyServerMessage, useLobbySocket } from "@/hooks/useLobbySocket";
 import { toast } from "sonner";
 import { truncateAddress } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -22,16 +17,16 @@ import Loading from "@/app/(games)/lexi-wars/[lobbyId]/loading";
 import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
 import { GameType } from "@/types/schema/game";
 import {
-	LobbyPool,
+	JoinState,
 	lobbyState,
 	Lobby as LobbyType,
+	PendingJoin,
 } from "@/types/schema/lobby";
 import { Player } from "@/types/schema/player";
 
 interface LobbyProps {
 	lobby: LobbyType;
 	players: Player[];
-	pool: LobbyPool | null;
 	userId: string;
 	userWalletAddress: string;
 	lobbyId: string;
@@ -40,7 +35,6 @@ interface LobbyProps {
 export default function Lobby({
 	lobby,
 	players,
-	pool,
 	userId,
 	userWalletAddress,
 	lobbyId,
@@ -66,36 +60,37 @@ export default function Lobby({
 			}
 
 			switch (message.type) {
-				case "playerupdated":
+				case "playerUpdated":
 					setParticipantList(message.players);
 					break;
-				case "playerkicked":
+				case "playerKicked":
 					toast.info(
 						`${
-							message.display_name ||
-							truncateAddress(message.wallet_address)
+							message.player.displayName ||
+							message.player.username ||
+							truncateAddress(message.player.walletAddress)
 						} was kicked from the lobby.`
 					);
 					break;
-				case "notifykicked":
+				case "notifyKicked":
 					toast.info("You were kicked from the lobby.");
 					router.refresh();
 					break;
 				case "countdown":
 					setCountdown(message.time);
 					break;
-				case "gamestate":
+				case "lobbyState":
 					setLobbyState(message.state);
 					setReadyPlayers(message.ready_players);
 					break;
-				case "pendingplayers":
+				case "pendingPlayers":
 					setPendingPlayers(message.pending_players);
 					const isInPending = message.pending_players.find(
 						(p) => p.user.id === userId
 					);
 					if (isInPending) setJoinState(isInPending.state);
 					break;
-				case "playersnotready":
+				case "playersNotReady":
 					const notReadyPlayers = message.players;
 					notReadyPlayers.forEach((p) => {
 						toast.error(
@@ -203,15 +198,10 @@ export default function Lobby({
 					{/* Main Content */}
 					<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
 						{/* Stats Cards */}
-						<LobbyStats
-							lobby={lobby}
-							players={participantList}
-							pool={pool}
-						/>
+						<LobbyStats lobby={lobby} players={participantList} />
 						{/* Lobby Details */}
 						<LobbyDetails
 							lobby={lobby}
-							pool={pool}
 							players={participantList}
 							countdown={countdown}
 							lobbyState={lobbyState}
@@ -220,7 +210,6 @@ export default function Lobby({
 						/>
 						<Participants
 							lobby={lobby}
-							pool={pool}
 							players={participantList}
 							pendingPlayers={pendingPlayers}
 							userId={userId}
@@ -239,7 +228,6 @@ export default function Lobby({
 								<JoinLobbyForm
 									lobby={lobby}
 									players={participantList}
-									pool={pool}
 									joinState={joinState}
 									lobbyId={lobbyId}
 									userId={userId}

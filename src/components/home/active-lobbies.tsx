@@ -28,13 +28,13 @@ export default async function ActiveLobbies({
 										{lobby.lobby.game.name}
 									</span>
 								</div>
-								{lobby.pool && (
+								{lobby.lobby.entryAmount && (
 									<div className="flex justify-between">
 										<span className="text-muted-foreground">
 											Pool entry:
 										</span>
 										<span className="font-medium">
-											{lobby.pool.entryAmount} STX
+											{lobby.lobby.entryAmount} STX
 										</span>
 									</div>
 								)}

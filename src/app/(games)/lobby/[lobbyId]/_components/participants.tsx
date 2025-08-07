@@ -3,15 +3,14 @@ import { Loader2, User as UserIcon, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { truncateAddress } from "@/lib/utils";
-import { LobbyClientMessage, PendingJoin } from "@/hooks/useLobbySocket";
+import { LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { useState } from "react";
 import { EXPLORER_BASE_URL } from "@/lib/constants";
-import { Lobby, LobbyPool } from "@/types/schema/lobby";
-import { Player } from "@/types/schema/player";
+import { Lobby, PendingJoin } from "@/types/schema/lobby";
+import { Player, PlayerStatus } from "@/types/schema/player";
 
 interface ParticipantProps {
 	lobby: Lobby;
-	pool: LobbyPool | null;
 	players: Player[];
 	pendingPlayers: PendingJoin[];
 	userId: string;
@@ -20,7 +19,6 @@ interface ParticipantProps {
 
 export default function Participants({
 	lobby,
-	pool,
 	players,
 	pendingPlayers,
 	userId,
@@ -32,18 +30,12 @@ export default function Participants({
 	const [isKicking, setIsKicking] = useState(false);
 	const [isHandlingJoin, setIsHandlingJoin] = useState(false);
 
-	const handleKickPlayer = async (
-		playerId: string,
-		wallet_address: string,
-		display_name: string | null
-	) => {
+	const handleKickPlayer = async (playerId: string) => {
 		setIsKicking(true);
 		try {
 			await sendMessage({
-				type: "kickplayer",
-				player_id: playerId,
-				wallet_address: wallet_address,
-				display_name: display_name,
+				type: "kickPlayer",
+				playerId: playerId,
 			});
 		} catch (error) {
 			console.error("Error kicking player:", error);
@@ -52,13 +44,11 @@ export default function Participants({
 		}
 	};
 
-	type PlayerStatus = "ready" | "notready";
-
 	const handleUpdatePlayerStatus = async (status: PlayerStatus) => {
 		setIsUpdating(true);
 		try {
 			await sendMessage({
-				type: "updateplayerstate",
+				type: "updatePlayerState",
 				new_state: status,
 			});
 		} catch (error) {
@@ -72,8 +62,8 @@ export default function Participants({
 		setIsHandlingJoin(true);
 		try {
 			sendMessage({
-				type: "permitjoin",
-				user_id: userId,
+				type: "permitJoin",
+				userId: userId,
 				allow,
 			});
 		} catch (error) {
@@ -100,7 +90,7 @@ export default function Participants({
 								disabled={isUpdating}
 								onClick={() =>
 									handleUpdatePlayerStatus(
-										isReady ? "notready" : "ready"
+										isReady ? "notReady" : "ready"
 									)
 								}
 								className="shrink-0 ml-2"
@@ -170,31 +160,34 @@ export default function Participants({
 											</div>
 										</div>
 										<div className="shrink-0 ml-2 flex flex-col items-end gap-1">
-											{player.txId && pool && (
-												<>
-													<span className="text-sm sm:text-base font-bold whitespace-nowrap">
-														{pool.entryAmount} STX
-													</span>
-													<Button
-														variant={"link"}
-														asChild
-														className="!p-0 text-right h-auto text-xs"
-													>
-														<Link
-															href={`${EXPLORER_BASE_URL}txid/${player.txId}?chain=testnet`}
-															target="_blank"
-															className="truncate max-w-[80px] sm:max-w-none"
+											{player.txId &&
+												lobby.entryAmount && (
+													<>
+														<span className="text-sm sm:text-base font-bold whitespace-nowrap">
+															{lobby.entryAmount}{" "}
+															STX
+														</span>
+														<Button
+															variant={"link"}
+															asChild
+															className="!p-0 text-right h-auto text-xs"
 														>
-															<span className="hidden sm:inline">
-																View in explorer
-															</span>
-															<span className="sm:hidden">
-																Explorer
-															</span>
-														</Link>
-													</Button>
-												</>
-											)}
+															<Link
+																href={`${EXPLORER_BASE_URL}txid/${player.txId}?chain=testnet`}
+																target="_blank"
+																className="truncate max-w-[80px] sm:max-w-none"
+															>
+																<span className="hidden sm:inline">
+																	View in
+																	explorer
+																</span>
+																<span className="sm:hidden">
+																	Explorer
+																</span>
+															</Link>
+														</Button>
+													</>
+												)}
 											{isSelfCreator &&
 												!isCreator &&
 												!lobby.contractAddress && (
@@ -205,9 +198,7 @@ export default function Participants({
 														disabled={isKicking}
 														onClick={() =>
 															handleKickPlayer(
-																player.id,
-																player.walletAddress,
-																player.username
+																player.id
 															)
 														}
 													>

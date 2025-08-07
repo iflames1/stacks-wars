@@ -7,12 +7,11 @@ import { toast } from "sonner";
 import { EXPLORER_BASE_URL } from "@/lib/constants";
 import Link from "next/link";
 import { truncateAddress } from "@/lib/utils";
-import { Lobby, LobbyPool, lobbyState } from "@/types/schema/lobby";
+import { Lobby, lobbyState } from "@/types/schema/lobby";
 import { Player } from "@/types/schema/player";
 
 interface LobbyDetailsProps {
 	lobby: Lobby;
-	pool: LobbyPool | null;
 	players: Player[];
 	countdown: number | null;
 	lobbyState: lobbyState;
@@ -22,7 +21,6 @@ interface LobbyDetailsProps {
 
 export default function LobbyDetails({
 	lobby,
-	pool,
 	players,
 	countdown,
 	lobbyState,
@@ -35,7 +33,7 @@ export default function LobbyDetails({
 		setLoading(true);
 		try {
 			await sendMessage({
-				type: "updategamestate",
+				type: "updateLobbyState",
 				new_state: state,
 			});
 		} catch (error) {
@@ -95,7 +93,7 @@ export default function LobbyDetails({
 									</p>
 								</div>
 							</div>
-							{pool && (
+							{lobby.contractAddress && (
 								<div className="shrink-0 ml-2">
 									<Button
 										variant={"link"}
@@ -104,7 +102,7 @@ export default function LobbyDetails({
 										className="text-xs"
 									>
 										<Link
-											href={`${EXPLORER_BASE_URL}txid/${pool.contractAddress}?chain=testnet`}
+											href={`${EXPLORER_BASE_URL}txid/${lobby.contractAddress}?chain=testnet`}
 											target="_blank"
 											className="truncate max-w-[100px] sm:max-w-none"
 										>

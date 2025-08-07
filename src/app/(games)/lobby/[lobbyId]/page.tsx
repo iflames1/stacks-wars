@@ -33,7 +33,6 @@ export default async function LobbyDetailPage({
 		<Lobby
 			lobby={lobbyExtended.lobby}
 			players={lobbyExtended.players}
-			pool={lobbyExtended.pool}
 			userId={userId}
 			userWalletAddress={userWalletAddress}
 			lobbyId={lobbyId}

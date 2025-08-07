@@ -14,16 +14,18 @@ export interface Lobby {
 	createdAt: string;
 	description: string | null;
 	contractAddress: string | null;
-}
-
-export interface LobbyPool {
-	entryAmount: number;
-	contractAddress: string;
-	currentAmount: number;
+	entryAmount: number | null;
+	currentAmount: number | null;
 }
 
 export interface LobbyExtended {
 	lobby: Lobby;
 	players: Player[];
-	pool: LobbyPool | null;
 }
+
+export type JoinState = "idle" | "pending" | "allowed" | "rejected";
+
+export type PendingJoin = {
+	user: User;
+	state: JoinState;
+};
