@@ -1,22 +1,17 @@
-import { JsonParticipant } from "@/types/schema";
+import { Player } from "@/types/schema/player";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export interface PlayerStanding {
-	player: JsonParticipant;
-	rank: number;
-}
-
-export interface JsonChatMessage {
+export interface ChatMessage {
 	id: string;
 	text: string;
-	sender: JsonParticipant;
+	sender: Player;
 	timestamp: string;
 }
 
 export type ChatServerMessage =
-	| { type: "permitchat"; allowed: boolean }
-	| { type: "chat"; message: JsonChatMessage }
-	| { type: "chathistory"; messages: JsonChatMessage[] }
+	| { type: "permitChat"; allowed: boolean }
+	| { type: "chat"; message: ChatMessage }
+	| { type: "chatHistory"; messages: ChatMessage[] }
 	| { type: "pong"; ts: number; pong: number }
 	| { type: "error"; message: string };
 
@@ -45,7 +40,7 @@ export interface UseChatSocketType {
 	error: null | Event;
 	reconnecting: boolean;
 	forceReconnect: () => void;
-	messages: JsonChatMessage[];
+	messages: ChatMessage[];
 	unreadCount: number;
 	chatPermitted: boolean;
 	userId: string;
@@ -69,7 +64,7 @@ export function useChatSocket({
 	);
 	const [error, setError] = useState<null | Event>(null);
 	const [reconnecting, setReconnecting] = useState(false);
-	const [messages, setMessages] = useState<JsonChatMessage[]>([]);
+	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [chatPermitted, setChatPermitted] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [open, setOpen] = useState(false);
@@ -166,7 +161,7 @@ export function useChatSocket({
 				const data = JSON.parse(raw) as ChatServerMessage;
 
 				switch (data.type) {
-					case "permitchat":
+					case "permitChat":
 						setChatPermitted(data.allowed);
 						if (!data.allowed) setMessages([]);
 						break;
@@ -176,7 +171,7 @@ export function useChatSocket({
 							setUnreadCount((prev) => prev + 1);
 						}
 						break;
-					case "chathistory":
+					case "chatHistory":
 						setMessages(data.messages);
 						break;
 					case "pong":

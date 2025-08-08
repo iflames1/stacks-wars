@@ -8,10 +8,8 @@ import GameOverModal from "./game-over-modal";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
 	LexiWarsServerMessage,
-	PlayerStanding,
 	useLexiWarsSocket,
 } from "@/hooks/useLexiWarsSocket";
-import { Participant, transParticipant } from "@/types/schema";
 import { toast } from "sonner";
 import { truncateAddress } from "@/lib/utils";
 import ClaimRewardModal from "./claim-reward-modal";
@@ -20,6 +18,7 @@ import { useRouter } from "next/navigation";
 import Loading from "../loading";
 import Back from "./back";
 import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
+import { Player, PlayerStanding } from "@/types/schema/player";
 
 interface LexiWarsProps {
 	lobbyId: string;
@@ -30,7 +29,7 @@ interface LexiWarsProps {
 export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
 
-	const [currentTurn, setCurrentTurn] = useState<Participant | null>(null);
+	const [currentTurn, setCurrentTurn] = useState<Player | null>(null);
 	const [rule, setRule] = useState<string>(
 		"Word must be at least 4 characters!"
 	);
@@ -55,7 +54,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const handleMessage = useCallback(
 		(message: LexiWarsServerMessage) => {
 			if (
-				message.type !== "startfailed" &&
+				message.type !== "startFailed" &&
 				message.type !== "start" &&
 				message.type !== "pong"
 			) {
@@ -63,7 +62,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 			}
 			switch (message.type) {
 				case "turn":
-					setCurrentTurn(transParticipant(message.current_turn));
+					setCurrentTurn(message.currentTurn);
 					break;
 				case "rule":
 					setRule(message.rule);
@@ -83,26 +82,27 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 				case "validate":
 					toast.info(`${message.msg}`);
 					break;
-				case "wordentry":
+				case "wordEntry":
 					toast.info(
 						`${
 							userId === message.sender.id
 								? "You"
-								: message.sender.display_name ||
+								: message.sender.displayName ||
+									message.sender.username ||
 									truncateAddress(
-										message.sender.wallet_address
+										message.sender.walletAddress
 									)
 						} entered: ${message.word}`
 					);
 					break;
-				case "usedword":
+				case "usedWord":
 					toast.info(`${message.word} has already been used!`);
 					break;
-				case "gameover":
+				case "gameOver":
 					toast.info(`🏁 Game Over!`);
 					setGameOver(true);
 					break;
-				case "finalstanding":
+				case "finalStanding":
 					setFinalStanding(message.standing);
 					break;
 				case "prize":
@@ -121,13 +121,13 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					setStartCountdown(message.time);
 					setGameStarted(message.started);
 					break;
-				case "startfailed":
+				case "startFailed":
 					toast.error("Failed to start the game.", {
 						description: "Not enough players connected.",
 					});
 					router.replace(`/lobby/${lobbyId}`);
 					break;
-				case "alreadystarted":
+				case "alreadyStarted":
 					setAlreadyStarted(true);
 					break;
 				default:
@@ -191,7 +191,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		setIsLoading(true);
 		try {
 			e?.preventDefault();
-			await sendMessage({ type: "wordentry", word: word.trim() });
+			await sendMessage({ type: "wordEntry", word: word.trim() });
 			setWord("");
 		} catch (error) {
 			console.error("Failed to send word:", error);

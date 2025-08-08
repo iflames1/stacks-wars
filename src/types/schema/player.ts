@@ -17,3 +17,8 @@ export interface Player extends User {
 	claim: ClaimState | null;
 	prize: number | null;
 }
+
+export interface PlayerStanding {
+	player: Player;
+	rank: number;
+}

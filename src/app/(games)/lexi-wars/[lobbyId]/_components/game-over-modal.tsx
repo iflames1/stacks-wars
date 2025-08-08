@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { PlayerStanding } from "@/hooks/useLexiWarsSocket";
 import { truncateAddress } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Trophy } from "lucide-react";
+import { PlayerStanding } from "@/types/schema/player";
 
 interface GameOverModalProps {
 	standing: PlayerStanding[] | null;
@@ -84,10 +84,9 @@ export default function GameOverModal({
 									{i + 1}
 								</span>
 								<span className="font-medium">
-									{s.player.display_name ??
-										truncateAddress(
-											s.player.wallet_address
-										)}
+									{s.player.displayName ||
+										s.player.username ||
+										truncateAddress(s.player.walletAddress)}
 								</span>
 							</div>
 							<div className="flex items-center space-x-2">
