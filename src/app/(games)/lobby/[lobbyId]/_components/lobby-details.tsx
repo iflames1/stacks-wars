@@ -34,7 +34,7 @@ export default function LobbyDetails({
 		try {
 			await sendMessage({
 				type: "updateLobbyState",
-				new_state: state,
+				newState: state,
 			});
 		} catch (error) {
 			console.error("Failed to send message:", error);

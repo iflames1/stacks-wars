@@ -74,21 +74,31 @@ export default function Lobby({
 					break;
 				case "notifyKicked":
 					toast.info("You were kicked from the lobby.");
-					router.refresh();
+					setJoinState("idle");
 					break;
 				case "countdown":
 					setCountdown(message.time);
 					break;
 				case "lobbyState":
 					setLobbyState(message.state);
-					setReadyPlayers(message.ready_players);
+					setReadyPlayers(message.readyPlayers);
 					break;
 				case "pendingPlayers":
-					setPendingPlayers(message.pending_players);
-					const isInPending = message.pending_players.find(
+					setPendingPlayers(
+						message.pendingPlayers.filter(
+							(p) => p.state === "pending"
+						)
+					);
+					const isInPending = message.pendingPlayers.find(
 						(p) => p.user.id === userId
 					);
-					if (isInPending) setJoinState(isInPending.state);
+					if (isInPending) {
+						console.log(
+							"found in pending players",
+							isInPending.state
+						);
+						setJoinState(isInPending.state);
+					}
 					break;
 				case "playersNotReady":
 					const notReadyPlayers = message.players;
@@ -120,7 +130,7 @@ export default function Lobby({
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[router, userId]
+		[userId]
 	);
 
 	const {

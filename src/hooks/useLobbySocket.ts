@@ -10,8 +10,8 @@ interface UseLobbySocketProps {
 }
 
 export type LobbyClientMessage =
-	| { type: "updatePlayerState"; new_state: PlayerStatus }
-	| { type: "updateLobbyState"; new_state: lobbyState }
+	| { type: "updatePlayerState"; newState: PlayerStatus }
+	| { type: "updateLobbyState"; newState: lobbyState }
 	| { type: "leaveLobby" }
 	| {
 			type: "kickPlayer";
@@ -25,7 +25,7 @@ export type LobbyClientMessage =
 	  }
 	| {
 			type: "joinLobby";
-			tx_id: string | undefined;
+			txId: string | undefined;
 	  }
 	| {
 			type: "ping";
@@ -43,11 +43,11 @@ export type LobbyServerMessage =
 	| {
 			type: "lobbyState";
 			state: lobbyState;
-			ready_players: string[] | null;
+			readyPlayers: string[] | null;
 	  }
 	| {
 			type: "pendingPlayers";
-			pending_players: PendingJoin[];
+			pendingPlayers: PendingJoin[];
 	  }
 	| { type: "playersNotReady"; players: Player[] }
 	| { type: "allowed" }
@@ -158,7 +158,7 @@ export function useLobbySocket({
 		console.log("🟢 Connecting LobbySocket...");
 
 		const ws = new WebSocket(
-			`${process.env.NEXT_PUBLIC_WS_URL}/ws/room/${lobbyId}?user_id=${userId}`
+			`${process.env.NEXT_PUBLIC_WS_URL}/ws/lobby/${lobbyId}?user_id=${userId}`
 		);
 
 		socketRef.current = ws;

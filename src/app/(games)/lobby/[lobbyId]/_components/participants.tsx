@@ -35,7 +35,7 @@ export default function Participants({
 		try {
 			await sendMessage({
 				type: "kickPlayer",
-				playerId: playerId,
+				playerId,
 			});
 		} catch (error) {
 			console.error("Error kicking player:", error);
@@ -49,7 +49,7 @@ export default function Participants({
 		try {
 			await sendMessage({
 				type: "updatePlayerState",
-				new_state: status,
+				newState: status,
 			});
 		} catch (error) {
 			console.error("Error updating status:", error);
@@ -61,9 +61,9 @@ export default function Participants({
 	const handleJoinRequest = async (userId: string, allow: boolean) => {
 		setIsHandlingJoin(true);
 		try {
-			sendMessage({
+			await sendMessage({
 				type: "permitJoin",
-				userId: userId,
+				userId,
 				allow,
 			});
 		} catch (error) {

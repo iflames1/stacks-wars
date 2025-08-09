@@ -48,6 +48,7 @@ export default function JoinLobbyForm({
 
 	useEffect(() => {
 		if (isParticipant) setJoined(true);
+		else setJoined(false);
 	}, [isParticipant]);
 
 	const handleClick = async () => {
@@ -113,10 +114,10 @@ export default function JoinLobbyForm({
 
 					await sendMessage({
 						type: "joinLobby",
-						tx_id: joinTx.txid,
+						txId: joinTx.txid,
 					});
 				} else {
-					await sendMessage({ type: "joinLobby", tx_id: undefined });
+					await sendMessage({ type: "joinLobby", txId: undefined });
 				}
 			}
 		} catch (error) {
@@ -140,6 +141,7 @@ export default function JoinLobbyForm({
 			case "allowed":
 				return "Join Lobby";
 			case "idle":
+				return "Request to Join";
 			case "rejected":
 				return "Request to Join";
 			default:
