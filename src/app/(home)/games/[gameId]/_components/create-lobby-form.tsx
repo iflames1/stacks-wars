@@ -393,7 +393,11 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 										size={17}
 									/>
 								)}
-								{isLoading ? "Creating..." : "Create Lobby"}
+								{isLoading
+									? "Creating..."
+									: deployedContract
+										? "Join Deployed Lobby"
+										: "Create Lobby"}
 							</Button>
 						)}
 					</CardFooter>

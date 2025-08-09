@@ -75,9 +75,9 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					toast.info(`Time's up!`, {
 						description: `Your rank was ${message.rank}.`,
 					});
-					if (Number(message.rank) > 3) {
-						setIsClaimed(true);
-					}
+					//if (Number(message.rank) > 3) {
+					//	setIsClaimed(true);
+					//}
 					break;
 				case "validate":
 					toast.info(`${message.msg}`);
@@ -106,11 +106,11 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					setFinalStanding(message.standing);
 					break;
 				case "prize":
+					setPrizeAmount(message.amount);
 					if (message.amount > 0) {
-						setPrizeAmount(message.amount);
 						setShowPrizeModal(true);
 						setIsClaimed(false);
-					} else {
+					} else if (message.amount === 0) {
 						setIsClaimed(true);
 					}
 					break;
@@ -172,6 +172,17 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 			finalStanding &&
 			gameOver &&
 			(contract ? prizeAmount !== null : true);
+
+		console.log(
+			"finalStanding:",
+			finalStanding,
+			"gameOver:",
+			gameOver,
+			"prizeAmount:",
+			prizeAmount,
+			"contract:",
+			contract
+		);
 
 		if (shouldDisconnect) {
 			console.log("🔌 Game completed with prizes, disconnecting...");
