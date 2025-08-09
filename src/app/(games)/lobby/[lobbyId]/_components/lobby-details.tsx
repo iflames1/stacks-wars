@@ -121,17 +121,18 @@ export default function LobbyDetails({
 				</div>
 
 				{/* Countdown Timer */}
-				{(lobbyState === "inProgress" ||
-					(countdown && countdown < 15)) && (
-					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted">
-						<div className="flex items-center justify-center gap-2 text-center">
-							<Timer className="h-5 w-5 text-muted-foreground shrink-0" />
-							<span className="text-sm sm:text-lg md:text-xl font-semibold text-primary">
-								Game starting in {countdown} seconds
-							</span>
+				{lobbyState === "inProgress" &&
+					countdown &&
+					countdown <= 15 && (
+						<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted">
+							<div className="flex items-center justify-center gap-2 text-center">
+								<Timer className="h-5 w-5 text-muted-foreground shrink-0" />
+								<span className="text-sm sm:text-lg md:text-xl font-semibold text-primary">
+									Game starting in {countdown} seconds
+								</span>
+							</div>
 						</div>
-					</div>
-				)}
+					)}
 
 				{userId === lobby.creator.id && (
 					<Button
