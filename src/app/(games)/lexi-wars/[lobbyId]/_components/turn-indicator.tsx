@@ -1,10 +1,10 @@
 import { truncateAddress } from "@/lib/utils";
-import { Participant } from "@/types/schema";
+import { Player } from "@/types/schema/player";
 import { User } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface TurnIndicatorProps {
-	currentPlayer: Participant | null;
+	currentPlayer: Player | null;
 	userId: string;
 }
 

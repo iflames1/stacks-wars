@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SendHorizonal, Users, Wifi, WifiOff } from "lucide-react";
 import { cn, truncateAddress } from "@/lib/utils";
-import { JsonChatMessage } from "@/hooks/useChatSocket";
+import { ChatMessage } from "@/hooks/useChatSocket";
 import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -150,8 +150,12 @@ export default function Chat() {
 		});
 	};
 
-	const getDisplayName = (sender: JsonChatMessage["sender"]) => {
-		return sender.display_name || truncateAddress(sender.wallet_address);
+	const getDisplayName = (sender: ChatMessage["sender"]) => {
+		return (
+			sender.displayName ||
+			sender.username ||
+			truncateAddress(sender.walletAddress)
+		);
 	};
 
 	const getInitials = (name: string) => {

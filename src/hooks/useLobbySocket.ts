@@ -1,5 +1,7 @@
+import { lobbyState, PendingJoin } from "@/types/schema/lobby";
+import { Player, PlayerStatus } from "@/types/schema/player";
+import { User } from "@/types/schema/user";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { JsonParticipant, JsonUser, lobbyStatus } from "@/types/schema";
 
 interface UseLobbySocketProps {
 	lobbyId: string;
@@ -7,34 +9,23 @@ interface UseLobbySocketProps {
 	userId: string;
 }
 
-export type PlayerStatus = "ready" | "notready";
-
-export type JoinState = "idle" | "pending" | "allowed" | "rejected";
-
-export type PendingJoin = {
-	user: JsonUser;
-	state: JoinState;
-};
-
 export type LobbyClientMessage =
-	| { type: "updateplayerstate"; new_state: PlayerStatus }
-	| { type: "updategamestate"; new_state: lobbyStatus }
-	| { type: "leaveroom" }
+	| { type: "updatePlayerState"; newState: PlayerStatus }
+	| { type: "updateLobbyState"; newState: lobbyState }
+	| { type: "leaveLobby" }
 	| {
-			type: "kickplayer";
-			player_id: string;
-			wallet_address: string;
-			display_name: string | null;
+			type: "kickPlayer";
+			playerId: string;
 	  }
-	| { type: "requestjoin" }
+	| { type: "requestJoin" }
 	| {
-			type: "permitjoin";
-			user_id: string;
+			type: "permitJoin";
+			userId: string;
 			allow: boolean;
 	  }
 	| {
-			type: "joinlobby";
-			tx_id: string | undefined;
+			type: "joinLobby";
+			txId: string | undefined;
 	  }
 	| {
 			type: "ping";
@@ -42,25 +33,23 @@ export type LobbyClientMessage =
 	  };
 
 export type LobbyServerMessage =
-	| { type: "playerupdated"; players: JsonParticipant[] }
+	| { type: "playerUpdated"; players: Player[] }
 	| {
-			type: "playerkicked";
-			player_id: string;
-			wallet_address: string;
-			display_name: string | null;
+			type: "playerKicked";
+			player: User;
 	  }
-	| { type: "notifykicked" }
+	| { type: "notifyKicked" }
 	| { type: "countdown"; time: number }
 	| {
-			type: "gamestate";
-			state: lobbyStatus;
-			ready_players: string[] | null;
+			type: "lobbyState";
+			state: lobbyState;
+			readyPlayers: string[] | null;
 	  }
 	| {
-			type: "pendingplayers";
-			pending_players: PendingJoin[];
+			type: "pendingPlayers";
+			pendingPlayers: PendingJoin[];
 	  }
-	| { type: "playersnotready"; players: JsonParticipant[] }
+	| { type: "playersNotReady"; players: Player[] }
 	| { type: "allowed" }
 	| { type: "rejected" }
 	| { type: "pending" }
@@ -169,7 +158,7 @@ export function useLobbySocket({
 		console.log("🟢 Connecting LobbySocket...");
 
 		const ws = new WebSocket(
-			`${process.env.NEXT_PUBLIC_WS_URL}/ws/room/${lobbyId}?user_id=${userId}`
+			`${process.env.NEXT_PUBLIC_WS_URL}/ws/lobby/${lobbyId}?user_id=${userId}`
 		);
 
 		socketRef.current = ws;

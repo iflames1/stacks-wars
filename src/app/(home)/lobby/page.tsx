@@ -2,40 +2,18 @@ import ActiveLobbies from "@/components/home/active-lobbies";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-//import { getAvailableLobbies, getLobbies } from "@/lib/services/lobby";
 import { apiRequest } from "@/lib/api";
-import {
-	JsonLobbyExtended,
-	LobbyExtended,
-	transLobbyExtended,
-} from "@/types/schema";
+import { LobbyExtended } from "@/types/schema/lobby";
 
-export default async function PoolsPage({
-	searchParams,
-}: {
-	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-	const params = await searchParams;
-	const error = params.error;
-
-	const jsonLobbies = await apiRequest<JsonLobbyExtended[]>({
-		path: `/rooms/extended?page=1&state=waiting,inprogress`,
+export default async function LobbyPage() {
+	const lobbies = await apiRequest<LobbyExtended[]>({
+		path: `/lobby/extended?page=1&lobby_state=waiting,inProgress`,
 		auth: false,
 		tag: "lobby",
 	});
-	const lobbies: LobbyExtended[] = jsonLobbies.map(transLobbyExtended);
-
-	if (!lobbies) {
-		return <div>No lobbies found</div>;
-	}
 
 	return (
 		<>
-			{error === "wallet-required" && (
-				<div className="py-3 flex items-center justify-center text-sm bg-red-400">
-					<p>Please connect your wallet to access lobbies</p>
-				</div>
-			)}
 			<section className="w-full py-12 md:py-24 lg:py-32">
 				<div className="max-w-5xl mx-auto px-4 md:px-6">
 					<div className="flex flex-col items-start gap-4 md:flex-row md:justify-between md:items-center">

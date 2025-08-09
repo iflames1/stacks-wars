@@ -1,9 +1,9 @@
 "use client";
-import { type Lobby } from "@/types/schema";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useConnectUser } from "@/contexts/ConnectWalletContext";
 import { Loader } from "lucide-react";
+import { Lobby } from "@/types/schema/lobby";
 
 interface OpenLobbyProps {
 	lobby: Lobby;
@@ -16,16 +16,14 @@ export default function OpenLobby({ lobby }: OpenLobbyProps) {
 		<>
 			{isConnected ? (
 				<Button
-					variant={
-						lobby.lobbyStatus === "waiting" ? "default" : "outline"
-					}
+					variant={lobby.state === "waiting" ? "default" : "outline"}
 					className="w-full gap-1.5 "
-					disabled={lobby.lobbyStatus !== "waiting"}
+					disabled={lobby.state !== "waiting"}
 					onClick={() => router.push(`/lobby/${lobby.id}`)}
 				>
-					{lobby.lobbyStatus === "waiting"
+					{lobby.state === "waiting"
 						? "Open Lobby"
-						: lobby.lobbyStatus === "inprogress"
+						: lobby.state === "inProgress"
 							? "In Progress"
 							: "Closed"}
 				</Button>

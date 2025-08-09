@@ -6,20 +6,7 @@ import Participants from "./participants";
 import JoinLobbyForm from "./join-lobby-form";
 import GamePreview from "./game-preview";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import {
-	GameType,
-	lobbyStatus,
-	Lobby as LobbyType,
-	Participant,
-	Pool,
-	transParticipant,
-} from "@/types/schema";
-import {
-	JoinState,
-	LobbyServerMessage,
-	PendingJoin,
-	useLobbySocket,
-} from "@/hooks/useLobbySocket";
+import { LobbyServerMessage, useLobbySocket } from "@/hooks/useLobbySocket";
 import { toast } from "sonner";
 import { truncateAddress } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -28,11 +15,18 @@ import ShareLinkButton from "./share-link-button";
 import Link from "next/link";
 import Loading from "@/app/(games)/lexi-wars/[lobbyId]/loading";
 import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
+import { GameType } from "@/types/schema/game";
+import {
+	JoinState,
+	lobbyState,
+	Lobby as LobbyType,
+	PendingJoin,
+} from "@/types/schema/lobby";
+import { Player } from "@/types/schema/player";
 
 interface LobbyProps {
 	lobby: LobbyType;
-	players: Participant[];
-	pool: Pool | null;
+	players: Player[];
 	userId: string;
 	userWalletAddress: string;
 	lobbyId: string;
@@ -41,19 +35,15 @@ interface LobbyProps {
 export default function Lobby({
 	lobby,
 	players,
-	pool,
 	userId,
 	userWalletAddress,
 	lobbyId,
 	game,
 }: LobbyProps) {
 	const [joined, setJoined] = useState(false);
-	const [participantList, setParticipantList] =
-		useState<Participant[]>(players);
+	const [participantList, setParticipantList] = useState<Player[]>(players);
 	const [countdown, setCountdown] = useState<number | null>(null);
-	const [lobbyState, setLobbyState] = useState<lobbyStatus>(
-		lobby.lobbyStatus
-	);
+	const [lobbyState, setLobbyState] = useState<lobbyState>(lobby.state);
 	const [pendingPlayers, setPendingPlayers] = useState<PendingJoin[]>([]);
 	const [joinState, setJoinState] = useState<JoinState>("idle");
 	const [latency, setLatency] = useState<number | null>(null);
@@ -70,38 +60,48 @@ export default function Lobby({
 			}
 
 			switch (message.type) {
-				case "playerupdated":
-					setParticipantList(message.players.map(transParticipant));
+				case "playerUpdated":
+					setParticipantList(message.players);
 					break;
-				case "playerkicked":
+				case "playerKicked":
 					toast.info(
 						`${
-							message.display_name ||
-							truncateAddress(message.wallet_address)
+							message.player.displayName ||
+							message.player.username ||
+							truncateAddress(message.player.walletAddress)
 						} was kicked from the lobby.`
 					);
 					break;
-				case "notifykicked":
+				case "notifyKicked":
 					toast.info("You were kicked from the lobby.");
-					router.refresh();
+					setJoinState("idle");
 					break;
 				case "countdown":
 					setCountdown(message.time);
 					break;
-				case "gamestate":
+				case "lobbyState":
 					setLobbyState(message.state);
-					setReadyPlayers(message.ready_players);
+					setReadyPlayers(message.readyPlayers);
 					break;
-				case "pendingplayers":
-					setPendingPlayers(message.pending_players);
-					const isInPending = message.pending_players.find(
+				case "pendingPlayers":
+					setPendingPlayers(
+						message.pendingPlayers.filter(
+							(p) => p.state === "pending"
+						)
+					);
+					const isInPending = message.pendingPlayers.find(
 						(p) => p.user.id === userId
 					);
-					if (isInPending) setJoinState(isInPending.state);
+					if (isInPending) {
+						console.log(
+							"found in pending players",
+							isInPending.state
+						);
+						setJoinState(isInPending.state);
+					}
 					break;
-				case "playersnotready":
-					const notReadyPlayers =
-						message.players.map(transParticipant);
+				case "playersNotReady":
+					const notReadyPlayers = message.players;
 					notReadyPlayers.forEach((p) => {
 						toast.error(
 							`${p.username || truncateAddress(p.walletAddress)} is not ready`
@@ -130,7 +130,7 @@ export default function Lobby({
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[router, userId]
+		[userId]
 	);
 
 	const {
@@ -156,7 +156,7 @@ export default function Lobby({
 	}, [isParticipant, joined]);
 
 	useEffect(() => {
-		if (readyPlayers && countdown === 0 && lobbyState === "inprogress") {
+		if (readyPlayers && countdown === 0 && lobbyState === "inProgress") {
 			disconnect();
 			if (readyPlayers.includes(userId)) {
 				router.replace(`/lexi-wars/${lobbyId}`);
@@ -181,7 +181,7 @@ export default function Lobby({
 		disconnectChat,
 	]);
 
-	if (lobbyState === "inprogress" && countdown === 0) {
+	if (lobbyState === "inProgress" && countdown === 0) {
 		return <Loading />;
 	}
 
@@ -208,15 +208,10 @@ export default function Lobby({
 					{/* Main Content */}
 					<div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
 						{/* Stats Cards */}
-						<LobbyStats
-							lobby={lobby}
-							players={participantList}
-							pool={pool}
-						/>
+						<LobbyStats lobby={lobby} players={participantList} />
 						{/* Lobby Details */}
 						<LobbyDetails
 							lobby={lobby}
-							pool={pool}
 							players={participantList}
 							countdown={countdown}
 							lobbyState={lobbyState}
@@ -225,7 +220,6 @@ export default function Lobby({
 						/>
 						<Participants
 							lobby={lobby}
-							pool={pool}
 							players={participantList}
 							pendingPlayers={pendingPlayers}
 							userId={userId}
@@ -244,7 +238,6 @@ export default function Lobby({
 								<JoinLobbyForm
 									lobby={lobby}
 									players={participantList}
-									pool={pool}
 									joinState={joinState}
 									lobbyId={lobbyId}
 									userId={userId}

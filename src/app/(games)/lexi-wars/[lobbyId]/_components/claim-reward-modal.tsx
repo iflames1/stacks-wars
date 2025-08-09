@@ -61,11 +61,11 @@ export default function ClaimRewardModal({
 			await waitForTxConfirmed(claimTxId);
 
 			await apiRequest({
-				path: `/room/${lobbyId}/claim-state`,
-				method: "PUT",
+				path: `/lobby/${lobbyId}/claim-state`,
+				method: "PATCH",
 				body: {
 					claim: {
-						status: "Claimed",
+						status: "claimed",
 						data: {
 							tx_id: claimTxId,
 						},

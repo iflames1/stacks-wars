@@ -7,19 +7,19 @@ import {
 	CardDescription,
 	CardFooter,
 } from "@/components/ui/card";
-import { Lobby, Participant, Pool } from "@/types/schema";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { JoinState, LobbyClientMessage } from "@/hooks/useLobbySocket";
+import { LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { leaveGamePool } from "@/lib/actions/leaveGamePool";
 import { useRouter } from "next/navigation";
+import { JoinState, Lobby } from "@/types/schema/lobby";
+import { Player } from "@/types/schema/player";
 
 interface JoinLobbyFormProps {
 	lobby: Lobby;
-	players: Participant[];
-	pool: Pool | null;
+	players: Player[];
 	joinState: JoinState;
 	lobbyId: string;
 	userId: string;
@@ -32,7 +32,6 @@ interface JoinLobbyFormProps {
 export default function JoinLobbyForm({
 	lobby,
 	players,
-	pool,
 	joinState,
 	userId,
 	userWalletAddress,
@@ -43,12 +42,13 @@ export default function JoinLobbyForm({
 	const [joined, setJoined] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const isParticipant = players.some((p) => p.id === userId);
-	const isCreator = userId === lobby.creatorId;
+	const isCreator = userId === lobby.creator.id;
 
 	const router = useRouter();
 
 	useEffect(() => {
 		if (isParticipant) setJoined(true);
+		else setJoined(false);
 	}, [isParticipant]);
 
 	const handleClick = async () => {
@@ -63,16 +63,13 @@ export default function JoinLobbyForm({
 					});
 					return;
 				}
-				if (lobby.contractAddress) {
-					if (!pool) {
-						throw new Error("No pool found for this lobby");
-					}
+				if (lobby.contractAddress && lobby.entryAmount) {
 					const contract =
 						lobby.contractAddress as `${string}.${string}`;
 					const leaveTxId = await leaveGamePool(
 						userWalletAddress,
 						contract,
-						pool.entryAmount
+						lobby.entryAmount
 					);
 					if (!leaveTxId) {
 						throw new Error(
@@ -82,7 +79,7 @@ export default function JoinLobbyForm({
 
 					await waitForTxConfirmed(leaveTxId);
 				}
-				await sendMessage({ type: "leaveroom" });
+				await sendMessage({ type: "leaveLobby" });
 				setJoined(false);
 				toast.info("You left the lobby");
 				if (isCreator) {
@@ -96,15 +93,15 @@ export default function JoinLobbyForm({
 			if (joinState === "pending") return;
 
 			if (joinState === "idle" || joinState === "rejected") {
-				await sendMessage({ type: "requestjoin" });
+				await sendMessage({ type: "requestJoin" });
 				return;
 			}
 
 			if (joinState === "allowed") {
-				if (pool) {
+				if (lobby.contractAddress && lobby.entryAmount) {
 					const contract =
-						pool.contractAddress as `${string}.${string}`;
-					const amount = pool.entryAmount;
+						lobby.contractAddress as `${string}.${string}`;
+					const amount = lobby.entryAmount;
 
 					const joinTx = await joinGamePool(contract, amount);
 					if (!joinTx.txid) {
@@ -116,11 +113,11 @@ export default function JoinLobbyForm({
 					await waitForTxConfirmed(joinTx.txid);
 
 					await sendMessage({
-						type: "joinlobby",
-						tx_id: joinTx.txid,
+						type: "joinLobby",
+						txId: joinTx.txid,
 					});
 				} else {
-					await sendMessage({ type: "joinlobby", tx_id: undefined });
+					await sendMessage({ type: "joinLobby", txId: undefined });
 				}
 			}
 		} catch (error) {
@@ -144,6 +141,7 @@ export default function JoinLobbyForm({
 			case "allowed":
 				return "Join Lobby";
 			case "idle":
+				return "Request to Join";
 			case "rejected":
 				return "Request to Join";
 			default:

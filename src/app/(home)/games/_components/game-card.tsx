@@ -11,7 +11,7 @@ import { Trophy, Users, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { GameType } from "@/types/schema";
+import { GameType } from "@/types/schema/game";
 
 export default function GameCard({ game }: { game: GameType }) {
 	return (
@@ -77,7 +77,7 @@ export default function GameCard({ game }: { game: GameType }) {
 				</div>
 				<div className="relative hidden sm:block mr-6">
 					<Image
-						src={game.image}
+						src={game.imageUrl}
 						alt={game.name}
 						className="absolute inset-0 h-full w-full object-cover"
 						width={300}
@@ -87,7 +87,7 @@ export default function GameCard({ game }: { game: GameType }) {
 				</div>
 				<div className="sm:hidden mt-4">
 					<Image
-						src={game.image}
+						src={game.imageUrl}
 						alt={game.name}
 						className="w-full rounded-md object-cover"
 						width={400}

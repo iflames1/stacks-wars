@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gamepad2, Users, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { GameType } from "@/types/schema";
+import { GameType } from "@/types/schema/game";
 
 export default function GameDetails({ game }: { game: GameType | null }) {
 	if (!game) return null;

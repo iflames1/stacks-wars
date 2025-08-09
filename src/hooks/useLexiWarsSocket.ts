@@ -1,29 +1,24 @@
-import { JsonParticipant } from "@/types/schema";
+import { Player, PlayerStanding } from "@/types/schema/player";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export interface PlayerStanding {
-	player: JsonParticipant;
-	rank: number;
-}
-
 export type LexiWarsServerMessage =
-	| { type: "turn"; current_turn: JsonParticipant }
+	| { type: "turn"; currentTurn: Player }
 	| { type: "rule"; rule: string }
 	| { type: "countdown"; time: number }
 	| { type: "rank"; rank: string }
 	| { type: "validate"; msg: string }
-	| { type: "wordentry"; word: string; sender: JsonParticipant }
-	| { type: "usedword"; word: string }
-	| { type: "gameover" }
-	| { type: "finalstanding"; standing: PlayerStanding[] }
+	| { type: "wordEntry"; word: string; sender: Player }
+	| { type: "usedWord"; word: string }
+	| { type: "gameOver" }
+	| { type: "finalStanding"; standing: PlayerStanding[] }
 	| { type: "prize"; amount: number }
 	| { type: "pong"; ts: number; pong: number }
 	| { type: "start"; time: number; started: boolean }
-	| { type: "startfailed" }
-	| { type: "alreadystarted" };
+	| { type: "startFailed" }
+	| { type: "alreadyStarted" };
 
 export type LexiWarsClientMessage =
-	| { type: "wordentry"; word: string }
+	| { type: "wordEntry"; word: string }
 	| {
 			type: "ping";
 			ts: number;

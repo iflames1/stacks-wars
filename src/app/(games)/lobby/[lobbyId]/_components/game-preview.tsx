@@ -5,10 +5,10 @@ import {
 	CardTitle,
 	CardFooter,
 } from "@/components/ui/card";
+import { GameType } from "@/types/schema/game";
 import Image from "next/image";
 //import { Button } from "@/components/ui/button";
 //import { ChevronRight } from "lucide-react";
-import { GameType } from "@/types/schema";
 
 export default function GamePreview({ game }: { game: GameType }) {
 	return (
@@ -20,7 +20,7 @@ export default function GamePreview({ game }: { game: GameType }) {
 			</CardHeader>
 			<CardContent className="p-0">
 				<Image
-					src={game.image}
+					src={game.imageUrl}
 					width={500}
 					height={300}
 					alt="Game preview"
