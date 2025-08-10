@@ -2,16 +2,16 @@ import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { Loader2, User as UserIcon, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Lobby, Participant, Pool } from "@/types/schema";
 import { truncateAddress } from "@/lib/utils";
-import { LobbyClientMessage, PendingJoin } from "@/hooks/useLobbySocket";
+import { LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { useState } from "react";
 import { EXPLORER_BASE_URL } from "@/lib/constants";
+import { Lobby, PendingJoin } from "@/types/schema/lobby";
+import { Player, PlayerStatus } from "@/types/schema/player";
 
 interface ParticipantProps {
 	lobby: Lobby;
-	pool: Pool | null;
-	players: Participant[];
+	players: Player[];
 	pendingPlayers: PendingJoin[];
 	userId: string;
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
@@ -19,30 +19,23 @@ interface ParticipantProps {
 
 export default function Participants({
 	lobby,
-	pool,
 	players,
 	pendingPlayers,
 	userId,
 	sendMessage,
 }: ParticipantProps) {
 	const currentPlayer = players.find((p) => p.id === userId);
-	const isReady = currentPlayer?.playerStatus === "ready";
+	const isReady = currentPlayer?.state === "ready";
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [isKicking, setIsKicking] = useState(false);
 	const [isHandlingJoin, setIsHandlingJoin] = useState(false);
 
-	const handleKickPlayer = async (
-		playerId: string,
-		wallet_address: string,
-		display_name: string | null
-	) => {
+	const handleKickPlayer = async (playerId: string) => {
 		setIsKicking(true);
 		try {
 			await sendMessage({
-				type: "kickplayer",
-				player_id: playerId,
-				wallet_address: wallet_address,
-				display_name: display_name,
+				type: "kickPlayer",
+				playerId,
 			});
 		} catch (error) {
 			console.error("Error kicking player:", error);
@@ -51,14 +44,12 @@ export default function Participants({
 		}
 	};
 
-	type PlayerStatus = "ready" | "notready";
-
 	const handleUpdatePlayerStatus = async (status: PlayerStatus) => {
 		setIsUpdating(true);
 		try {
 			await sendMessage({
-				type: "updateplayerstate",
-				new_state: status,
+				type: "updatePlayerState",
+				newState: status,
 			});
 		} catch (error) {
 			console.error("Error updating status:", error);
@@ -70,9 +61,9 @@ export default function Participants({
 	const handleJoinRequest = async (userId: string, allow: boolean) => {
 		setIsHandlingJoin(true);
 		try {
-			sendMessage({
-				type: "permitjoin",
-				user_id: userId,
+			await sendMessage({
+				type: "permitJoin",
+				userId,
 				allow,
 			});
 		} catch (error) {
@@ -90,7 +81,7 @@ export default function Participants({
 						<Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
 						<span className="truncate">Current Participants</span>
 					</CardTitle>
-					{userId !== lobby.creatorId &&
+					{userId !== lobby.creator.id &&
 						!lobby.contractAddress &&
 						players.some((p) => p.id === userId) && (
 							<Button
@@ -99,7 +90,7 @@ export default function Participants({
 								disabled={isUpdating}
 								onClick={() =>
 									handleUpdatePlayerStatus(
-										isReady ? "notready" : "ready"
+										isReady ? "notReady" : "ready"
 									)
 								}
 								className="shrink-0 ml-2"
@@ -117,9 +108,10 @@ export default function Participants({
 					<>
 						<div className="space-y-2 sm:space-y-3">
 							{players.map((player, index) => {
-								const isCreator = player.id === lobby.creatorId;
+								const isCreator =
+									player.id === lobby.creator.id;
 								const isSelfCreator =
-									userId === lobby.creatorId;
+									userId === lobby.creator.id;
 								const isSelf = userId === player.id;
 
 								return (
@@ -152,13 +144,13 @@ export default function Participants({
 														)}
 														<span
 															className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
-																player.playerStatus ===
+																player.state ===
 																"ready"
 																	? "bg-green-500/10 text-green-500"
 																	: "bg-yellow-500/10 text-yellow-500"
 															}`}
 														>
-															{player.playerStatus ===
+															{player.state ===
 															"ready"
 																? "Ready"
 																: "Not Ready"}
@@ -168,31 +160,34 @@ export default function Participants({
 											</div>
 										</div>
 										<div className="shrink-0 ml-2 flex flex-col items-end gap-1">
-											{player.txId && pool && (
-												<>
-													<span className="text-sm sm:text-base font-bold whitespace-nowrap">
-														{pool.entryAmount} STX
-													</span>
-													<Button
-														variant={"link"}
-														asChild
-														className="!p-0 text-right h-auto text-xs"
-													>
-														<Link
-															href={`${EXPLORER_BASE_URL}txid/${player.txId}?chain=testnet`}
-															target="_blank"
-															className="truncate max-w-[80px] sm:max-w-none"
+											{player.txId &&
+												lobby.entryAmount && (
+													<>
+														<span className="text-sm sm:text-base font-bold whitespace-nowrap">
+															{lobby.entryAmount}{" "}
+															STX
+														</span>
+														<Button
+															variant={"link"}
+															asChild
+															className="!p-0 text-right h-auto text-xs"
 														>
-															<span className="hidden sm:inline">
-																View in explorer
-															</span>
-															<span className="sm:hidden">
-																Explorer
-															</span>
-														</Link>
-													</Button>
-												</>
-											)}
+															<Link
+																href={`${EXPLORER_BASE_URL}txid/${player.txId}?chain=testnet`}
+																target="_blank"
+																className="truncate max-w-[80px] sm:max-w-none"
+															>
+																<span className="hidden sm:inline">
+																	View in
+																	explorer
+																</span>
+																<span className="sm:hidden">
+																	Explorer
+																</span>
+															</Link>
+														</Button>
+													</>
+												)}
 											{isSelfCreator &&
 												!isCreator &&
 												!lobby.contractAddress && (
@@ -203,9 +198,7 @@ export default function Participants({
 														disabled={isKicking}
 														onClick={() =>
 															handleKickPlayer(
-																player.id,
-																player.walletAddress,
-																player.username
+																player.id
 															)
 														}
 													>
@@ -239,11 +232,11 @@ export default function Participants({
 													<div className="min-w-0 flex-1">
 														<p className="text-sm sm:text-base font-medium truncate">
 															{pendingplayer.user
-																.display_name ||
+																.displayName ||
 																truncateAddress(
 																	pendingplayer
 																		.user
-																		.wallet_address
+																		.walletAddress
 																)}
 														</p>
 														<p className="text-xs text-muted-foreground">
@@ -251,7 +244,8 @@ export default function Participants({
 														</p>
 													</div>
 												</div>
-												{userId === lobby.creatorId && (
+												{userId ===
+													lobby.creator.id && (
 													<div className="flex gap-2 shrink-0 ml-2">
 														<Button
 															size="sm"

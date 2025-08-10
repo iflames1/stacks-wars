@@ -7,8 +7,7 @@ import {
 	DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
-import React, { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { claimPoolReward } from "@/lib/actions/claimReward";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { toast } from "sonner";
@@ -20,9 +19,10 @@ interface ClaimRewardModalProps {
 	setShowPrizeModal: (show: boolean) => void;
 	setIsClaimed: (claimed: boolean) => void;
 	rank: string | null;
-	prizeAmount: number;
+	prizeAmount: number | null;
 	lobbyId: string;
 	contractAddress: string | null;
+	warsPoint: number | null;
 }
 
 export default function ClaimRewardModal({
@@ -33,11 +33,47 @@ export default function ClaimRewardModal({
 	prizeAmount,
 	lobbyId,
 	contractAddress,
+	warsPoint,
 }: ClaimRewardModalProps) {
 	const [isLoading, setIsLoading] = useState(false);
+	const [countdown, setCountdown] = useState(10);
+
+	// Determine if user has a prize to claim
+	const hasPrize = contractAddress && prizeAmount && prizeAmount > 0;
+
+	const handleOkay = useCallback(() => {
+		setIsClaimed(true);
+		setShowPrizeModal(false);
+	}, [setIsClaimed, setShowPrizeModal]);
+
+	useEffect(() => {
+		if (!hasPrize && showPrizeModal) {
+			// Reset countdown when modal opens
+			setCountdown(10);
+
+			const timer = setInterval(() => {
+				setCountdown((prev) => {
+					if (prev <= 1) {
+						clearInterval(timer);
+						handleOkay();
+						return 0;
+					}
+					return prev - 1;
+				});
+			}, 1000);
+
+			return () => clearInterval(timer);
+		}
+	}, [hasPrize, showPrizeModal, handleOkay]);
 
 	const handleClaim = async () => {
 		try {
+			if (!hasPrize) {
+				toast.error("Something went wrong", {
+					description: "Please contact support.",
+				});
+				return;
+			}
 			setIsLoading(true);
 			const walletAddress = await getClaimFromJwt<string>("wallet");
 			if (!walletAddress) {
@@ -61,11 +97,11 @@ export default function ClaimRewardModal({
 			await waitForTxConfirmed(claimTxId);
 
 			await apiRequest({
-				path: `/room/${lobbyId}/claim-state`,
-				method: "PUT",
+				path: `/lobby/${lobbyId}/claim-state`,
+				method: "PATCH",
 				body: {
 					claim: {
-						status: "Claimed",
+						status: "claimed",
 						data: {
 							tx_id: claimTxId,
 						},
@@ -93,26 +129,45 @@ export default function ClaimRewardModal({
 			>
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 justify-center text-xl">
-						🏆 Claim Your Prize!
+						{hasPrize ? "🏆 Congratulations!" : "🎮 Game Complete!"}
 					</DialogTitle>
-					<DialogDescription className="text-center">
+					<DialogDescription className="text-center space-y-2">
 						{rank && (
-							<span>
-								Your rank: <strong>{rank}</strong> <br />
-							</span>
+							<div>
+								Your rank: <strong>{rank}</strong>
+							</div>
 						)}
-						Reward: <strong>{prizeAmount} STX</strong>
+						{hasPrize && (
+							<div className="text-green-600 font-semibold">
+								🎉 You won <strong>{prizeAmount} STX</strong>!
+							</div>
+						)}
+						{warsPoint !== null && (
+							<div>
+								You earned{" "}
+								<strong>
+									{warsPoint} wars point
+									{warsPoint !== 1 ? "s" : ""}
+								</strong>
+							</div>
+						)}
 					</DialogDescription>
 				</DialogHeader>
 
 				<DialogFooter className="flex flex-col space-y-2">
-					<Button
-						disabled={isLoading}
-						onClick={handleClaim}
-						className="w-full"
-					>
-						Claim Reward
-					</Button>
+					{hasPrize ? (
+						<Button
+							disabled={isLoading}
+							onClick={handleClaim}
+							className="w-full"
+						>
+							{isLoading ? "Claiming..." : "Claim Reward"}
+						</Button>
+					) : (
+						<Button onClick={handleOkay} className="w-full">
+							Okay ({countdown}s)
+						</Button>
+					)}
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

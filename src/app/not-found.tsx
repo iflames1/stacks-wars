@@ -26,7 +26,7 @@ export default function NotFound() {
 				<div className="space-y-2">
 					<h1 className="text-8xl font-bold text-primary/20">404</h1>
 					<h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-						Page Not Found
+						Page Not Found or Lobby does not exist
 					</h2>
 					<p className="text-muted-foreground max-w-md mx-auto">
 						Sorry, we couldn&apos;t find the page you&apos;re
