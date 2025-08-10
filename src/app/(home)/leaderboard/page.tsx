@@ -17,9 +17,9 @@ export default async function LeaderboardPage() {
 					<h1 className="text-3xl font-bold tracking-tight">
 						🏆 Leaderboard
 					</h1>
-					<p className="text-muted-foreground">
+					{/*<p className="text-muted-foreground">
 						Top players competing in Stacks Wars
-					</p>
+					</p>*/}
 				</div>
 				<LeaderboardTable data={leaderboard} />
 			</div>

@@ -248,7 +248,7 @@ export default function LeaderboardTable({ data }: LeaderboardTableProps) {
 	});
 
 	return (
-		<Card className="w-full">
+		<Card className="w-full bg-primary/30">
 			<CardHeader className="flex flex-col space-y-4 pb-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
 				<CardTitle className="flex items-center gap-2">
 					<Trophy className="h-5 w-5 text-yellow-500" />
@@ -275,7 +275,11 @@ export default function LeaderboardTable({ data }: LeaderboardTableProps) {
 									{headerGroup.headers.map((header) => (
 										<TableHead
 											key={header.id}
-											className="text-center"
+											className={
+												header.id === "user"
+													? "text-left"
+													: "text-center"
+											}
 										>
 											{header.isPlaceholder
 												? null
