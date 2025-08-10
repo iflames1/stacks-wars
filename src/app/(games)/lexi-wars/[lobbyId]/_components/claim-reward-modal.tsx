@@ -7,8 +7,7 @@ import {
 	DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { claimPoolReward } from "@/lib/actions/claimReward";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { toast } from "sonner";
@@ -20,9 +19,10 @@ interface ClaimRewardModalProps {
 	setShowPrizeModal: (show: boolean) => void;
 	setIsClaimed: (claimed: boolean) => void;
 	rank: string | null;
-	prizeAmount: number;
+	prizeAmount: number | null;
 	lobbyId: string;
 	contractAddress: string | null;
+	warsPoint: number | null;
 }
 
 export default function ClaimRewardModal({
@@ -33,11 +33,41 @@ export default function ClaimRewardModal({
 	prizeAmount,
 	lobbyId,
 	contractAddress,
+	warsPoint,
 }: ClaimRewardModalProps) {
 	const [isLoading, setIsLoading] = useState(false);
+	const [countdown, setCountdown] = useState(10);
+
+	// Determine if user has a prize to claim
+	const hasPrize = contractAddress && prizeAmount && prizeAmount > 0;
+
+	// Auto-close countdown for no-prize scenario
+	useEffect(() => {
+		if (!hasPrize && showPrizeModal) {
+			const timer = setInterval(() => {
+				setCountdown((prev) => {
+					if (prev <= 1) {
+						clearInterval(timer);
+						setIsClaimed(true);
+						setShowPrizeModal(false);
+						return 0;
+					}
+					return prev - 1;
+				});
+			}, 1000);
+
+			return () => clearInterval(timer);
+		}
+	}, [hasPrize, setIsClaimed, setShowPrizeModal, showPrizeModal]);
 
 	const handleClaim = async () => {
 		try {
+			if (!hasPrize) {
+				toast.error("Something went wrong", {
+					description: "Please contact support.",
+				});
+				return;
+			}
 			setIsLoading(true);
 			const walletAddress = await getClaimFromJwt<string>("wallet");
 			if (!walletAddress) {
@@ -93,26 +123,51 @@ export default function ClaimRewardModal({
 			>
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 justify-center text-xl">
-						🏆 Claim Your Prize!
+						{hasPrize ? "🏆 Congratulations!" : "🎮 Game Complete!"}
 					</DialogTitle>
-					<DialogDescription className="text-center">
+					<DialogDescription className="text-center space-y-2">
 						{rank && (
-							<span>
-								Your rank: <strong>{rank}</strong> <br />
-							</span>
+							<div>
+								Your rank: <strong>{rank}</strong>
+							</div>
 						)}
-						Reward: <strong>{prizeAmount} STX</strong>
+						{hasPrize && (
+							<div className="text-green-600 font-semibold">
+								🎉 You won <strong>{prizeAmount} STX</strong>!
+							</div>
+						)}
+						{warsPoint !== null && (
+							<div>
+								You earned{" "}
+								<strong>
+									{warsPoint} wars point
+									{warsPoint !== 1 ? "s" : ""}
+								</strong>
+							</div>
+						)}
 					</DialogDescription>
 				</DialogHeader>
 
 				<DialogFooter className="flex flex-col space-y-2">
-					<Button
-						disabled={isLoading}
-						onClick={handleClaim}
-						className="w-full"
-					>
-						Claim Reward
-					</Button>
+					{hasPrize ? (
+						<Button
+							disabled={isLoading}
+							onClick={handleClaim}
+							className="w-full"
+						>
+							{isLoading ? "Claiming..." : "Claim Reward"}
+						</Button>
+					) : (
+						<Button
+							onClick={() => {
+								setIsClaimed(true);
+								setShowPrizeModal(false);
+							}}
+							className="w-full"
+						>
+							Okay ({countdown}s)
+						</Button>
+					)}
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
