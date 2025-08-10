@@ -1,7 +1,7 @@
 export interface User {
 	id: string;
 	walletAddress: string;
-	warsPoints: number;
+	warsPoint: number;
 	username: string | null;
 	displayName: string | null;
 }
