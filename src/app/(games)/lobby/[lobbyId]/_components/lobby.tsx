@@ -120,6 +120,9 @@ export default function Lobby({
 					setJoinState(message.type);
 					toast.info("Your join request is pending approval");
 					break;
+				case "warsPointDeduction":
+					toast.warning(`You lost ${message.amount} Wars Points`);
+					break;
 				case "error":
 					toast.error(`Error: ${message.message}`);
 					break;

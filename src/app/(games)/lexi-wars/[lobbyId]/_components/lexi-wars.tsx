@@ -48,6 +48,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [messageReceived, setMessageReceived] = useState<boolean>(false);
 	const [gameOver, setGameOver] = useState<boolean>(false);
 	const [alreadyStarted, setAlreadyStarted] = useState<boolean>(false);
+	const [warsPoint, setWarsPoint] = useState<number | null>(null);
 
 	const router = useRouter();
 
@@ -75,9 +76,6 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					toast.info(`Time's up!`, {
 						description: `Your rank was ${message.rank}.`,
 					});
-					//if (Number(message.rank) > 3) {
-					//	setIsClaimed(true);
-					//}
 					break;
 				case "validate":
 					toast.info(`${message.msg}`);
@@ -114,6 +112,13 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 						setIsClaimed(true);
 					}
 					break;
+				case "warsPoint":
+					setWarsPoint(message.warsPoint);
+					setShowPrizeModal(true);
+					if (!contract) {
+						setPrizeAmount(0);
+					}
+					break;
 				case "pong":
 					setLatency(message.pong);
 					break;
@@ -134,7 +139,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[userId, router, lobbyId]
+		[userId, contract, router, lobbyId]
 	);
 
 	const {
@@ -262,7 +267,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					contractAddress={contract}
 					isClaimed={isClaimed}
 				/>
-				{prizeAmount && (
+				{(prizeAmount !== null || showPrizeModal) && (
 					<ClaimRewardModal
 						showPrizeModal={showPrizeModal}
 						setShowPrizeModal={setShowPrizeModal}
@@ -271,6 +276,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 						prizeAmount={prizeAmount}
 						lobbyId={lobbyId}
 						contractAddress={contract}
+						warsPoint={warsPoint}
 					/>
 				)}
 
