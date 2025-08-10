@@ -125,15 +125,6 @@ export default function LeaderboardTable({ data }: LeaderboardTableProps) {
 					</div>
 				);
 			},
-			filterFn: (row, id, value) => {
-				const user = row.getValue(id) as LeaderBoard["user"];
-				const searchValue = value.toLowerCase();
-				return (
-					user.displayName?.toLowerCase().includes(searchValue) ||
-					user.username?.toLowerCase().includes(searchValue) ||
-					user.walletAddress.toLowerCase().includes(searchValue)
-				);
-			},
 		},
 		{
 			accessorKey: "warsPoint",
@@ -207,6 +198,32 @@ export default function LeaderboardTable({ data }: LeaderboardTableProps) {
 		},
 	];
 
+	// Custom global filter function
+	const globalFilterFn = React.useMemo(
+		() =>
+			(
+				row: { original: LeaderBoard },
+				columnId: string,
+				value: string
+			) => {
+				const user = row.original.user;
+				const searchValue = value.toLowerCase();
+
+				// Search in wallet address, username, and display name
+				const searchableText = [
+					user.walletAddress,
+					user.username,
+					user.displayName,
+				]
+					.filter(Boolean) // Remove null/undefined values
+					.join(" ")
+					.toLowerCase();
+
+				return searchableText.includes(searchValue);
+			},
+		[]
+	);
+
 	const table = useReactTable({
 		data,
 		columns,
@@ -217,6 +234,7 @@ export default function LeaderboardTable({ data }: LeaderboardTableProps) {
 		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
+		globalFilterFn: globalFilterFn,
 		state: {
 			sorting,
 			columnFilters,
@@ -240,7 +258,7 @@ export default function LeaderboardTable({ data }: LeaderboardTableProps) {
 					<div className="relative w-full sm:w-[250px]">
 						<Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 						<Input
-							placeholder="Search players..."
+							placeholder="Search by wallet, username..."
 							value={globalFilter ?? ""}
 							onChange={(e) => setGlobalFilter(e.target.value)}
 							className="pl-8 w-full"
