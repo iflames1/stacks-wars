@@ -7,7 +7,7 @@ import {
 	DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { claimPoolReward } from "@/lib/actions/claimReward";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { toast } from "sonner";
@@ -41,15 +41,21 @@ export default function ClaimRewardModal({
 	// Determine if user has a prize to claim
 	const hasPrize = contractAddress && prizeAmount && prizeAmount > 0;
 
-	// Auto-close countdown for no-prize scenario
+	const handleOkay = useCallback(() => {
+		setIsClaimed(true);
+		setShowPrizeModal(false);
+	}, [setIsClaimed, setShowPrizeModal]);
+
 	useEffect(() => {
 		if (!hasPrize && showPrizeModal) {
+			// Reset countdown when modal opens
+			setCountdown(10);
+
 			const timer = setInterval(() => {
 				setCountdown((prev) => {
 					if (prev <= 1) {
 						clearInterval(timer);
-						setIsClaimed(true);
-						setShowPrizeModal(false);
+						handleOkay();
 						return 0;
 					}
 					return prev - 1;
@@ -58,7 +64,7 @@ export default function ClaimRewardModal({
 
 			return () => clearInterval(timer);
 		}
-	}, [hasPrize, setIsClaimed, setShowPrizeModal, showPrizeModal]);
+	}, [hasPrize, showPrizeModal, handleOkay]);
 
 	const handleClaim = async () => {
 		try {
@@ -158,13 +164,7 @@ export default function ClaimRewardModal({
 							{isLoading ? "Claiming..." : "Claim Reward"}
 						</Button>
 					) : (
-						<Button
-							onClick={() => {
-								setIsClaimed(true);
-								setShowPrizeModal(false);
-							}}
-							className="w-full"
-						>
+						<Button onClick={handleOkay} className="w-full">
 							Okay ({countdown}s)
 						</Button>
 					)}
