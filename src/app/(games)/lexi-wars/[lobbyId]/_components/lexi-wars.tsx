@@ -76,9 +76,6 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					toast.info(`Time's up!`, {
 						description: `Your rank was ${message.rank}.`,
 					});
-					//if (Number(message.rank) > 3) {
-					//	setIsClaimed(true);
-					//}
 					break;
 				case "validate":
 					toast.info(`${message.msg}`);

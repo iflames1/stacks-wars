@@ -57,7 +57,13 @@ export type LobbyServerMessage =
 			type: "error";
 			message: string;
 	  }
-	| { type: "pong"; ts: number; pong: number };
+	| { type: "pong"; ts: number; pong: number }
+	| {
+			type: "warsPointDeduction";
+			amount: number;
+			newTotal: number;
+			reason: string;
+	  };
 
 interface QueuedMessage {
 	data: LobbyClientMessage;
