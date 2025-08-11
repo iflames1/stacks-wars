@@ -54,7 +54,7 @@ export default function ProfileEdit({ user }: ProfileEditProps) {
 			await apiRequest({
 				path: "/user/display_name",
 				method: "PATCH",
-				body: { displayName: displayName.trim() || null },
+				body: { display_name: displayName.trim() || null },
 			});
 
 			toast.success("Display name updated successfully!");
