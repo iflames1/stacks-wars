@@ -16,7 +16,7 @@ interface ProfileEditProps {
 }
 
 export default function ProfileEdit({ user }: ProfileEditProps) {
-	const [isEditingUsername, setIsEditingUsername] = useState(false);
+	//const [isEditingUsername, setIsEditingUsername] = useState(false);
 	const [isEditingDisplayName, setIsEditingDisplayName] = useState(false);
 	const [username, setUsername] = useState(user.username || "");
 	const [displayName, setDisplayName] = useState(user.displayName || "");
@@ -38,7 +38,7 @@ export default function ProfileEdit({ user }: ProfileEditProps) {
 			});
 
 			toast.success("Username updated successfully!");
-			setIsEditingUsername(false);
+			//setIsEditingUsername(false);
 			router.refresh();
 		} catch (error) {
 			console.error("Failed to update username:", error);
@@ -68,10 +68,10 @@ export default function ProfileEdit({ user }: ProfileEditProps) {
 		}
 	};
 
-	const cancelEditUsername = () => {
-		setUsername(user.username || "");
-		setIsEditingUsername(false);
-	};
+	//const cancelEditUsername = () => {
+	//	setUsername(user.username || "");
+	//	setIsEditingUsername(false);
+	//};
 
 	const cancelEditDisplayName = () => {
 		setDisplayName(user.displayName || "");
@@ -88,77 +88,44 @@ export default function ProfileEdit({ user }: ProfileEditProps) {
 			</CardHeader>
 			<CardContent className="space-y-6">
 				{/* Username Section */}
-				{!user.username || isEditingUsername ? (
+				{!user.username ? (
 					<div className="space-y-2">
 						<Label htmlFor="username">Username</Label>
-						{isEditingUsername ? (
-							<div className="flex gap-2">
-								<Input
-									id="username"
-									value={username}
-									onChange={(e) =>
-										setUsername(e.target.value)
-									}
-									placeholder="Enter username"
-									disabled={loading}
-								/>
-								<Button
-									size="sm"
-									onClick={handleUpdateUsername}
-									disabled={loading || !username.trim()}
-								>
-									<Save className="h-4 w-4" />
-								</Button>
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={cancelEditUsername}
-									disabled={loading}
-								>
-									<X className="h-4 w-4" />
-								</Button>
-							</div>
-						) : (
-							<div className="flex gap-2">
-								<Input
-									value={username}
-									onChange={(e) =>
-										setUsername(e.target.value)
-									}
-									placeholder="Add a username"
-								/>
-								<Button
-									size="sm"
-									onClick={() => setIsEditingUsername(true)}
-								>
-									<Edit className="h-4 w-4" />
-								</Button>
-							</div>
-						)}
-						{!user.username && (
-							<p className="text-sm text-muted-foreground">
-								Add a username to make your profile easier to
-								find
-							</p>
-						)}
+						<div className="flex gap-2">
+							<Input
+								id="username"
+								value={username}
+								onChange={(e) => setUsername(e.target.value)}
+								placeholder="Add a username"
+								disabled={loading}
+							/>
+
+							<Button
+								size="sm"
+								onClick={handleUpdateUsername}
+								disabled={loading || !username.trim()}
+							>
+								<Save className="h-4 w-4" />
+							</Button>
+						</div>
+						<p className="text-sm text-muted-foreground">
+							Add a username to make your profile easier to find
+						</p>
+						<p className="text-sm text-muted-foreground">
+							Username cannot be changed once set
+						</p>
 					</div>
 				) : (
 					<div className="space-y-2">
 						<Label>Username</Label>
-						<div className="flex gap-2">
-							<Input value={`@${user.username}`} disabled />
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={() => setIsEditingUsername(true)}
-							>
-								<Edit className="h-4 w-4" />
-							</Button>
-						</div>
+						<Input value={`@${user.username}`} disabled />
+						<p className="text-sm text-muted-foreground">
+							Username cannot be changed
+						</p>
 					</div>
 				)}
 
-				{/* Display Name Section */}
+				{/* Display Name Section - remains the same */}
 				<div className="space-y-2">
 					<Label htmlFor="displayName">Display Name</Label>
 					{isEditingDisplayName ? (
