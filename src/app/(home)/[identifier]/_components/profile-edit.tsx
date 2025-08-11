@@ -11,21 +11,72 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Edit, Save, X } from "lucide-react";
 
+const RESERVED_USERNAMES = [
+	"game",
+	"games",
+	"lobby",
+	"leaderboard",
+	"lexi-wars",
+	"profile",
+	"user",
+	"admin",
+	"api",
+	"auth",
+	"login",
+	"signup",
+	"settings",
+	"dashboard",
+];
+
 interface ProfileEditProps {
 	user: User;
 }
 
 export default function ProfileEdit({ user }: ProfileEditProps) {
-	//const [isEditingUsername, setIsEditingUsername] = useState(false);
 	const [isEditingDisplayName, setIsEditingDisplayName] = useState(false);
 	const [username, setUsername] = useState(user.username || "");
 	const [displayName, setDisplayName] = useState(user.displayName || "");
 	const [loading, setLoading] = useState(false);
 	const router = useRouter();
 
+	// Username validation function
+	const validateUsername = (username: string): string | null => {
+		const trimmed = username.trim().toLowerCase();
+
+		if (!trimmed) {
+			return "Username cannot be empty";
+		}
+
+		if (trimmed.length < 3) {
+			return "Username must be at least 3 characters long";
+		}
+
+		if (trimmed.length > 20) {
+			return "Username must be 20 characters or less";
+		}
+
+		// Check for reserved usernames
+		if (RESERVED_USERNAMES.includes(trimmed)) {
+			return "This username is reserved and cannot be used";
+		}
+
+		// Check for valid characters (alphanumeric, underscore, hyphen)
+		if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
+			return "Username can only contain letters, numbers, underscores, and hyphens";
+		}
+
+		// Cannot start or end with special characters
+		if (/^[-_]|[-_]$/.test(trimmed)) {
+			return "Username cannot start or end with underscore or hyphen";
+		}
+
+		return null; // Valid username
+	};
+
 	const handleUpdateUsername = async () => {
-		if (!username.trim()) {
-			toast.error("Username cannot be empty");
+		const validationError = validateUsername(username);
+		if (validationError) {
+			toast.error(validationError);
 			return;
 		}
 
@@ -38,7 +89,6 @@ export default function ProfileEdit({ user }: ProfileEditProps) {
 			});
 
 			toast.success("Username updated successfully!");
-			//setIsEditingUsername(false);
 			router.refresh();
 		} catch (error) {
 			console.error("Failed to update username:", error);
@@ -68,15 +118,13 @@ export default function ProfileEdit({ user }: ProfileEditProps) {
 		}
 	};
 
-	//const cancelEditUsername = () => {
-	//	setUsername(user.username || "");
-	//	setIsEditingUsername(false);
-	//};
-
 	const cancelEditDisplayName = () => {
 		setDisplayName(user.displayName || "");
 		setIsEditingDisplayName(false);
 	};
+
+	// Check if current username input is valid
+	const isUsernameValid = !validateUsername(username);
 
 	return (
 		<Card>
@@ -98,29 +146,52 @@ export default function ProfileEdit({ user }: ProfileEditProps) {
 								onChange={(e) => setUsername(e.target.value)}
 								placeholder="Add a username"
 								disabled={loading}
+								className={
+									username && !isUsernameValid
+										? "border-destructive focus-visible:ring-destructive"
+										: ""
+								}
 							/>
-
 							<Button
 								size="sm"
 								onClick={handleUpdateUsername}
-								disabled={loading || !username.trim()}
+								disabled={
+									loading ||
+									!username.trim() ||
+									!isUsernameValid
+								}
 							>
 								<Save className="h-4 w-4" />
 							</Button>
 						</div>
-						<p className="text-sm text-muted-foreground">
-							Add a username to make your profile easier to find
-						</p>
-						<p className="text-sm text-muted-foreground">
-							Username cannot be changed once set
-						</p>
+
+						{/* Show validation error if any */}
+						{username && !isUsernameValid && (
+							<p className="text-sm text-destructive">
+								{validateUsername(username)}
+							</p>
+						)}
+
+						<div className="space-y-1">
+							<p className="text-sm text-muted-foreground">
+								Add a username to make your profile easier to
+								find
+							</p>
+							<p className="text-sm text-muted-foreground">
+								Username cannot be changed once set
+							</p>
+							<p className="text-xs text-muted-foreground">
+								3-20 characters, letters, numbers, underscore,
+								and hyphen only
+							</p>
+						</div>
 					</div>
 				) : (
 					<div className="space-y-2">
 						<Label>Username</Label>
 						<Input value={`@${user.username}`} disabled />
 						<p className="text-sm text-muted-foreground">
-							Username cannot be changed
+							Username cannot be changed once set
 						</p>
 					</div>
 				)}
