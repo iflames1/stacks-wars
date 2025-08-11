@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import ProfileHeader from "./_components/profile-header";
 import ProfileStats from "./_components/profile-stats";
 import ProfileEdit from "./_components/profile-edit";
+import UnclaimedRewards from "./_components/unclaimed-rewards";
 
 export default async function ProfilePage({
 	params,
@@ -31,7 +32,12 @@ export default async function ProfilePage({
 				<div className="space-y-6">
 					<ProfileHeader user={userProfile.user} isOwner={isOwner} />
 					<ProfileStats profile={userProfile} />
-					{isOwner && <ProfileEdit user={userProfile.user} />}
+					{isOwner && (
+						<>
+							<UnclaimedRewards />
+							<ProfileEdit user={userProfile.user} />
+						</>
+					)}
 				</div>
 			</div>
 		);
