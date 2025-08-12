@@ -2,7 +2,7 @@ import { User } from "./user";
 
 type txId = string;
 
-interface ClaimState {
+export interface ClaimState {
 	status: "claimed" | "notClaimed";
 	data: txId | null;
 }

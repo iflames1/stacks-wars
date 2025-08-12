@@ -34,7 +34,7 @@ export default async function ProfilePage({
 					<ProfileStats profile={userProfile} />
 					{isOwner && (
 						<>
-							<UnclaimedRewards />
+							<UnclaimedRewards userId={currentUserId} />
 							<ProfileEdit user={userProfile.user} />
 						</>
 					)}

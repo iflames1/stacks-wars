@@ -10,41 +10,36 @@ import { claimPoolReward } from "@/lib/actions/claimReward";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { Gift, Clock, Trophy, Loader2 } from "lucide-react";
-import { Lobby } from "@/types/schema/lobby";
+import { PlayerLobbyInfo } from "@/types/schema/lobby";
 
-interface UnclaimedLobby extends Lobby {
-	prizeAmount: number;
-	rank: number;
-}
-
-export default function UnclaimedRewards() {
-	const [unclaimedLobbies, setUnclaimedLobbies] = useState<UnclaimedLobby[]>(
+export default function UnclaimedRewards({ userId }: { userId: string }) {
+	const [unclaimedLobbies, setUnclaimedLobbies] = useState<PlayerLobbyInfo[]>(
 		[]
 	);
 	const [loading, setLoading] = useState(true);
 	const [claimingLobby, setClaimingLobby] = useState<string | null>(null);
 
 	useEffect(() => {
+		const fetchUnclaimedRewards = async () => {
+			try {
+				const response = await apiRequest<PlayerLobbyInfo[]>({
+					path: `/user/lobbies?user_id=${userId}&claim_state=not_claimed`,
+					method: "GET",
+				});
+				setUnclaimedLobbies(response);
+			} catch (error) {
+				console.error("Failed to fetch unclaimed rewards:", error);
+				toast.error("Failed to load unclaimed rewards");
+			} finally {
+				setLoading(false);
+			}
+		};
+
 		fetchUnclaimedRewards();
-	}, []);
+	}, [userId]);
 
-	const fetchUnclaimedRewards = async () => {
-		try {
-			const response = await apiRequest<UnclaimedLobby[]>({
-				path: "/user/lobbies?claim_state=not_claimed",
-				method: "GET",
-			});
-			setUnclaimedLobbies(response);
-		} catch (error) {
-			console.error("Failed to fetch unclaimed rewards:", error);
-			toast.error("Failed to load unclaimed rewards");
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleClaimReward = async (lobby: UnclaimedLobby) => {
-		if (!lobby.contractAddress) {
+	const handleClaimReward = async (lobby: PlayerLobbyInfo) => {
+		if (!lobby.contractAddress || !lobby.prizeAmount) {
 			toast.error("Contract address is missing");
 			return;
 		}
@@ -169,49 +164,57 @@ export default function UnclaimedRewards() {
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				{unclaimedLobbies.map((lobby) => (
-					<div
-						key={lobby.id}
-						className="flex items-center justify-between p-4 border rounded-lg bg-muted/50"
-					>
-						<div className="flex-1 min-w-0">
-							<div className="flex items-center gap-2 mb-1">
-								<h4 className="font-medium truncate">
-									{lobby.name}
-								</h4>
-								<Badge variant="outline" className="shrink-0">
-									{getRankIcon(lobby.rank)}
-								</Badge>
-							</div>
-							<div className="flex items-center gap-4 text-sm text-muted-foreground">
-								<div className="flex items-center gap-1">
-									<Clock className="h-3 w-3" />
-									{formatDate(lobby.createdAt)}
+				{unclaimedLobbies.map(
+					(lobby) =>
+						lobby.prizeAmount &&
+						lobby.contractAddress &&
+						lobby.rank && (
+							<div
+								key={lobby.id}
+								className="flex items-center justify-between p-4 border rounded-lg bg-muted/50"
+							>
+								<div className="flex-1 min-w-0">
+									<div className="flex items-center gap-2 mb-1">
+										<h4 className="font-medium truncate">
+											{lobby.name}
+										</h4>
+										<Badge
+											variant="outline"
+											className="shrink-0"
+										>
+											{getRankIcon(lobby.rank)}
+										</Badge>
+									</div>
+									<div className="flex items-center gap-4 text-sm text-muted-foreground">
+										<div className="flex items-center gap-1">
+											<Clock className="h-3 w-3" />
+											{formatDate(lobby.createdAt)}
+										</div>
+										<div className="text-green-600 font-medium">
+											+{lobby.prizeAmount} STX
+										</div>
+									</div>
 								</div>
-								<div className="text-green-600 font-medium">
-									+{lobby.prizeAmount} STX
-								</div>
+								<Button
+									onClick={() => handleClaimReward(lobby)}
+									disabled={claimingLobby === lobby.id}
+									className="shrink-0"
+								>
+									{claimingLobby === lobby.id ? (
+										<>
+											<Loader2 className="h-4 w-4 animate-spin mr-2" />
+											Claiming...
+										</>
+									) : (
+										<>
+											<Gift className="h-4 w-4 mr-2" />
+											Claim
+										</>
+									)}
+								</Button>
 							</div>
-						</div>
-						<Button
-							onClick={() => handleClaimReward(lobby)}
-							disabled={claimingLobby === lobby.id}
-							className="shrink-0"
-						>
-							{claimingLobby === lobby.id ? (
-								<>
-									<Loader2 className="h-4 w-4 animate-spin mr-2" />
-									Claiming...
-								</>
-							) : (
-								<>
-									<Gift className="h-4 w-4 mr-2" />
-									Claim
-								</>
-							)}
-						</Button>
-					</div>
-				))}
+						)
+				)}
 			</CardContent>
 		</Card>
 	);
