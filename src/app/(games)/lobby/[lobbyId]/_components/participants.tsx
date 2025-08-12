@@ -108,6 +108,8 @@ export default function Participants({
 					<>
 						<div className="space-y-2 sm:space-y-3">
 							{players.map((player, index) => {
+								const identifier =
+									player.username || player.walletAddress;
 								const isCreator =
 									player.id === lobby.creator.id;
 								const isSelfCreator =
@@ -125,12 +127,16 @@ export default function Participants({
 											</div>
 											<div className="min-w-0 flex-1">
 												<div className="flex items-center gap-2 flex-wrap">
-													<p className="text-sm sm:text-base font-medium truncate min-w-0">
-														{player.username ||
+													<Link
+														href={`/${identifier}`}
+														className="text-sm sm:text-base font-medium truncate hover:underline min-w-0"
+													>
+														{player.displayName ||
+															player.username ||
 															truncateAddress(
 																player.walletAddress
 															)}
-													</p>
+													</Link>
 													<div className="flex items-center gap-1 flex-wrap shrink-0">
 														{isCreator && (
 															<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary whitespace-nowrap">
@@ -220,6 +226,9 @@ export default function Participants({
 								</h4>
 								<div className="space-y-2 sm:space-y-3">
 									{pendingPlayers.map((pendingplayer) => {
+										const identifier =
+											pendingplayer.user.username ||
+											pendingplayer.user.walletAddress;
 										return (
 											<div
 												key={pendingplayer.user.id}
@@ -230,15 +239,21 @@ export default function Participants({
 														<UserIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
 													</div>
 													<div className="min-w-0 flex-1">
-														<p className="text-sm sm:text-base font-medium truncate">
+														<Link
+															href={`/${identifier}`}
+															className="text-sm sm:text-base font-medium truncate hover:underline"
+														>
 															{pendingplayer.user
 																.displayName ||
+																pendingplayer
+																	.user
+																	.username ||
 																truncateAddress(
 																	pendingplayer
 																		.user
 																		.walletAddress
 																)}
-														</p>
+														</Link>
 														<p className="text-xs text-muted-foreground">
 															Requesting to join
 														</p>
