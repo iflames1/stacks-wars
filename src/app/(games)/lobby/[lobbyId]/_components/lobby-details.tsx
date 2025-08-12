@@ -55,6 +55,9 @@ export default function LobbyDetails({
 		lobbyState === "finished" ||
 		(lobbyState === "inProgress" && countdown === 0);
 
+	const creator = players.find((p) => p.id === lobby.creator.id);
+	const identifier = creator?.user.username || creator?.user.walletAddress;
+
 	return (
 		<Card className="overflow-hidden bg-primary/10">
 			<CardHeader className="bg-muted/30 p-4 pb-3 sm:p-6 sm:pb-4">
@@ -69,54 +72,57 @@ export default function LobbyDetails({
 						Created by
 					</h3>
 					<div className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-						<div className="flex items-center justify-between w-full min-w-0">
-							<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-								<div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-									<User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-								</div>
-								<div className="min-w-0 flex-1">
-									<p className="text-sm sm:text-base font-medium truncate">
-										{(() => {
-											const creator = players.find(
-												(player) =>
-													player.id ===
-													lobby.creator.id
-											);
-											return (
-												creator?.username ||
-												truncateAddress(
-													creator?.walletAddress
-												) ||
-												"Unknown Player"
-											);
-										})()}
-									</p>
-								</div>
+						<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+							<div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+								<User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
 							</div>
-							{lobby.contractAddress && (
-								<div className="shrink-0 ml-2">
-									<Button
-										variant={"link"}
-										asChild
-										size="sm"
-										className="text-xs"
-									>
-										<Link
-											href={`${EXPLORER_BASE_URL}txid/${lobby.contractAddress}?chain=testnet`}
-											target="_blank"
-											className="truncate max-w-[100px] sm:max-w-none"
-										>
-											<span className="hidden sm:inline">
-												View Pool Contract
-											</span>
-											<span className="sm:hidden">
-												View Contract
-											</span>
-										</Link>
-									</Button>
-								</div>
-							)}
+							<div className="min-w-0 flex-1">
+								<Link
+									href={`/${identifier}`}
+									className="flex flex-col truncate w-fit"
+								>
+									<span className="text-sm sm:text-base font-medium truncate hover:underline">
+										{creator?.user.displayName ||
+											creator?.user.username ||
+											truncateAddress(
+												creator?.user.walletAddress
+											) ||
+											"Unknown Player"}
+									</span>
+									{(creator?.user.displayName ||
+										creator?.user.username) && (
+										<span className="text-xs text-muted-foreground truncate hover:underline">
+											{truncateAddress(
+												creator.user.walletAddress
+											)}
+										</span>
+									)}
+								</Link>
+							</div>
 						</div>
+						{lobby.contractAddress && (
+							<div className="shrink-0 ml-2">
+								<Button
+									variant={"link"}
+									asChild
+									size="sm"
+									className="text-xs"
+								>
+									<Link
+										href={`${EXPLORER_BASE_URL}txid/${lobby.contractAddress}?chain=testnet`}
+										target="_blank"
+										className="truncate max-w-[100px] sm:max-w-none"
+									>
+										<span className="hidden sm:inline">
+											View Pool Contract
+										</span>
+										<span className="sm:hidden">
+											View Contract
+										</span>
+									</Link>
+								</Button>
+							</div>
+						)}
 					</div>
 				</div>
 

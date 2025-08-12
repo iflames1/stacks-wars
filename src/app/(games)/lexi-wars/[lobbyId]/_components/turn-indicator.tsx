@@ -45,9 +45,10 @@ export default function TurnIndicator({
 						{isCurrentPlayer
 							? "It's Your Turn!"
 							: `Waiting for ${
-									currentPlayer?.username ||
+									currentPlayer?.user.displayName ||
+									currentPlayer?.user.username ||
 									truncateAddress(
-										currentPlayer?.walletAddress
+										currentPlayer?.user.walletAddress
 									)
 								}`}
 					</h3>

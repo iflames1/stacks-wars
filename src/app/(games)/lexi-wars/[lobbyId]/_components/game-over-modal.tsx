@@ -84,9 +84,11 @@ export default function GameOverModal({
 									{i + 1}
 								</span>
 								<span className="font-medium">
-									{s.player.displayName ||
-										s.player.username ||
-										truncateAddress(s.player.walletAddress)}
+									{s.player.user.displayName ||
+										s.player.user.username ||
+										truncateAddress(
+											s.player.user.walletAddress
+										)}
 								</span>
 							</div>
 							<div className="flex items-center space-x-2">
