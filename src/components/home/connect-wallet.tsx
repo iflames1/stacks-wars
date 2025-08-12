@@ -80,7 +80,7 @@ export default function ConnectWallet() {
 					)}
 				</Button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="w-48">
+			<DropdownMenuContent align="end" className="w-full">
 				<DropdownMenuItem
 					onClick={handleProfileClick}
 					className="cursor-pointer"

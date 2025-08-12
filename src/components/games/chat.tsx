@@ -152,9 +152,9 @@ export default function Chat() {
 
 	const getDisplayName = (sender: ChatMessage["sender"]) => {
 		return (
-			sender.displayName ||
-			sender.username ||
-			truncateAddress(sender.walletAddress)
+			sender.user.displayName ||
+			sender.user.username ||
+			truncateAddress(sender.user.walletAddress)
 		);
 	};
 

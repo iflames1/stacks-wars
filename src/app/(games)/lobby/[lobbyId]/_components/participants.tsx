@@ -109,11 +109,12 @@ export default function Participants({
 						<div className="space-y-2 sm:space-y-3">
 							{players.map((player, index) => {
 								const identifier =
-									player.username || player.walletAddress;
+									player.user.username ||
+									player.user.walletAddress;
 								const displayName =
-									player.displayName ||
-									player.username ||
-									truncateAddress(player.walletAddress);
+									player.user.displayName ||
+									player.user.username ||
+									truncateAddress(player.user.walletAddress);
 								const isCreator =
 									player.id === lobby.creator.id;
 								const isSelfCreator =
@@ -133,16 +134,19 @@ export default function Participants({
 												<div className="flex items-center gap-2 flex-wrap">
 													<Link
 														href={`/${identifier}`}
-														className="flex flex-col truncate hover:underline"
+														className="flex flex-col truncate "
 													>
-														<span className="text-sm sm:text-base font-medium truncate">
+														<span className="text-sm sm:text-base font-medium truncate hover:underline">
 															{displayName}
 														</span>
-														{(player.displayName ||
-															player.username) && (
-															<span className="text-xs text-muted-foreground truncate">
+														{(player.user
+															.displayName ||
+															player.user
+																.username) && (
+															<span className="text-xs text-muted-foreground truncate hover:underline">
 																{truncateAddress(
-																	player.walletAddress
+																	player.user
+																		.walletAddress
 																)}
 															</span>
 														)}
@@ -258,9 +262,9 @@ export default function Participants({
 													<div className="min-w-0 flex-1">
 														<Link
 															href={`/${identifier}`}
-															className="flex flex-col truncate hover:underline"
+															className="flex flex-col truncate "
 														>
-															<span className="text-sm sm:text-base font-medium truncate">
+															<span className="text-sm sm:text-base font-medium truncate hover:underline">
 																{displayName}
 															</span>
 															{(pendingplayer.user
@@ -268,7 +272,7 @@ export default function Participants({
 																pendingplayer
 																	.user
 																	.username) && (
-																<span className="text-xs text-muted-foreground truncate">
+																<span className="text-xs text-muted-foreground truncate hover:underline">
 																	{truncateAddress(
 																		pendingplayer
 																			.user
