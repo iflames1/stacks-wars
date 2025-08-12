@@ -261,13 +261,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					/>
 				)}*/}
 
-				<GameOverModal
-					standing={finalStanding}
-					userId={userId}
-					contractAddress={contract}
-					isClaimed={isClaimed}
-				/>
-				{(prizeAmount !== null || showPrizeModal) && (
+				{finalStanding && showPrizeModal && (
 					<ClaimRewardModal
 						showPrizeModal={showPrizeModal}
 						setShowPrizeModal={setShowPrizeModal}
@@ -277,6 +271,15 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 						lobbyId={lobbyId}
 						contractAddress={contract}
 						warsPoint={warsPoint}
+					/>
+				)}
+
+				{finalStanding && !showPrizeModal && (
+					<GameOverModal
+						standing={finalStanding}
+						userId={userId}
+						contractAddress={contract}
+						isClaimed={isClaimed}
 					/>
 				)}
 

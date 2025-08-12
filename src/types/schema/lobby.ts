@@ -1,5 +1,5 @@
 import { GameType } from "./game";
-import { Player } from "./player";
+import { ClaimState, Player } from "./player";
 import { User } from "./user";
 
 export type lobbyState = "waiting" | "inProgress" | "finished";
@@ -21,6 +21,12 @@ export interface Lobby {
 export interface LobbyExtended {
 	lobby: Lobby;
 	players: Player[];
+}
+
+export interface PlayerLobbyInfo extends Lobby {
+	prizeAmount: number | null;
+	rank: number | null;
+	claimState: ClaimState | null;
 }
 
 export type JoinState = "idle" | "pending" | "allowed" | "rejected";

@@ -35,6 +35,7 @@ import {
 	Minus,
 } from "lucide-react";
 import { LeaderBoard } from "@/types/schema/leaderboard";
+import Link from "next/link";
 
 interface LeaderboardTableProps {
 	data: LeaderBoard[];
@@ -106,23 +107,29 @@ export default function LeaderboardTable({ data }: LeaderboardTableProps) {
 					user.displayName ||
 					user.username ||
 					truncateAddress(user.walletAddress);
+				const identifier = user.username || user.walletAddress;
 
 				return (
-					<div className="flex items-center space-x-3">
+					<Link
+						href={`/${identifier}`}
+						className="flex items-center space-x-3 "
+					>
 						<Avatar className="h-8 w-8">
 							<AvatarFallback className="bg-primary/10">
 								{displayName.charAt(0).toUpperCase()}
 							</AvatarFallback>
 						</Avatar>
-						<div className="min-w-0 flex-1">
-							<p className="text-sm font-medium leading-none truncate">
+						<div className="min-w-0 flex-1 ">
+							<p className="text-sm font-medium leading-none truncate hover:underline">
 								{displayName}
 							</p>
-							<p className="text-xs text-muted-foreground truncate">
-								{truncateAddress(user.walletAddress)}
-							</p>
+							{(user.displayName || user.username) && (
+								<p className="text-xs text-muted-foreground truncate hover:underline">
+									{truncateAddress(user.walletAddress)}
+								</p>
+							)}
 						</div>
-					</div>
+					</Link>
 				);
 			},
 		},
