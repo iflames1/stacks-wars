@@ -110,6 +110,10 @@ export default function Participants({
 							{players.map((player, index) => {
 								const identifier =
 									player.username || player.walletAddress;
+								const displayName =
+									player.displayName ||
+									player.username ||
+									truncateAddress(player.walletAddress);
 								const isCreator =
 									player.id === lobby.creator.id;
 								const isSelfCreator =
@@ -129,13 +133,19 @@ export default function Participants({
 												<div className="flex items-center gap-2 flex-wrap">
 													<Link
 														href={`/${identifier}`}
-														className="text-sm sm:text-base font-medium truncate hover:underline min-w-0"
+														className="flex flex-col truncate hover:underline"
 													>
-														{player.displayName ||
-															player.username ||
-															truncateAddress(
-																player.walletAddress
-															)}
+														<span className="text-sm sm:text-base font-medium truncate">
+															{displayName}
+														</span>
+														{(player.displayName ||
+															player.username) && (
+															<span className="text-xs text-muted-foreground truncate">
+																{truncateAddress(
+																	player.walletAddress
+																)}
+															</span>
+														)}
 													</Link>
 													<div className="flex items-center gap-1 flex-wrap shrink-0">
 														{isCreator && (
@@ -229,6 +239,13 @@ export default function Participants({
 										const identifier =
 											pendingplayer.user.username ||
 											pendingplayer.user.walletAddress;
+										const displayName =
+											pendingplayer.user.displayName ||
+											pendingplayer.user.username ||
+											truncateAddress(
+												pendingplayer.user.walletAddress
+											);
+
 										return (
 											<div
 												key={pendingplayer.user.id}
@@ -241,18 +258,24 @@ export default function Participants({
 													<div className="min-w-0 flex-1">
 														<Link
 															href={`/${identifier}`}
-															className="text-sm sm:text-base font-medium truncate hover:underline"
+															className="flex flex-col truncate hover:underline"
 														>
-															{pendingplayer.user
+															<span className="text-sm sm:text-base font-medium truncate">
+																{displayName}
+															</span>
+															{(pendingplayer.user
 																.displayName ||
 																pendingplayer
 																	.user
-																	.username ||
-																truncateAddress(
-																	pendingplayer
-																		.user
-																		.walletAddress
-																)}
+																	.username) && (
+																<span className="text-xs text-muted-foreground truncate">
+																	{truncateAddress(
+																		pendingplayer
+																			.user
+																			.walletAddress
+																	)}
+																</span>
+															)}
 														</Link>
 														<p className="text-xs text-muted-foreground">
 															Requesting to join

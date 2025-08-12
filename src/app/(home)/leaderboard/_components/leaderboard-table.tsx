@@ -123,9 +123,11 @@ export default function LeaderboardTable({ data }: LeaderboardTableProps) {
 							<p className="text-sm font-medium leading-none truncate hover:underline">
 								{displayName}
 							</p>
-							<p className="text-xs text-muted-foreground truncate hover:underline">
-								{truncateAddress(user.walletAddress)}
-							</p>
+							{(user.displayName || user.username) && (
+								<p className="text-xs text-muted-foreground truncate hover:underline">
+									{truncateAddress(user.walletAddress)}
+								</p>
+							)}
 						</div>
 					</Link>
 				);
