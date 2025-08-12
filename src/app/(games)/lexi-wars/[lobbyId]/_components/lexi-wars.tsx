@@ -85,10 +85,10 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 						`${
 							userId === message.sender.id
 								? "You"
-								: message.sender.displayName ||
-									message.sender.username ||
+								: message.sender.user.displayName ||
+									message.sender.user.username ||
 									truncateAddress(
-										message.sender.walletAddress
+										message.sender.user.walletAddress
 									)
 						} entered: ${message.word}`
 					);

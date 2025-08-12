@@ -104,7 +104,7 @@ export default function Lobby({
 					const notReadyPlayers = message.players;
 					notReadyPlayers.forEach((p) => {
 						toast.error(
-							`${p.username || truncateAddress(p.walletAddress)} is not ready`
+							`${p.user.displayName || p.user.username || truncateAddress(p.user.walletAddress)} is not ready`
 						);
 					});
 					break;
