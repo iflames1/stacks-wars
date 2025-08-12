@@ -6,6 +6,7 @@ import ProfileHeader from "./_components/profile-header";
 import ProfileStats from "./_components/profile-stats";
 import ProfileEdit from "./_components/profile-edit";
 import UnclaimedRewards from "./_components/unclaimed-rewards";
+import ActiveLobbies from "./_components/active-lobbies";
 
 export default async function ProfilePage({
 	params,
@@ -32,6 +33,7 @@ export default async function ProfilePage({
 				<div className="space-y-6">
 					<ProfileHeader user={userProfile.user} isOwner={isOwner} />
 					<ProfileStats profile={userProfile} />
+					<ActiveLobbies identifier={identifier} />
 					{isOwner && (
 						<>
 							<UnclaimedRewards userId={currentUserId} />
