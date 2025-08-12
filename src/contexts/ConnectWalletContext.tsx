@@ -12,13 +12,18 @@ import { getWalletAddress, connectWallet } from "@/lib/wallet";
 import { disconnect } from "@stacks/connect";
 import { toast } from "sonner";
 import { connectOrCreateUser, logoutUser } from "@/lib/actions/user";
+import { apiRequest } from "@/lib/api";
+import { User } from "@/types/schema/user";
 
 interface ConnectUserContextType {
 	isConnected: boolean;
 	isConnecting: boolean;
 	walletAddress?: string;
+	user: User | null;
+	userLoading: boolean;
 	handleConnect: () => Promise<void>;
 	handleDisconnect: () => Promise<void>;
+	refetchUser: () => Promise<void>;
 }
 
 const ConnectUserContext = createContext<ConnectUserContextType | undefined>(
@@ -29,6 +34,34 @@ export const ConnectUserProvider = ({ children }: { children: ReactNode }) => {
 	const [isConnected, setIsConnected] = useState(false);
 	const [walletAddress, setWalletAddress] = useState<string>();
 	const [isConnecting, setIsConnecting] = useState(false);
+	const [user, setUser] = useState<User | null>(null);
+	const [userLoading, setUserLoading] = useState(false);
+
+	const fetchUser = useCallback(async () => {
+		try {
+			setUserLoading(true);
+			const userId = await getClaimFromJwt<string>("sub");
+			if (!userId) {
+				setUser(null);
+				return;
+			}
+
+			const userData = await apiRequest<User>({
+				path: `/user/${userId}`,
+				method: "GET",
+			});
+			setUser(userData);
+		} catch (error) {
+			console.error("Failed to fetch user:", error);
+			setUser(null);
+		} finally {
+			setUserLoading(false);
+		}
+	}, []);
+
+	const refetchUser = useCallback(async () => {
+		await fetchUser();
+	}, [fetchUser]);
 
 	const checkConnection = useCallback(async () => {
 		const jwtWalletAddress = await getClaimFromJwt<string>("wallet");
@@ -38,12 +71,15 @@ export const ConnectUserProvider = ({ children }: { children: ReactNode }) => {
 			disconnect();
 			setIsConnected(false);
 			setWalletAddress(undefined);
+			setUser(null);
 			return;
 		}
 
 		setWalletAddress(jwtWalletAddress);
 		setIsConnected(true);
-	}, []);
+		// Fetch user data when connected
+		await fetchUser();
+	}, [fetchUser]);
 
 	useEffect(() => {
 		checkConnection();
@@ -73,6 +109,7 @@ export const ConnectUserProvider = ({ children }: { children: ReactNode }) => {
 			toast.info("Wallet disconnected successfully.");
 			setIsConnected(false);
 			setWalletAddress(undefined);
+			setUser(null);
 		} catch (error) {
 			console.error(error);
 			toast.error("Failed to disconnect wallet. Please try again.");
@@ -86,8 +123,11 @@ export const ConnectUserProvider = ({ children }: { children: ReactNode }) => {
 				isConnected,
 				isConnecting,
 				walletAddress,
+				user,
+				userLoading,
 				handleConnect,
 				handleDisconnect,
+				refetchUser,
 			}}
 		>
 			{children}

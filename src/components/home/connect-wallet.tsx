@@ -1,43 +1,107 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Loader, Wallet2 } from "lucide-react";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Loader, Wallet2, User, LogOut, ChevronDown } from "lucide-react";
 import { truncateAddress } from "@/lib/utils";
 import { useConnectUser } from "@/contexts/ConnectWalletContext";
+import { useRouter } from "next/navigation";
 
 export default function ConnectWallet() {
 	const {
 		isConnecting,
 		isConnected,
 		walletAddress,
+		user,
+		userLoading,
 		handleConnect,
 		handleDisconnect,
 	} = useConnectUser();
 
+	const router = useRouter();
+
+	const getProfileIdentifier = () => {
+		if (!user) return walletAddress;
+		return user.username || user.walletAddress;
+	};
+
+	const handleProfileClick = () => {
+		const identifier = getProfileIdentifier();
+		if (identifier) {
+			router.push(`/${identifier}`);
+		}
+	};
+
+	const handleDisconnectClick = async () => {
+		await handleDisconnect();
+	};
+
+	if (!isConnected) {
+		return (
+			<Button
+				variant="outline"
+				onClick={handleConnect}
+				disabled={isConnecting}
+			>
+				{isConnecting ? (
+					<Loader className="size-4 mr-1 animate-spin" />
+				) : (
+					<Wallet2 className="size-4 mr-1" />
+				)}
+				{isConnecting ? "Connecting..." : "Connect wallet"}
+			</Button>
+		);
+	}
+
 	return (
-		<>
-			{isConnected ? (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
 				<Button
-					variant={"outline"}
-					onClick={handleDisconnect}
-					disabled={isConnecting}
+					variant="outline"
+					disabled={isConnecting || userLoading}
+					className="flex items-center gap-2"
 				>
-					<span>{truncateAddress(walletAddress)}</span>
-					Disconnect
+					{userLoading ? (
+						<Loader className="size-4 animate-spin" />
+					) : (
+						<>
+							<span className="font-mono">
+								{user?.displayName ||
+									user?.username ||
+									truncateAddress(walletAddress)}
+							</span>
+							<ChevronDown className="size-4" />
+						</>
+					)}
 				</Button>
-			) : (
-				<Button
-					variant={"outline"}
-					onClick={handleConnect}
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-48">
+				<DropdownMenuItem
+					onClick={handleProfileClick}
+					className="cursor-pointer"
+				>
+					<User className="size-4 mr-2" />
+					Profile
+				</DropdownMenuItem>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem
+					onClick={handleDisconnectClick}
+					className="cursor-pointer text-destructive focus:text-destructive"
 					disabled={isConnecting}
 				>
 					{isConnecting ? (
-						<Loader className="size-4 mr-1 animate-spin" />
+						<Loader className="size-4 mr-2 animate-spin" />
 					) : (
-						<Wallet2 className="size-4 mr-1" />
+						<LogOut className="size-4 mr-2" />
 					)}
-					{isConnecting ? "Connecting ..." : "Connect wallet"}
-				</Button>
-			)}
-		</>
+					Disconnect Wallet
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
