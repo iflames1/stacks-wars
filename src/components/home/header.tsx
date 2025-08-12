@@ -14,6 +14,7 @@ import { ThemeToggle } from "../theme/theme-toggle";
 import ConnectWallet from "./connect-wallet";
 import { Loader, LogOut, UserIcon, Wallet2 } from "lucide-react";
 import { useConnectUser } from "@/contexts/ConnectWalletContext";
+import { useState } from "react";
 
 export default function Header() {
 	const navLinks = [
@@ -25,6 +26,8 @@ export default function Header() {
 
 	const { isConnected, isConnecting, user, handleConnect, handleDisconnect } =
 		useConnectUser();
+
+	const [openSheet, setSheetOpen] = useState(false);
 
 	return (
 		<header className="sticky top-0 z-50 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-primary/30">
@@ -59,7 +62,7 @@ export default function Header() {
 				</nav>
 
 				<div className="flex items-center md:hidden gap-4">
-					<Sheet>
+					<Sheet open={openSheet} onOpenChange={setSheetOpen}>
 						<SheetTrigger asChild className="md:hidden">
 							<Button variant="ghost" size="icon">
 								<FiMenu className="size-8" />
@@ -80,6 +83,7 @@ export default function Header() {
 										variant={"ghost"}
 										asChild
 										className="flex items-center gap-2 text-sm  w-fit"
+										onClick={() => setSheetOpen(false)}
 									>
 										<Link href={link.href}>
 											{link.label}
@@ -90,7 +94,10 @@ export default function Header() {
 								{!isConnected ? (
 									<Button
 										variant="ghost"
-										onClick={handleConnect}
+										onClick={() => {
+											handleConnect();
+											setSheetOpen(false);
+										}}
 										disabled={isConnecting}
 										className="justify-start text-sm"
 									>
@@ -109,6 +116,9 @@ export default function Header() {
 											variant={"ghost"}
 											asChild
 											className="flex items-center gap-2 text-sm  w-fit px-0"
+											onClick={() => {
+												setSheetOpen(false);
+											}}
 										>
 											<Link
 												href={`/${user?.username || user?.walletAddress}`}
@@ -119,7 +129,10 @@ export default function Header() {
 										</Button>
 										<Button
 											variant="ghost"
-											onClick={handleDisconnect}
+											onClick={() => {
+												handleDisconnect();
+												setSheetOpen(false);
+											}}
 											disabled={isConnecting}
 											className="flex items-center gap-2 text-sm text-destructive w-fit px-0"
 										>
