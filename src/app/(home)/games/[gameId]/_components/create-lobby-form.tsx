@@ -64,7 +64,6 @@ interface FormData {
 
 interface CreateLobbyFormProps {
 	gameId: string;
-	gameName: string;
 }
 
 export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
@@ -214,6 +213,7 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 						name: values.name,
 						description: values.description || null,
 						entry_amount: contractInfo.entryAmount,
+						current_amount: contractInfo.entryAmount,
 						contract_address: contractInfo.contractAddress,
 						tx_id,
 						game_id: gameId,

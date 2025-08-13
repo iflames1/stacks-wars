@@ -28,7 +28,6 @@ interface LobbyProps {
 	lobby: LobbyType;
 	players: Player[];
 	userId: string;
-	userWalletAddress: string;
 	lobbyId: string;
 	game: GameType;
 }
@@ -36,7 +35,6 @@ export default function Lobby({
 	lobby,
 	players,
 	userId,
-	userWalletAddress,
 	lobbyId,
 	game,
 }: LobbyProps) {
@@ -248,7 +246,6 @@ export default function Lobby({
 									joinState={joinState}
 									lobbyId={lobbyId}
 									userId={userId}
-									userWalletAddress={userWalletAddress}
 									sendMessage={sendMessage}
 									disconnect={disconnect}
 									chatDisconnect={disconnectChat}

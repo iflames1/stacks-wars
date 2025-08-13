@@ -1,10 +1,9 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-//import ActiveLobbies from "@/components/home/active-lobbies";
 import CreateLobbyForm from "./_components/create-lobby-form";
+import CreateSponsoredLobbyForm from "./_components/create-sponsored-lobby-form";
 import GameDetails from "./_components/game-details";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import SinglePlayer from "./_components/single-player";
 import { apiRequest } from "@/lib/api";
 import { GameType } from "@/types/schema/game";
 
@@ -33,22 +32,18 @@ export default async function CreateGame({
 			<div className="space-y-6 sm:space-y-8">
 				<GameDetails game={game} />
 
-				<Tabs defaultValue="multiplayer" className="w-full">
+				<Tabs defaultValue="normal" className="w-full">
 					<TabsList className="bg-primary/30 grid w-full grid-cols-2">
-						<TabsTrigger value="multiplayer">
-							Multiplayer
-						</TabsTrigger>
-						{/*<TabsTrigger value="singleplayer">
-							Singleplayer
-						</TabsTrigger>*/}
+						<TabsTrigger value="normal">Normal</TabsTrigger>
+						<TabsTrigger value="sponsored">Sponsored</TabsTrigger>
 					</TabsList>
 
-					<TabsContent value="multiplayer" className="space-y-6">
-						<CreateLobbyForm gameId={gameId} gameName={game.name} />
+					<TabsContent value="normal" className="space-y-6">
+						<CreateLobbyForm gameId={gameId} />
 					</TabsContent>
 
-					<TabsContent value="singleplayer">
-						<SinglePlayer game={game} />
+					<TabsContent value="sponsored" className="space-y-6">
+						<CreateSponsoredLobbyForm gameId={gameId} />
 					</TabsContent>
 				</Tabs>
 			</div>

@@ -31,7 +31,6 @@ interface JoinLobbyFormProps {
 	joinState: JoinState | null;
 	lobbyId: string;
 	userId: string;
-	userWalletAddress: string;
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
 	disconnect: () => void;
 	chatDisconnect: () => void;
@@ -42,7 +41,6 @@ export default function JoinLobbyForm({
 	players,
 	joinState,
 	userId,
-	userWalletAddress,
 	sendMessage,
 	disconnect,
 	chatDisconnect,
@@ -74,7 +72,6 @@ export default function JoinLobbyForm({
 			if (lobby.contractAddress && lobby.entryAmount) {
 				const contract = lobby.contractAddress as `${string}.${string}`;
 				const leaveTxId = await leaveGamePool(
-					userWalletAddress,
 					contract,
 					lobby.entryAmount
 				);

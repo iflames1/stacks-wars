@@ -23,10 +23,15 @@ export default async function ActiveLobbyHeader({ lobby }: LobbyProps) {
 							: "Closed"}
 				</Badge>
 			</div>
-			<CardDescription>
-				Created by{" "}
-				{lobby.creator.username ||
-					truncateAddress(lobby.creator.walletAddress)}
+			<CardDescription className="flex gap-1 justify-between items-center">
+				<p>
+					Created by{" "}
+					{lobby.creator.username ||
+						truncateAddress(lobby.creator.walletAddress)}
+				</p>
+				{lobby.entryAmount === 0 && (
+					<Badge variant={"outline"}>sponsored</Badge>
+				)}
 			</CardDescription>
 		</CardHeader>
 	);

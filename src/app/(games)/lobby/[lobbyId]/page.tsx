@@ -13,15 +13,13 @@ export default async function LobbyDetailPage({
 	const lobbyId = (await params).lobbyId;
 
 	const userId = await getClaimFromJwt<string>("sub");
-	const userWalletAddress = await getClaimFromJwt<string>("wallet");
 
-	if (!userId || !userWalletAddress) {
+	if (!userId) {
 		return <RequireAuth />;
 	}
 
 	const lobbyExtended = await apiRequest<LobbyExtended>({
 		path: `/lobby/extended/${lobbyId}`,
-		auth: false,
 		tag: "lobbyExtended",
 	});
 
@@ -34,7 +32,6 @@ export default async function LobbyDetailPage({
 			lobby={lobbyExtended.lobby}
 			players={lobbyExtended.players}
 			userId={userId}
-			userWalletAddress={userWalletAddress}
 			lobbyId={lobbyId}
 			game={lobbyExtended.lobby.game}
 		/>
