@@ -28,7 +28,7 @@ import { Player } from "@/types/schema/player";
 interface JoinLobbyFormProps {
 	lobby: Lobby;
 	players: Player[];
-	joinState: JoinState;
+	joinState: JoinState | null;
 	lobbyId: string;
 	userId: string;
 	userWalletAddress: string;
@@ -115,7 +115,7 @@ export default function JoinLobbyForm({
 
 			if (joinState === "pending") return;
 
-			if (joinState === "idle" || joinState === "rejected") {
+			if (joinState === null || joinState === "rejected") {
 				await sendMessage({ type: "requestJoin" });
 				return;
 			}
@@ -163,9 +163,9 @@ export default function JoinLobbyForm({
 		switch (joinState) {
 			case "allowed":
 				return "Join Lobby";
-			case "idle":
-				return "Request to Join";
 			case "rejected":
+				return "Request to Join";
+			case null:
 				return "Request to Join";
 			default:
 				return "Unknown State";
