@@ -45,7 +45,7 @@ export default function Lobby({
 	const [countdown, setCountdown] = useState<number | null>(null);
 	const [lobbyState, setLobbyState] = useState<lobbyState>(lobby.state);
 	const [pendingPlayers, setPendingPlayers] = useState<PendingJoin[]>([]);
-	const [joinState, setJoinState] = useState<JoinState>("idle");
+	const [joinState, setJoinState] = useState<JoinState | null>(null);
 	const [latency, setLatency] = useState<number | null>(null);
 	const [readyPlayers, setReadyPlayers] = useState<string[] | null>(null);
 
@@ -74,7 +74,11 @@ export default function Lobby({
 					break;
 				case "notifyKicked":
 					toast.info("You were kicked from the lobby.");
-					setJoinState("idle");
+					setJoinState(null);
+					break;
+				case "left":
+					toast.info("You left the lobby.");
+					setJoinState(null);
 					break;
 				case "countdown":
 					setCountdown(message.time);

@@ -39,6 +39,7 @@ export type LobbyServerMessage =
 			player: User;
 	  }
 	| { type: "notifyKicked" }
+	| { type: "left" }
 	| { type: "countdown"; time: number }
 	| {
 			type: "lobbyState";

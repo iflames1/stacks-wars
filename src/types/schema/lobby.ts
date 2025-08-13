@@ -29,7 +29,7 @@ export interface PlayerLobbyInfo extends Lobby {
 	claimState: ClaimState | null;
 }
 
-export type JoinState = "idle" | "pending" | "allowed" | "rejected";
+export type JoinState = "pending" | "allowed" | "rejected";
 
 export type PendingJoin = {
 	user: User;
