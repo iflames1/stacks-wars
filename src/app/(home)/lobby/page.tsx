@@ -9,6 +9,7 @@ export default async function LobbyPage() {
 	const lobbies = await apiRequest<LobbyExtended[]>({
 		path: `/lobby/extended?page=1&lobby_state=waiting,inProgress`,
 		auth: false,
+		cache: "no-store",
 		tag: "lobby",
 	});
 

@@ -44,7 +44,7 @@ export const leaveGamePool = async (
 
 export const leaveSponsoredGamePool = async (
 	contract: `${string}.${string}`,
-	deployerAddress: string,
+	isCreator: boolean,
 	amount: number
 ) => {
 	const walletAddress = await getClaimFromJwt<string>("wallet");
@@ -55,7 +55,7 @@ export const leaveSponsoredGamePool = async (
 	try {
 		let postConditions: StxPostCondition[] = [];
 
-		if (deployerAddress === walletAddress) {
+		if (isCreator) {
 			const stxPostCondition: StxPostCondition = {
 				type: "stx-postcondition",
 				address: contract,

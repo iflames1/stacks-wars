@@ -18,9 +18,15 @@ import {
 import { Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { LobbyClientMessage } from "@/hooks/useLobbySocket";
-import { joinGamePool } from "@/lib/actions/joinGamePool";
+import {
+	joinGamePool,
+	joinSponsoredGamePool,
+} from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
-import { leaveGamePool } from "@/lib/actions/leaveGamePool";
+import {
+	leaveGamePool,
+	leaveSponsoredGamePool,
+} from "@/lib/actions/leaveGamePool";
 import { useRouter } from "next/navigation";
 import { JoinState, Lobby } from "@/types/schema/lobby";
 import { Player } from "@/types/schema/player";
@@ -69,12 +75,21 @@ export default function JoinLobbyForm({
 				});
 				return;
 			}
-			if (lobby.contractAddress && lobby.entryAmount) {
+			if (lobby.contractAddress && lobby.entryAmount !== null) {
 				const contract = lobby.contractAddress as `${string}.${string}`;
-				const leaveTxId = await leaveGamePool(
-					contract,
-					lobby.entryAmount
-				);
+				let leaveTxId: string | undefined;
+				if (lobby.entryAmount === 0 && lobby.currentAmount) {
+					leaveTxId = await leaveSponsoredGamePool(
+						contract,
+						isCreator,
+						lobby.currentAmount
+					);
+				} else {
+					leaveTxId = await leaveGamePool(
+						contract,
+						lobby.entryAmount
+					);
+				}
 				if (!leaveTxId) {
 					throw new Error(
 						"Failed to leave game pool: missing transaction ID"
@@ -118,23 +133,32 @@ export default function JoinLobbyForm({
 			}
 
 			if (joinState === "allowed") {
-				if (lobby.contractAddress && lobby.entryAmount) {
+				if (lobby.contractAddress && lobby.entryAmount !== null) {
 					const contract =
 						lobby.contractAddress as `${string}.${string}`;
 					const amount = lobby.entryAmount;
+					let joinTxId: string | undefined;
 
-					const joinTx = await joinGamePool(contract, amount);
-					if (!joinTx.txid) {
+					if (lobby.entryAmount === 0 && lobby.currentAmount) {
+						joinTxId = await joinSponsoredGamePool(
+							contract,
+							isCreator,
+							lobby.currentAmount
+						);
+					} else {
+						joinTxId = await joinGamePool(contract, amount);
+					}
+					if (!joinTxId) {
 						throw new Error(
 							"Failed to join game pool: missing transaction ID"
 						);
 					}
 
-					await waitForTxConfirmed(joinTx.txid);
+					await waitForTxConfirmed(joinTxId);
 
 					await sendMessage({
 						type: "joinLobby",
-						txId: joinTx.txid,
+						txId: joinTxId,
 					});
 				} else {
 					await sendMessage({ type: "joinLobby", txId: undefined });

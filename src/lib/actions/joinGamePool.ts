@@ -18,7 +18,7 @@ export const joinGamePool = async (
 			amount: amount * 1_000_000,
 		};
 
-		return await request("stx_callContract", {
+		const response = await request("stx_callContract", {
 			contract,
 			functionName: "join-pool",
 			functionArgs: [],
@@ -26,6 +26,7 @@ export const joinGamePool = async (
 			postConditionMode: "deny",
 			postConditions: [stxPostCondition],
 		});
+		return response.txid;
 	} catch (error) {
 		console.error("Wallet returned an error:", error);
 		throw error;
@@ -34,7 +35,7 @@ export const joinGamePool = async (
 
 export const joinSponsoredGamePool = async (
 	contract: `${string}.${string}`,
-	deployerAddress: string,
+	isCreator: boolean,
 	amount: number
 ) => {
 	const address = await getClaimFromJwt<string>("wallet");
@@ -44,7 +45,7 @@ export const joinSponsoredGamePool = async (
 	try {
 		let postConditions: StxPostCondition[] = [];
 
-		if (deployerAddress === address) {
+		if (isCreator) {
 			const stxPostCondition: StxPostCondition = {
 				type: "stx-postcondition",
 				address,
@@ -56,7 +57,7 @@ export const joinSponsoredGamePool = async (
 
 		console.log(contract, postConditions);
 
-		return await request("stx_callContract", {
+		const response = await request("stx_callContract", {
 			contract,
 			functionName: "join-pool",
 			functionArgs: [],
@@ -64,6 +65,7 @@ export const joinSponsoredGamePool = async (
 			postConditionMode: "deny",
 			postConditions,
 		});
+		return response.txid;
 	} catch (error) {
 		console.error("Wallet returned an error:", error);
 		throw error;

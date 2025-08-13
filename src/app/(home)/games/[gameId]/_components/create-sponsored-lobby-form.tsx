@@ -160,20 +160,20 @@ export default function CreateSponsoredLobbyForm({
 				console.log("✅ Using existing sponsored join transaction");
 				tx_id = joinInfo.txId;
 			} else {
-				const joinTx = await joinSponsoredGamePool(
+				const joinTxId = await joinSponsoredGamePool(
 					contractInfo.contractAddress,
-					deployerAddress,
+					true,
 					contractInfo.poolSize
 				);
 
-				if (!joinTx.txid) {
+				if (!joinTxId) {
 					throw new Error(
 						"Failed to join sponsored game pool: missing transaction ID"
 					);
 				}
 
 				try {
-					await waitForTxConfirmed(joinTx.txid);
+					await waitForTxConfirmed(joinTxId);
 					console.log("✅ Sponsored Join Transaction confirmed!");
 				} catch (err) {
 					console.error("❌ TX failed or aborted:", err);
@@ -182,11 +182,11 @@ export default function CreateSponsoredLobbyForm({
 
 				joinInfo = {
 					contractAddress: contractInfo.contractAddress,
-					txId: joinTx.txid,
+					txId: joinTxId,
 					poolSize: contractInfo.poolSize,
 				};
 				setJoined(joinInfo);
-				tx_id = joinTx.txid;
+				tx_id = joinTxId;
 			}
 
 			const apiParams: ApiRequestProps = {
