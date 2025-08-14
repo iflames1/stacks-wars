@@ -181,10 +181,14 @@ export default function Participants({
 										</div>
 										<div className="shrink-0 ml-2 flex flex-col items-end gap-1">
 											{player.txId &&
-												lobby.entryAmount && (
+												lobby.entryAmount !== null && (
 													<>
 														<span className="text-sm sm:text-base font-bold whitespace-nowrap">
-															{lobby.entryAmount}{" "}
+															{isCreator &&
+															lobby.entryAmount ===
+																0
+																? lobby.currentAmount
+																: lobby.entryAmount}{" "}
 															STX
 														</span>
 														<Button

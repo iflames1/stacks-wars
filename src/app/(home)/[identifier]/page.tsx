@@ -1,12 +1,12 @@
 import { apiRequest } from "@/lib/api";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { LeaderBoard } from "@/types/schema/leaderboard";
-import { notFound } from "next/navigation";
 import ProfileHeader from "./_components/profile-header";
 import ProfileStats from "./_components/profile-stats";
 import ProfileEdit from "./_components/profile-edit";
 import UnclaimedRewards from "./_components/unclaimed-rewards";
 import ActiveLobbies from "./_components/active-lobbies";
+import NotFound from "@/app/not-found";
 
 export default async function ProfilePage({
 	params,
@@ -45,6 +45,6 @@ export default async function ProfilePage({
 		);
 	} catch (error) {
 		console.error("Failed to fetch user profile:", error);
-		notFound();
+		return <NotFound page="Profile does not exist" />;
 	}
 }

@@ -64,7 +64,6 @@ interface FormData {
 
 interface CreateLobbyFormProps {
 	gameId: string;
-	gameName: string;
 }
 
 export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
@@ -179,19 +178,19 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 					console.log("✅ Using existing join transaction");
 					tx_id = joinInfo.txId;
 				} else {
-					const joinTx = await joinGamePool(
+					const joinTxId = await joinGamePool(
 						contractInfo.contractAddress,
 						contractInfo.entryAmount
 					);
 
-					if (!joinTx.txid) {
+					if (!joinTxId) {
 						throw new Error(
 							"Failed to join game pool: missing transaction ID"
 						);
 					}
 
 					try {
-						await waitForTxConfirmed(joinTx.txid);
+						await waitForTxConfirmed(joinTxId);
 						console.log("✅ Join Transaction confirmed!");
 					} catch (err) {
 						console.error("❌ TX failed or aborted:", err);
@@ -200,11 +199,11 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 
 					joinInfo = {
 						contractAddress: contractInfo.contractAddress,
-						txId: joinTx.txid,
+						txId: joinTxId,
 						entryAmount: contractInfo.entryAmount,
 					};
 					setJoined(joinInfo);
-					tx_id = joinTx.txid;
+					tx_id = joinTxId;
 				}
 
 				apiParams = {
@@ -214,6 +213,7 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 						name: values.name,
 						description: values.description || null,
 						entry_amount: contractInfo.entryAmount,
+						current_amount: contractInfo.entryAmount,
 						contract_address: contractInfo.contractAddress,
 						tx_id,
 						game_id: gameId,

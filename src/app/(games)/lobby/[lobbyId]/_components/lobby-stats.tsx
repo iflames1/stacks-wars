@@ -11,7 +11,7 @@ interface LobbyStatsProps {
 export default function LobbyStats({ lobby, players }: LobbyStatsProps) {
 	return (
 		<div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-			{lobby.entryAmount && (
+			{lobby.entryAmount !== null && (
 				<Card className="bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/20 transition-colors">
 					<CardContent className="p-3 sm:p-4 md:p-6">
 						<div className="flex items-center gap-2 sm:gap-3 md:gap-4">
@@ -23,7 +23,10 @@ export default function LobbyStats({ lobby, players }: LobbyStatsProps) {
 									Pool Size
 								</p>
 								<p className="text-base sm:text-xl md:text-2xl font-bold truncate">
-									{lobby.entryAmount * players.length} STX
+									{lobby.entryAmount !== 0
+										? lobby.entryAmount * players.length
+										: lobby.currentAmount}{" "}
+									STX
 								</p>
 							</div>
 						</div>

@@ -166,7 +166,7 @@ export default function UnclaimedRewards({ userId }: { userId: string }) {
 			<CardContent className="space-y-4">
 				{unclaimedLobbies.map(
 					(lobby) =>
-						lobby.prizeAmount &&
+						lobby.prizeAmount !== 0 &&
 						lobby.contractAddress &&
 						lobby.rank && (
 							<div

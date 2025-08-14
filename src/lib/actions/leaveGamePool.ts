@@ -1,12 +1,16 @@
 import { ClarityType, StxPostCondition } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import { generateSignature } from "./txSigner";
+import { getClaimFromJwt } from "../getClaimFromJwt";
 
 export const leaveGamePool = async (
-	walletAddress: string,
 	contract: `${string}.${string}`,
 	amount: number
 ) => {
+	const walletAddress = await getClaimFromJwt<string>("wallet");
+	if (!walletAddress) {
+		throw new Error("No wallet address found");
+	}
 	amount = amount * 1_000_000;
 
 	try {
@@ -30,6 +34,44 @@ export const leaveGamePool = async (
 			network: "testnet",
 			postConditionMode: "deny",
 			postConditions: [stxPostCondition],
+		});
+		return response.txid;
+	} catch (error) {
+		console.error("Wallet returned an error:", error);
+		throw error;
+	}
+};
+
+export const leaveSponsoredGamePool = async (
+	contract: `${string}.${string}`,
+	isCreator: boolean,
+	amount: number
+) => {
+	const walletAddress = await getClaimFromJwt<string>("wallet");
+	if (!walletAddress) {
+		throw new Error("No wallet address found");
+	}
+
+	try {
+		let postConditions: StxPostCondition[] = [];
+
+		if (isCreator) {
+			const stxPostCondition: StxPostCondition = {
+				type: "stx-postcondition",
+				address: contract,
+				condition: "eq",
+				amount: amount * 1_000_000,
+			};
+			postConditions = [stxPostCondition];
+		}
+
+		const response = await request("stx_callContract", {
+			contract,
+			functionName: "leave-pool",
+			functionArgs: [],
+			network: "testnet",
+			postConditionMode: "deny",
+			postConditions,
 		});
 		return response.txid;
 	} catch (error) {
