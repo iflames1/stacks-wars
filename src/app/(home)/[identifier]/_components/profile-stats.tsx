@@ -32,7 +32,7 @@ function getRankIcon(rank: number) {
 		case 3:
 			return "🥉";
 		default:
-			return rank.toString();
+			return;
 	}
 }
 
@@ -50,8 +50,8 @@ export default function ProfileStats({ profile }: ProfileStatsProps) {
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold flex items-center gap-2">
+						<span>#{profile.rank}</span>
 						<span>{getRankIcon(profile.rank)}</span>
-						{profile.rank > 3 && <span>#{profile.rank}</span>}
 					</div>
 					<p className="text-xs text-muted-foreground">
 						Global ranking
