@@ -1,4 +1,4 @@
-export const getSponsoredClarityCode = (
+export const getSponsoredFtClarityCode = (
 	contract: `${string}.${string}`,
 	tokenName: string,
 	poolSize: number,
