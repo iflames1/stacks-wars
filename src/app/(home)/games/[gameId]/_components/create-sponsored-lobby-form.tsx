@@ -22,14 +22,27 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { apiRequest, ApiRequestProps } from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { nanoid } from "nanoid";
-import { createSponsoredGamePool } from "@/lib/actions/createGamePool";
-import { joinSponsoredGamePool } from "@/lib/actions/joinGamePool";
+import {
+	createSponsoredGamePool,
+	createSponsoredFtGamePool,
+} from "@/lib/actions/createGamePool";
+import {
+	joinSponsoredGamePool,
+	joinSponsoredFtGamePool,
+} from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { useConnectUser } from "@/contexts/ConnectWalletContext";
 
@@ -43,15 +56,37 @@ const formSchema = z.object({
 			message: "Lobby description must be at least 3 characters.",
 		})
 		.optional(),
-	poolSize: z.number().min(50, {
-		message: "Pool size must be at least 50 STX.",
+	token: z.string().min(1, {
+		message: "Please select a token.",
+	}),
+	poolSize: z.number().min(1, {
+		message: "Pool size must be greater than 0.",
 	}),
 });
 
 interface FormData {
 	name: string;
 	description?: string;
+	token: string;
 	poolSize: number;
+}
+
+interface TokenBalance {
+	contract: string;
+	symbol: string;
+	name: string;
+	balance: string;
+	decimals: number;
+}
+
+interface TokenMetadata {
+	contract_id: string;
+	symbol: string;
+	decimals: number;
+	name: string;
+	metrics: {
+		price_usd: number;
+	};
 }
 
 interface CreateSponsoredLobbyFormProps {
@@ -63,24 +98,33 @@ export default function CreateSponsoredLobbyForm({
 }: CreateSponsoredLobbyFormProps) {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
-	const { isConnecting, isConnected, handleConnect } = useConnectUser();
+	const [loadingTokens, setLoadingTokens] = useState(false);
+	const { isConnecting, isConnected, handleConnect, user } = useConnectUser();
+	const [availableTokens, setAvailableTokens] = useState<TokenBalance[]>([]);
+	const [selectedTokenMetadata, setSelectedTokenMetadata] =
+		useState<TokenMetadata | null>(null);
+	const [minPoolSize, setMinPoolSize] = useState<number>(50);
 	const [deployedContract, setDeployedContract] = useState<{
 		contractName: string;
 		contractAddress: `${string}.${string}`;
 		poolSize: number;
 		txId: string;
+		token: string;
 	} | null>(null);
 	const [joined, setJoined] = useState<{
 		contractAddress: `${string}.${string}`;
 		txId: string;
 		poolSize: number;
+		token: string;
 	} | null>(null);
 	const prevPoolSizeRef = useRef<number | undefined>(undefined);
+	const prevTokenRef = useRef<string | undefined>(undefined);
 
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: "",
+			token: "STX",
 		},
 		mode: "onChange",
 	});
@@ -90,19 +134,143 @@ export default function CreateSponsoredLobbyForm({
 		name: "poolSize",
 	});
 
+	const selectedToken = useWatch({
+		control: form.control,
+		name: "token",
+	});
+
+	// Fetch available tokens when user is connected
+	useEffect(() => {
+		if (isConnected && user?.walletAddress) {
+			fetchAvailableTokens(user.walletAddress);
+		}
+	}, [isConnected, user?.walletAddress]);
+
+	// Reset contract when pool size or token changes
 	useEffect(() => {
 		const poolSizeChanged =
 			prevPoolSizeRef.current !== undefined &&
 			poolSize !== prevPoolSizeRef.current;
 
-		if (deployedContract && poolSizeChanged) {
-			console.log("⚠️ Pool size changed, resetting deployed contract");
+		const tokenChanged =
+			prevTokenRef.current !== undefined &&
+			selectedToken !== prevTokenRef.current;
+
+		if (deployedContract && (poolSizeChanged || tokenChanged)) {
+			console.log(
+				"⚠️ Pool configuration changed, resetting deployed contract"
+			);
 			setDeployedContract(null);
 			setJoined(null);
 		}
 
 		prevPoolSizeRef.current = poolSize;
-	}, [deployedContract, poolSize]);
+		prevTokenRef.current = selectedToken;
+	}, [deployedContract, poolSize, selectedToken]);
+
+	const fetchTokenMetadata = useCallback(
+		async (contract: string) => {
+			try {
+				const response = await fetch(
+					`https://api.stxtools.io/tokens/${contract}`
+				);
+				const metadata: TokenMetadata = await response.json();
+
+				setSelectedTokenMetadata(metadata);
+
+				// Calculate minimum pool size based on $30 USD
+				const minUsdValue = 30;
+				const tokenPriceUsd = metadata.metrics.price_usd;
+				const decimals = metadata.decimals;
+
+				if (tokenPriceUsd > 0) {
+					const minTokenAmount = minUsdValue / tokenPriceUsd;
+					const minTokenAmountWithDecimals =
+						Math.ceil(minTokenAmount * Math.pow(10, decimals)) /
+						Math.pow(10, decimals);
+					setMinPoolSize(minTokenAmountWithDecimals);
+
+					// Update form validation
+					if (poolSize < minTokenAmountWithDecimals) {
+						form.setValue("poolSize", minTokenAmountWithDecimals);
+					}
+				} else {
+					// Fallback if no price data
+					setMinPoolSize(1);
+				}
+			} catch (error) {
+				console.error("Failed to fetch token metadata:", error);
+				setMinPoolSize(1);
+			}
+		},
+		[poolSize, form]
+	);
+
+	// Fetch token metadata and calculate minimum pool size
+	useEffect(() => {
+		if (selectedToken && selectedToken !== "STX") {
+			fetchTokenMetadata(selectedToken);
+		} else {
+			setSelectedTokenMetadata(null);
+			setMinPoolSize(50);
+			// Update form validation for STX
+			form.setValue("poolSize", Math.max(50, poolSize));
+		}
+	}, [selectedToken, form, poolSize, fetchTokenMetadata]);
+
+	const fetchAvailableTokens = async (walletAddress: string) => {
+		setLoadingTokens(true);
+		try {
+			const response = await fetch(
+				`https://api.hiro.so/extended/v1/address/${walletAddress}/balances?unanchored=true`
+			);
+			const data = await response.json();
+
+			const tokens: TokenBalance[] = [
+				{
+					contract: "STX",
+					symbol: "STX",
+					name: "Stacks",
+					balance: data.stx.balance,
+					decimals: 6,
+				},
+			];
+
+			// Process fungible tokens
+			if (data.fungible_tokens) {
+				for (const [contractFull, tokenData] of Object.entries(
+					data.fungible_tokens
+				)) {
+					const tokenBalance = tokenData as { balance: string };
+
+					if (parseInt(tokenBalance.balance) > 0) {
+						// Extract token name from contract address
+						// Format: CONTRACT_ADDRESS::TOKEN_NAME
+						const parts = contractFull.split("::");
+						if (parts.length === 2) {
+							const contract = parts[0];
+							const tokenName = parts[1];
+
+							tokens.push({
+								contract,
+								symbol: tokenName.toUpperCase(),
+								name: tokenName,
+								balance: tokenBalance.balance,
+								decimals: 6, // Default, will be updated with metadata
+							});
+						}
+					}
+				}
+			}
+
+			setAvailableTokens(tokens);
+		} catch (error) {
+			console.error("Failed to fetch token balances:", error);
+			toast.error("Failed to load available tokens");
+		} finally {
+			setLoadingTokens(false);
+		}
+	};
 
 	const onSubmit = async (values: FormData) => {
 		setIsLoading(true);
@@ -118,14 +286,30 @@ export default function CreateSponsoredLobbyForm({
 			let contractInfo = deployedContract;
 
 			if (!contractInfo) {
-				const contractName = `${nanoid(5)}-sponsored-stacks-wars`;
+				const contractName = `${nanoid(5)}-sponsored-${values.token === "STX" ? "stx" : "ft"}-wars`;
 				const contract: `${string}.${string}` = `${deployerAddress}.${contractName}`;
 
-				const deployTx = await createSponsoredGamePool(
-					values.poolSize,
-					contractName,
-					deployerAddress
-				);
+				let deployTx;
+
+				if (values.token === "STX") {
+					deployTx = await createSponsoredGamePool(
+						values.poolSize,
+						contractName,
+						deployerAddress
+					);
+				} else {
+					if (!selectedTokenMetadata) {
+						throw new Error("Token metadata not loaded");
+					}
+
+					deployTx = await createSponsoredFtGamePool(
+						values.token as `${string}.${string}`,
+						selectedTokenMetadata.symbol.toLowerCase(),
+						values.poolSize,
+						contractName,
+						deployerAddress
+					);
+				}
 
 				if (!deployTx.txid) {
 					throw new Error(
@@ -146,6 +330,7 @@ export default function CreateSponsoredLobbyForm({
 					contractAddress: contract,
 					poolSize: values.poolSize,
 					txId: deployTx.txid,
+					token: values.token,
 				};
 				setDeployedContract(contractInfo);
 			}
@@ -160,11 +345,26 @@ export default function CreateSponsoredLobbyForm({
 				console.log("✅ Using existing sponsored join transaction");
 				tx_id = joinInfo.txId;
 			} else {
-				const joinTxId = await joinSponsoredGamePool(
-					contractInfo.contractAddress,
-					true,
-					contractInfo.poolSize
-				);
+				let joinTxId;
+
+				if (values.token === "STX") {
+					joinTxId = await joinSponsoredGamePool(
+						contractInfo.contractAddress,
+						true,
+						contractInfo.poolSize
+					);
+				} else {
+					if (!selectedTokenMetadata) {
+						throw new Error("Token metadata not loaded");
+					}
+
+					joinTxId = await joinSponsoredFtGamePool(
+						contractInfo.contractAddress,
+						values.token as `${string}.${string}`,
+						true,
+						contractInfo.poolSize
+					);
+				}
 
 				if (!joinTxId) {
 					throw new Error(
@@ -184,6 +384,7 @@ export default function CreateSponsoredLobbyForm({
 					contractAddress: contractInfo.contractAddress,
 					txId: joinTxId,
 					poolSize: contractInfo.poolSize,
+					token: values.token,
 				};
 				setJoined(joinInfo);
 				tx_id = joinTxId;
@@ -200,6 +401,8 @@ export default function CreateSponsoredLobbyForm({
 					contract_address: contractInfo.contractAddress,
 					tx_id,
 					game_id: gameId,
+					token_contract:
+						values.token === "STX" ? null : values.token,
 				},
 				tag: "lobby",
 				revalidateTag: "lobby",
@@ -291,40 +494,139 @@ export default function CreateSponsoredLobbyForm({
 							)}
 						/>
 
-						<FormField
-							control={form.control}
-							name="poolSize"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel className="inline-flex items-center gap-1">
-										Pool Size (STX)
-										<span className="text-destructive">
-											*
-										</span>
-									</FormLabel>
-									<FormControl>
-										<Input
-											type="number"
-											placeholder="Enter pool size in STX"
-											value={field.value || ""}
-											onChange={(e) => {
-												const value = e.target.value;
-												field.onChange(
-													value === ""
-														? undefined
-														: parseFloat(value)
-												);
-											}}
-										/>
-									</FormControl>
-									<FormDescription>
-										This is the total prize pool you&apos;ll
-										sponsor. Players can join for free.
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+						{/* Grouped Pool Size Section */}
+						<div className="space-y-2">
+							<FormLabel className="inline-flex items-center gap-1">
+								Pool Size
+								<span className="text-destructive">*</span>
+							</FormLabel>
+
+							<div className="flex gap-4">
+								<FormField
+									control={form.control}
+									name="token"
+									render={({ field }) => (
+										<FormItem>
+											<FormControl>
+												<Select
+													onValueChange={
+														field.onChange
+													}
+													defaultValue={field.value}
+												>
+													<SelectTrigger>
+														<SelectValue placeholder="Token" />
+													</SelectTrigger>
+													<SelectContent>
+														{loadingTokens ? (
+															<SelectItem
+																value="loading"
+																disabled
+															>
+																<div className="flex items-center gap-2">
+																	<Loader className="h-4 w-4 animate-spin" />
+																	Loading
+																	tokens...
+																</div>
+															</SelectItem>
+														) : (
+															availableTokens.map(
+																(token) => (
+																	<SelectItem
+																		key={
+																			token.contract
+																		}
+																		value={
+																			token.contract
+																		}
+																	>
+																		<div className="flex items-center justify-between w-full">
+																			<span>
+																				{
+																					token.symbol
+																				}
+																			</span>
+																			<span className="text-xs text-muted-foreground ml-2">
+																				{(
+																					parseInt(
+																						token.balance
+																					) /
+																					Math.pow(
+																						10,
+																						token.decimals
+																					)
+																				).toFixed(
+																					2
+																				)}
+																			</span>
+																		</div>
+																	</SelectItem>
+																)
+															)
+														)}
+													</SelectContent>
+												</Select>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								<FormField
+									control={form.control}
+									name="poolSize"
+									render={({ field }) => (
+										<FormItem className="w-full">
+											<FormControl>
+												<Input
+													type="number"
+													placeholder={`Min: ${minPoolSize}`}
+													min={minPoolSize}
+													step={
+														1 /
+														Math.pow(
+															10,
+															selectedTokenMetadata?.decimals ||
+																6
+														)
+													}
+													value={field.value || ""}
+													onChange={(e) => {
+														const value =
+															e.target.value;
+														field.onChange(
+															value === ""
+																? undefined
+																: parseFloat(
+																		value
+																	)
+														);
+													}}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
+
+							<p className="text-sm text-muted-foreground">
+								This is the total prize pool you&apos;ll
+								sponsor. Players can join for free.
+								{selectedTokenMetadata && (
+									<>
+										{" "}
+										Minimum value: $
+										{(
+											minPoolSize *
+											selectedTokenMetadata.metrics
+												.price_usd
+										).toFixed(2)}{" "}
+										USD
+									</>
+								)}
+							</p>
+						</div>
 					</CardContent>
 					<CardFooter className="flex justify-end">
 						{!isConnected ? (
