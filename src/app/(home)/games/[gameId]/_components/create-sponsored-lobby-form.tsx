@@ -286,7 +286,14 @@ export default function CreateSponsoredLobbyForm({
 			let contractInfo = deployedContract;
 
 			if (!contractInfo) {
-				const contractName = `${nanoid(5)}-sponsored-${values.token === "STX" ? "stx" : "ft"}-wars`;
+				let tokenSymbol = "stx";
+				if (values.token === "STX") {
+					tokenSymbol = "stx";
+				} else if (selectedTokenMetadata) {
+					tokenSymbol = selectedTokenMetadata.symbol.toLowerCase();
+				}
+
+				const contractName = `${nanoid(5)}-sponsored-${tokenSymbol}-wars`;
 				const contract: `${string}.${string}` = `${deployerAddress}.${contractName}`;
 
 				let deployTx;
@@ -390,6 +397,13 @@ export default function CreateSponsoredLobbyForm({
 				tx_id = joinTxId;
 			}
 
+			let tokenSymbol = "STX";
+			if (values.token === "STX") {
+				tokenSymbol = "STX";
+			} else if (selectedTokenMetadata) {
+				tokenSymbol = selectedTokenMetadata.symbol.toUpperCase();
+			}
+
 			const apiParams: ApiRequestProps = {
 				path: "/lobby",
 				method: "POST",
@@ -401,8 +415,7 @@ export default function CreateSponsoredLobbyForm({
 					contract_address: contractInfo.contractAddress,
 					tx_id,
 					game_id: gameId,
-					token_contract:
-						values.token === "STX" ? null : values.token,
+					token_symbol: tokenSymbol,
 				},
 				tag: "lobby",
 				revalidateTag: "lobby",
