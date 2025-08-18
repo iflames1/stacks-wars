@@ -45,6 +45,7 @@ import {
 } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { useConnectUser } from "@/contexts/ConnectWalletContext";
+import { TokenMetadata } from "@/types/schema/token";
 
 const formSchema = z.object({
 	name: z.string().min(3, {
@@ -60,7 +61,7 @@ const formSchema = z.object({
 		message: "Please select a token.",
 	}),
 	poolSize: z.number().min(1, {
-		message: "Pool size must be greater than 0.",
+		message: "Pool size must be greater than minimum.",
 	}),
 });
 
@@ -77,16 +78,6 @@ interface TokenBalance {
 	name: string;
 	balance: string;
 	decimals: number;
-}
-
-interface TokenMetadata {
-	contract_id: string;
-	symbol: string;
-	decimals: number;
-	name: string;
-	metrics: {
-		price_usd: number;
-	};
 }
 
 interface CreateSponsoredLobbyFormProps {
@@ -168,43 +159,21 @@ export default function CreateSponsoredLobbyForm({
 		prevTokenRef.current = selectedToken;
 	}, [deployedContract, poolSize, selectedToken]);
 
-	const fetchTokenMetadata = useCallback(
-		async (contract: string) => {
-			try {
-				const response = await fetch(
-					`https://api.stxtools.io/tokens/${contract}`
-				);
-				const metadata: TokenMetadata = await response.json();
+	const fetchTokenMetadata = useCallback(async (contract: string) => {
+		try {
+			const metadata = await apiRequest<TokenMetadata>({
+				path: `/token_info/testnet/${contract}`,
+				method: "GET",
+			});
 
-				setSelectedTokenMetadata(metadata);
-
-				// Calculate minimum pool size based on $30 USD
-				const minUsdValue = 30;
-				const tokenPriceUsd = metadata.metrics.price_usd;
-				const decimals = metadata.decimals;
-
-				if (tokenPriceUsd > 0) {
-					const minTokenAmount = minUsdValue / tokenPriceUsd;
-					const minTokenAmountWithDecimals =
-						Math.ceil(minTokenAmount * Math.pow(10, decimals)) /
-						Math.pow(10, decimals);
-					setMinPoolSize(minTokenAmountWithDecimals);
-
-					// Update form validation
-					if (poolSize < minTokenAmountWithDecimals) {
-						form.setValue("poolSize", minTokenAmountWithDecimals);
-					}
-				} else {
-					// Fallback if no price data
-					setMinPoolSize(1);
-				}
-			} catch (error) {
-				console.error("Failed to fetch token metadata:", error);
-				setMinPoolSize(1);
-			}
-		},
-		[poolSize, form]
-	);
+			setSelectedTokenMetadata(metadata);
+			setMinPoolSize(metadata.minimumAmount || 50);
+		} catch (error) {
+			console.error("Failed to fetch token metadata:", error);
+			setMinPoolSize(1);
+			toast.error("Failed to load token information");
+		}
+	}, []);
 
 	// Fetch token metadata and calculate minimum pool size
 	useEffect(() => {
@@ -213,16 +182,14 @@ export default function CreateSponsoredLobbyForm({
 		} else {
 			setSelectedTokenMetadata(null);
 			setMinPoolSize(50);
-			// Update form validation for STX
-			form.setValue("poolSize", Math.max(50, poolSize));
 		}
-	}, [selectedToken, form, poolSize, fetchTokenMetadata]);
+	}, [selectedToken, fetchTokenMetadata, form]);
 
 	const fetchAvailableTokens = async (walletAddress: string) => {
 		setLoadingTokens(true);
 		try {
 			const response = await fetch(
-				`https://api.hiro.so/extended/v1/address/${walletAddress}/balances?unanchored=true`
+				`https://api.testnet.hiro.so/extended/v1/address/${walletAddress}/balances?unanchored=true`
 			);
 			const data = await response.json();
 
@@ -308,9 +275,9 @@ export default function CreateSponsoredLobbyForm({
 					if (!selectedTokenMetadata) {
 						throw new Error("Token metadata not loaded");
 					}
-
+					const tokenContract: `'${string}.${string}` = `'${values.token as `${string}.${string}`}`;
 					deployTx = await createSponsoredFtGamePool(
-						values.token as `${string}.${string}`,
+						tokenContract,
 						selectedTokenMetadata.symbol.toLowerCase(),
 						values.poolSize,
 						contractName,
@@ -595,14 +562,6 @@ export default function CreateSponsoredLobbyForm({
 													type="number"
 													placeholder={`Min: ${minPoolSize}`}
 													min={minPoolSize}
-													step={
-														1 /
-														Math.pow(
-															10,
-															selectedTokenMetadata?.decimals ||
-																6
-														)
-													}
 													value={field.value || ""}
 													onChange={(e) => {
 														const value =
@@ -628,14 +587,27 @@ export default function CreateSponsoredLobbyForm({
 								sponsor. Players can join for free.
 								{selectedTokenMetadata && (
 									<>
-										{" "}
-										Minimum value: $
-										{(
-											minPoolSize *
-											selectedTokenMetadata.metrics
-												.price_usd
-										).toFixed(2)}{" "}
-										USD
+										<br />
+										<span className="font-medium">
+											Minimum:{" "}
+											{minPoolSize.toLocaleString()}{" "}
+											{selectedTokenMetadata.symbol}
+											(≈$
+											{(
+												minPoolSize *
+												selectedTokenMetadata.priceUsd
+											).toFixed(2)}{" "}
+											USD)
+										</span>
+									</>
+								)}
+								{selectedToken === "STX" && (
+									<>
+										<br />
+										<span className="font-medium">
+											Minimum: {minPoolSize} STX (≈$30
+											USD)
+										</span>
 									</>
 								)}
 							</p>

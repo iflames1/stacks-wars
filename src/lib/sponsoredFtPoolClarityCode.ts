@@ -1,5 +1,5 @@
 export const getSponsoredFtClarityCode = (
-	contract: `${string}.${string}`,
+	tokenContract: `'${string}.${string}`,
 	tokenName: string,
 	poolSize: number,
 	deployer: string
@@ -15,22 +15,22 @@ export const getSponsoredFtClarityCode = (
 ;; TOKEN CONFIGURATION
 ;; ----------------------
 
-;; Token contract details (replace with your actual token contract)
-;; For local testing, use a local contract reference
-(define-constant TOKEN_CONTRACT ${contract})  ;; Change to your actual token contract
-(define-constant TOKEN_NAME ${tokenName})  ;; Token name for ft-transfer calls
+(define-constant TOKEN_NAME ${tokenName})
 
 ;; ----------------------
 ;; CONSTANTS
 ;; ----------------------
 
 (define-constant STACKS_WARS_FEE_WALLET 'SP39V8Q7KATNA4B0ZKD6QNTMHDNH5VJXRBG7PB8G2)
-(define-constant TRUSTED_PUBLIC_KEY 0x03ffe7c30724197e226ddc09b6340c078e7f42e3751c3d0654d067798850d22d09----)
+(define-constant TRUSTED_PUBLIC_KEY 0x03ffe7c30724197e226ddc09b6340c078e7f42e3751c3d0654d067798850d22d09)
 (define-constant DEPLOYER '${deployer})
-(define-constant POOL_SIZE u${poolSize}000000) ;; Pool funding amount in tokens
+(define-constant POOL_SIZE u${poolSize}000000)
 (define-constant FEE_PERCENTAGE u2)
 
+;; ----------------------
 ;; Error codes
+;; ----------------------
+
 (define-constant ERR_ALREADY_JOINED u5)
 (define-constant ERR_INSUFFICIENT_FUNDS u6)
 (define-constant ERR_TRANSFER_FAILED u7)
@@ -52,18 +52,6 @@ export const getSponsoredFtClarityCode = (
 (define-map players {player: principal} {joined-at: uint, is-sponsor: bool})
 (define-map claimed-rewards {player: principal} {claimed: bool, amount: uint})
 (define-map collected-fees {player: principal} {paid: bool})
-
-;; ----------------------
-;; TOKEN TRANSFER HELPERS
-;; ----------------------
-
-(define-private (transfer-tokens (amount uint) (sender principal) (recipient principal))
-    (contract-call? TOKEN_CONTRACT transfer amount sender recipient none)
-)
-
-(define-private (get-token-balance (owner principal))
-    (contract-call? TOKEN_CONTRACT get-balance owner)
-)
 
 ;; ----------------------
 ;; HELPER FUNCTIONS
@@ -98,7 +86,7 @@ export const getSponsoredFtClarityCode = (
                 (asserts! (not (var-get pool-funded)) (err ERR_ALREADY_JOINED))
 
                 ;; Transfer tokens from deployer to contract
-                (match (transfer-tokens POOL_SIZE tx-sender (as-contract tx-sender))
+                (match (contract-call? ${tokenContract} transfer POOL_SIZE tx-sender (as-contract tx-sender) none)
                     success
                     (begin
                         (map-set players {player: tx-sender} {joined-at: stacks-block-height, is-sponsor: true})
@@ -132,8 +120,8 @@ export const getSponsoredFtClarityCode = (
                     ;; Ensure no other players are still in the pool
                     (asserts! (is-eq (var-get total-players) u1) (err ERR_POOL_NOT_EMPTY))
 
-                    (let ((balance (unwrap-panic (get-token-balance (as-contract tx-sender)))))
-                        (match (as-contract (transfer-tokens balance tx-sender DEPLOYER))
+                    (let ((balance (unwrap-panic (contract-call? ${tokenContract} get-balance (as-contract tx-sender)))))
+                        (match (as-contract (contract-call? ${tokenContract} transfer balance tx-sender DEPLOYER none))
                             success
                             (begin
                                 (map-delete players {player: tx-sender})
@@ -167,7 +155,7 @@ export const getSponsoredFtClarityCode = (
             (fee (/ (* amount FEE_PERCENTAGE) u100))
             (net-amount (- amount fee))
             (has-paid-fee (has-paid-entry-fee tx-sender))
-            (current-balance (unwrap-panic (get-token-balance (as-contract tx-sender))))
+            (current-balance (unwrap-panic (contract-call? ${tokenContract} get-balance (as-contract tx-sender))))
         )
             (asserts! (secp256k1-verify msg-hash signature TRUSTED_PUBLIC_KEY) (err ERR_INVALID_SIGNATURE))
             (asserts! (>= current-balance amount) (err ERR_INSUFFICIENT_FUNDS))
@@ -176,7 +164,7 @@ export const getSponsoredFtClarityCode = (
             (let ((fee-result
                 (if (not has-paid-fee)
                     ;; Transfer fee if not already paid
-                    (match (as-contract (transfer-tokens fee tx-sender STACKS_WARS_FEE_WALLET))
+                    (match (as-contract (contract-call? ${tokenContract} transfer fee tx-sender STACKS_WARS_FEE_WALLET none))
                         fee-success
                         (begin
                             ;; Mark fee as collected
@@ -192,7 +180,7 @@ export const getSponsoredFtClarityCode = (
                 (try! fee-result)
 
                 ;; Transfer reward to player
-                (match (as-contract (transfer-tokens net-amount tx-sender recipient))
+                (match (as-contract (contract-call? ${tokenContract} transfer net-amount tx-sender recipient none))
                     reward-success
                     (begin
                         (map-set claimed-rewards {player: recipient} {claimed: true, amount: amount})
@@ -208,10 +196,6 @@ export const getSponsoredFtClarityCode = (
 ;; ----------------------
 ;; READ-ONLY FUNCTIONS
 ;; ----------------------
-
-;;(define-read-only (get-pool-balance)
-;;    (contract-call? TOKEN_CONTRACT get-balance (as-contract tx-sender))
-;;)
 
 (define-read-only (get-total-players)
     (var-get total-players)

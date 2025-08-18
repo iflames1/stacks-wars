@@ -40,7 +40,7 @@ export const createSponsoredGamePool = async (
 };
 
 export const createSponsoredFtGamePool = async (
-	tokenContract: `${string}.${string}`,
+	tokenContract: `'${string}.${string}`,
 	tokenName: string,
 	poolSize: number,
 	contractName: string,
