@@ -144,49 +144,45 @@ export const getSponsoredFtClarityCode = (
     )
 )
 
-(define-public (claim-reward (amount uint) (signature (buff 65)))
+(define-public (leave-pool (signature (buff 65)))
     (begin
-        (asserts! (is-some (map-get? players {player: tx-sender})) (err ERR_NOT_JOINED))
-        (asserts! (not (is-some (map-get? claimed-rewards {player: tx-sender}))) (err ERR_REWARD_ALREADY_CLAIMED))
+        ;; Ensure player has joined
+        (let ((player-data (unwrap! (map-get? players {player: tx-sender}) (err ERR_NOT_JOINED))))
+            (if (get is-sponsor player-data)
+                ;; Sponsor leaving - withdraw remaining tokens
+                (begin
+                    ;; Ensure no other players are still in the pool
+                    (asserts! (is-eq (var-get total-players) u1) (err ERR_POOL_NOT_EMPTY))
 
-        (let (
-            (msg-hash (try! (construct-message-hash amount)))
-            (recipient tx-sender)
-            (fee (/ (* amount FEE_PERCENTAGE) u100))
-            (net-amount (- amount fee))
-            (has-paid-fee (has-paid-entry-fee tx-sender))
-            (current-balance (unwrap-panic (contract-call? ${tokenContract} get-balance (as-contract tx-sender))))
-        )
-            (asserts! (secp256k1-verify msg-hash signature TRUSTED_PUBLIC_KEY) (err ERR_INVALID_SIGNATURE))
-            (asserts! (>= current-balance amount) (err ERR_INSUFFICIENT_FUNDS))
-
-            ;; Handle the fee payment conditionally
-            (let ((fee-result
-                (if (not has-paid-fee)
-                    ;; Transfer fee if not already paid
-                    (match (as-contract (contract-call? ${tokenContract} transfer fee tx-sender STACKS_WARS_FEE_WALLET none))
-                        fee-success
-                        (begin
-                            ;; Mark fee as collected
-                            (map-set collected-fees {player: tx-sender} {paid: true})
-                            (ok true)
-                        )
-                        fee-error (err ERR_FEE_TRANSFER_FAILED)
+                    ;; Verify signature for pool size amount
+                    (let (
+                        (msg-hash (try! (construct-message-hash POOL_SIZE)))
+                        (balance (unwrap-panic (contract-call? ${tokenContract} get-balance (as-contract tx-sender))))
                     )
-                    (ok true)  ;; Skip fee if already paid
-                )))
+                        (asserts! (secp256k1-verify msg-hash signature TRUSTED_PUBLIC_KEY) (err ERR_INVALID_SIGNATURE))
 
-                ;; Check if fee payment was successful
-                (try! fee-result)
+                        (match (as-contract (contract-call? ${tokenContract} transfer balance tx-sender DEPLOYER none))
+                            success
+                            (begin
+                                (map-delete players {player: tx-sender})
+                                (var-set total-players (- (var-get total-players) u1))
+                                (var-set pool-funded false)
+                                (ok true)
+                            )
+                            error (err ERR_TRANSFER_FAILED)
+                        )
+                    )
+                )
+                ;; Regular player leaving
+                (begin
+                    ;; Verify signature for amount 0
+                    (let ((msg-hash (try! (construct-message-hash u0))))
+                        (asserts! (secp256k1-verify msg-hash signature TRUSTED_PUBLIC_KEY) (err ERR_INVALID_SIGNATURE))
 
-                ;; Transfer reward to player
-                (match (as-contract (contract-call? ${tokenContract} transfer net-amount tx-sender recipient none))
-                    reward-success
-                    (begin
-                        (map-set claimed-rewards {player: recipient} {claimed: true, amount: amount})
+                        (map-delete players {player: tx-sender})
+                        (var-set total-players (- (var-get total-players) u1))
                         (ok true)
                     )
-                    reward-error (err ERR_TRANSFER_FAILED)
                 )
             )
         )
