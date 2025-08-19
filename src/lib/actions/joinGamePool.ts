@@ -1,4 +1,8 @@
-import { StxPostCondition } from "@stacks/transactions";
+import {
+	AssetString,
+	FungiblePostCondition,
+	StxPostCondition,
+} from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import { getClaimFromJwt } from "../getClaimFromJwt";
 
@@ -42,6 +46,7 @@ export const joinSponsoredGamePool = async (
 	if (!address) {
 		throw new Error("No wallet address found");
 	}
+
 	try {
 		let postConditions: StxPostCondition[] = [];
 
@@ -56,6 +61,46 @@ export const joinSponsoredGamePool = async (
 		}
 
 		console.log(contract, postConditions);
+
+		const response = await request("stx_callContract", {
+			contract,
+			functionName: "join-pool",
+			functionArgs: [],
+			network: "testnet",
+			postConditionMode: "deny",
+			postConditions,
+		});
+		return response.txid;
+	} catch (error) {
+		console.error("Wallet returned an error:", error);
+		throw error;
+	}
+};
+
+export const joinSponsoredFtGamePool = async (
+	contract: `${string}.${string}`,
+	tokenId: AssetString,
+	isCreator: boolean,
+	amount: number
+) => {
+	const walletAddress = await getClaimFromJwt<string>("wallet");
+	if (!walletAddress) {
+		throw new Error("No wallet address found");
+	}
+
+	try {
+		let postConditions: FungiblePostCondition[] = [];
+
+		if (isCreator) {
+			const ftPostCondition: FungiblePostCondition = {
+				type: "ft-postcondition",
+				address: walletAddress,
+				condition: "eq",
+				asset: tokenId,
+				amount: amount * 1_000_000,
+			};
+			postConditions = [ftPostCondition];
+		}
 
 		const response = await request("stx_callContract", {
 			contract,

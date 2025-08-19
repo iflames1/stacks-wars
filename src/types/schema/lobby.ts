@@ -1,3 +1,4 @@
+import { AssetString } from "@stacks/transactions";
 import { GameType } from "./game";
 import { ClaimState, Player } from "./player";
 import { User } from "./user";
@@ -16,6 +17,8 @@ export interface Lobby {
 	contractAddress: string | null;
 	entryAmount: number | null;
 	currentAmount: number | null;
+	tokenSymbol: string;
+	tokenId: AssetString | null;
 }
 
 export interface LobbyExtended {

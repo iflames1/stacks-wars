@@ -1,4 +1,9 @@
-import { ClarityType, StxPostCondition } from "@stacks/transactions";
+import {
+	AssetString,
+	ClarityType,
+	FungiblePostCondition,
+	StxPostCondition,
+} from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import { generateSignature } from "./txSigner";
 import { getClaimFromJwt } from "../getClaimFromJwt";
@@ -51,8 +56,15 @@ export const leaveSponsoredGamePool = async (
 	if (!walletAddress) {
 		throw new Error("No wallet address found");
 	}
+	amount = amount * 1_000_000;
 
 	try {
+		const signature = await generateSignature(
+			amount,
+			walletAddress,
+			contract
+		);
+
 		let postConditions: StxPostCondition[] = [];
 
 		if (isCreator) {
@@ -60,7 +72,7 @@ export const leaveSponsoredGamePool = async (
 				type: "stx-postcondition",
 				address: contract,
 				condition: "eq",
-				amount: amount * 1_000_000,
+				amount: amount,
 			};
 			postConditions = [stxPostCondition];
 		}
@@ -68,7 +80,54 @@ export const leaveSponsoredGamePool = async (
 		const response = await request("stx_callContract", {
 			contract,
 			functionName: "leave-pool",
-			functionArgs: [],
+			functionArgs: [{ type: ClarityType.Buffer, value: signature }],
+			network: "testnet",
+			postConditionMode: "deny",
+			postConditions,
+		});
+		return response.txid;
+	} catch (error) {
+		console.error("Wallet returned an error:", error);
+		throw error;
+	}
+};
+
+export const leaveSponsoredFtGamePool = async (
+	contract: `${string}.${string}`,
+	tokenId: AssetString,
+	isCreator: boolean,
+	amount: number
+) => {
+	const walletAddress = await getClaimFromJwt<string>("wallet");
+	if (!walletAddress) {
+		throw new Error("No wallet address found");
+	}
+	amount = amount * 1_000_000;
+
+	try {
+		const signature = await generateSignature(
+			amount,
+			walletAddress,
+			contract
+		);
+
+		let postConditions: FungiblePostCondition[] = [];
+
+		if (isCreator) {
+			const ftPostCondition: FungiblePostCondition = {
+				type: "ft-postcondition",
+				address: contract,
+				condition: "eq",
+				asset: tokenId,
+				amount: amount,
+			};
+			postConditions = [ftPostCondition];
+		}
+
+		const response = await request("stx_callContract", {
+			contract,
+			functionName: "leave-pool",
+			functionArgs: [{ type: ClarityType.Buffer, value: signature }],
 			network: "testnet",
 			postConditionMode: "deny",
 			postConditions,
