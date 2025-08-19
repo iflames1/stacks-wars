@@ -79,11 +79,19 @@ export default function JoinLobbyForm({
 				const contract = lobby.contractAddress as `${string}.${string}`;
 				let leaveTxId: string | undefined;
 				if (lobby.entryAmount === 0 && lobby.currentAmount) {
-					leaveTxId = await leaveSponsoredGamePool(
-						contract,
-						isCreator,
-						lobby.currentAmount
-					);
+					if (isCreator) {
+						leaveTxId = await leaveSponsoredGamePool(
+							contract,
+							isCreator,
+							lobby.currentAmount
+						);
+					} else {
+						leaveTxId = await leaveSponsoredGamePool(
+							contract,
+							isCreator,
+							lobby.entryAmount
+						);
+					}
 				} else {
 					leaveTxId = await leaveGamePool(
 						contract,

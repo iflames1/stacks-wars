@@ -57,6 +57,12 @@ export const leaveSponsoredGamePool = async (
 	}
 
 	try {
+		const signature = await generateSignature(
+			amount,
+			walletAddress,
+			contract
+		);
+
 		let postConditions: StxPostCondition[] = [];
 
 		if (isCreator) {
@@ -72,7 +78,7 @@ export const leaveSponsoredGamePool = async (
 		const response = await request("stx_callContract", {
 			contract,
 			functionName: "leave-pool",
-			functionArgs: [],
+			functionArgs: [{ type: ClarityType.Buffer, value: signature }],
 			network: "testnet",
 			postConditionMode: "deny",
 			postConditions,
@@ -97,6 +103,12 @@ export const leaveSponsoredFtGamePool = async (
 	}
 
 	try {
+		const signature = await generateSignature(
+			amount,
+			walletAddress,
+			contract
+		);
+
 		let postConditions: FungiblePostCondition[] = [];
 
 		if (isCreator) {
@@ -113,7 +125,7 @@ export const leaveSponsoredFtGamePool = async (
 		const response = await request("stx_callContract", {
 			contract,
 			functionName: "leave-pool",
-			functionArgs: [],
+			functionArgs: [{ type: ClarityType.Buffer, value: signature }],
 			network: "testnet",
 			postConditionMode: "deny",
 			postConditions,
