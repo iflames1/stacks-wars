@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 		"smart contract games",
 		"competitive esports",
 	],
-	authors: [{ name: "SWE Hashiras", url: "https://stackswars.com/about" }],
+	authors: [{ name: "SWE Hashiras", url: "" }],
 	creator: "SWE Hashiras",
 	publisher: "Stacks Wars",
 	formatDetection: {
@@ -83,14 +83,16 @@ export const metadata: Metadata = {
 			"Compete in skill-based Web3 games on Stacks blockchain. Join tournaments, play Lexi Wars, and earn real STX rewards. Fair, transparent, and competitive gaming for everyone.",
 		images: [
 			{
-				url: "https://stackswars.com/og-image.png",
+				//url: "https://stackswars.com/og-image.png",
+				url: "/logo.png",
 				width: 1200,
 				height: 630,
 				alt: "Stacks Wars - Web3 Gaming Platform",
 				type: "image/png",
 			},
 			{
-				url: "https://stackswars.com/og-image-square.png",
+				//url: "https://stackswars.com/og-image-square.png",
+				url: "/logo.png",
 				width: 600,
 				height: 600,
 				alt: "Stacks Wars Logo",
@@ -106,7 +108,8 @@ export const metadata: Metadata = {
 		description:
 			"🎮 Skill-based Web3 gaming on Stacks blockchain\n🏆 Compete in tournaments & earn STX rewards\n🎯 Fair play, transparent gaming\n🔥 Join the competition now!",
 		images: {
-			url: "https://stackswars.com/twitter-image.png",
+			//url: "https://stackswars.com/twitter-image.png",
+			url: "/logo.png",
 			alt: "Stacks Wars - Web3 Gaming Platform",
 		},
 	},
@@ -134,7 +137,7 @@ export const metadata: Metadata = {
 			},
 		],
 	},
-	manifest: "/site.webmanifest",
+	manifest: "/manifest.json",
 	applicationName: "Stacks Wars",
 	category: "Gaming",
 	classification: "Gaming Platform",
@@ -153,7 +156,7 @@ export const metadata: Metadata = {
 		"apple-mobile-web-app-title": "Stacks Wars",
 		"mobile-web-app-capable": "yes",
 		"msapplication-TileColor": "#000000",
-		"msapplication-config": "/browserconfig.xml",
+		//"msapplication-config": "/browserconfig.xml",
 	},
 };
 
