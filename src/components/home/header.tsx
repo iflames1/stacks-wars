@@ -121,7 +121,7 @@ export default function Header() {
 											}}
 										>
 											<Link
-												href={`/${user?.username || user?.walletAddress}`}
+												href={`/u/${user?.username || user?.walletAddress}`}
 											>
 												<UserIcon className="h-4 w-4" />
 												Profile
