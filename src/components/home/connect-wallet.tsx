@@ -33,7 +33,7 @@ export default function ConnectWallet() {
 	const handleProfileClick = () => {
 		const identifier = getProfileIdentifier();
 		if (identifier) {
-			router.push(`/${identifier}`);
+			router.push(`/u/${identifier}`);
 		}
 	};
 
