@@ -693,7 +693,7 @@ export default function CreateSponsoredLobbyForm({
 								{isLoading
 									? "Creating..."
 									: deployedContract
-										? "Join Deployed Sponsored Lobby"
+										? "Join Deployed Lobby"
 										: "Create Sponsored Lobby"}
 							</Button>
 						)}
