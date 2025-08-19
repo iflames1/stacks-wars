@@ -1,4 +1,5 @@
 import {
+	AssetString,
 	ClarityType,
 	FungiblePostCondition,
 	StxPostCondition,
@@ -93,7 +94,7 @@ export const leaveSponsoredGamePool = async (
 
 export const leaveSponsoredFtGamePool = async (
 	contract: `${string}.${string}`,
-	tokenId: `${string}.${string}::${string}`,
+	tokenId: AssetString,
 	isCreator: boolean,
 	amount: number
 ) => {

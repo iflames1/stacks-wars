@@ -1,4 +1,8 @@
-import { FungiblePostCondition, StxPostCondition } from "@stacks/transactions";
+import {
+	AssetString,
+	FungiblePostCondition,
+	StxPostCondition,
+} from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import { getClaimFromJwt } from "../getClaimFromJwt";
 
@@ -75,7 +79,7 @@ export const joinSponsoredGamePool = async (
 
 export const joinSponsoredFtGamePool = async (
 	contract: `${string}.${string}`,
-	tokenName: string,
+	tokenId: AssetString,
 	isCreator: boolean,
 	amount: number
 ) => {
@@ -92,7 +96,7 @@ export const joinSponsoredFtGamePool = async (
 				type: "ft-postcondition",
 				address: walletAddress,
 				condition: "eq",
-				asset: `${contract}::${tokenName}`,
+				asset: tokenId,
 				amount: amount * 1_000_000,
 			};
 			postConditions = [ftPostCondition];

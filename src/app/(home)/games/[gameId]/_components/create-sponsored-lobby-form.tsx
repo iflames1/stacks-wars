@@ -47,6 +47,7 @@ import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { useConnectUser } from "@/contexts/ConnectWalletContext";
 import { TokenMetadata } from "@/types/schema/token";
 import { formatNumber } from "@/lib/utils";
+import { AssetString, ContractIdString } from "@stacks/transactions";
 
 interface FormData {
 	name: string;
@@ -181,6 +182,7 @@ export default function CreateSponsoredLobbyForm({
 	const fetchTokenMetadata = useCallback(
 		async (contract_id: string) => {
 			try {
+				console.log("Fetch meta data");
 				const metadata = await apiRequest<TokenMetadata>({
 					path: `/token_info/testnet/${contract_id}`,
 					method: "GET",
@@ -273,8 +275,14 @@ export default function CreateSponsoredLobbyForm({
 
 			let contractInfo = deployedContract;
 
+			let tokenSymbol = "STX";
+			let tokenId: AssetString | null = null;
+			if (values.token !== "stx" && selectedTokenMetadata) {
+				tokenSymbol = selectedTokenMetadata.symbol;
+				tokenId = `'${values.token as ContractIdString}::${selectedTokenMetadata.name}`;
+			}
+
 			if (!contractInfo) {
-				let tokenSymbol = "stacks";
 				if (values.token !== "stx" && selectedTokenMetadata) {
 					tokenSymbol = selectedTokenMetadata.symbol;
 				}
@@ -346,13 +354,13 @@ export default function CreateSponsoredLobbyForm({
 						contractInfo.poolSize
 					);
 				} else {
-					if (!selectedTokenMetadata) {
+					if (!selectedTokenMetadata || tokenId === null) {
 						throw new Error("Token metadata not loaded");
 					}
 
 					joinTxId = await joinSponsoredFtGamePool(
 						contractInfo.contractAddress,
-						values.token as `${string}.${string}`,
+						tokenId,
 						true,
 						contractInfo.poolSize
 					);
@@ -379,13 +387,6 @@ export default function CreateSponsoredLobbyForm({
 					console.error("❌ TX failed or aborted:", err);
 					throw err;
 				}
-			}
-
-			let tokenSymbol = "STX";
-			let tokenId = null;
-			if (values.token !== "stx" && selectedTokenMetadata) {
-				tokenSymbol = selectedTokenMetadata.symbol;
-				tokenId = `${values.token}::${selectedTokenMetadata.name}`;
 			}
 
 			const apiParams: ApiRequestProps = {
