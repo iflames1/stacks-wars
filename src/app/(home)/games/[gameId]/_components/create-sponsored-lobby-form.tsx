@@ -48,24 +48,6 @@ import { useConnectUser } from "@/contexts/ConnectWalletContext";
 import { TokenMetadata } from "@/types/schema/token";
 import { formatNumber } from "@/lib/utils";
 
-const formSchema = z.object({
-	name: z.string().min(3, {
-		message: "Lobby name must be at least 3 characters.",
-	}),
-	description: z
-		.string()
-		.min(3, {
-			message: "Lobby description must be at least 3 characters.",
-		})
-		.optional(),
-	token: z.string().min(1, {
-		message: "Please select a token.",
-	}),
-	poolSize: z.number().min(1, {
-		message: "Pool size must be greater than minimum.",
-	}),
-});
-
 interface FormData {
 	name: string;
 	description?: string;
@@ -111,6 +93,24 @@ export default function CreateSponsoredLobbyForm({
 	} | null>(null);
 	const prevPoolSizeRef = useRef<number | undefined>(undefined);
 	const prevTokenRef = useRef<string | undefined>(undefined);
+
+	const formSchema = z.object({
+		name: z.string().min(3, {
+			message: "Lobby name must be at least 3 characters.",
+		}),
+		description: z
+			.string()
+			.min(3, {
+				message: "Lobby description must be at least 3 characters.",
+			})
+			.optional(),
+		token: z.string().min(1, {
+			message: "Please select a token.",
+		}),
+		poolSize: z.number().min(selectedTokenMetadata?.priceUsd || 50, {
+			message: `Pool size must be greater than ${selectedTokenMetadata?.minimumAmount || 0}`,
+		}),
+	});
 
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
@@ -160,18 +160,18 @@ export default function CreateSponsoredLobbyForm({
 		prevTokenRef.current = selectedToken;
 	}, [deployedContract, poolSize, selectedToken]);
 
-	const fetchTokenMetadata = useCallback(async (contract: string) => {
+	const fetchTokenMetadata = useCallback(async (contract_id: string) => {
 		try {
 			const metadata = await apiRequest<TokenMetadata>({
-				path: `/token_info/testnet/${contract}`,
+				path: `/token_info/testnet/${contract_id}`,
 				method: "GET",
 			});
 
 			setSelectedTokenMetadata(metadata);
-			setMinPoolSize(metadata.minimumAmount || 50);
+			setMinPoolSize(metadata.minimumAmount);
 		} catch (error) {
 			console.error("Failed to fetch token metadata:", error);
-			setMinPoolSize(1);
+			setMinPoolSize(0);
 			toast.error("Failed to load token information");
 		}
 	}, []);
@@ -180,9 +180,11 @@ export default function CreateSponsoredLobbyForm({
 	useEffect(() => {
 		if (selectedToken && selectedToken !== "STX") {
 			fetchTokenMetadata(selectedToken);
+		} else if (selectedToken === "STX") {
+			fetchTokenMetadata("stx");
 		} else {
 			setSelectedTokenMetadata(null);
-			setMinPoolSize(50);
+			setMinPoolSize(0);
 		}
 	}, [selectedToken, fetchTokenMetadata, form]);
 
@@ -554,30 +556,71 @@ export default function CreateSponsoredLobbyForm({
 								<FormField
 									control={form.control}
 									name="poolSize"
-									render={({ field }) => (
-										<FormItem className="w-full">
-											<FormControl>
-												<Input
-													type="number"
-													placeholder={`Min: ${minPoolSize}`}
-													min={minPoolSize}
-													value={field.value || ""}
-													onChange={(e) => {
-														const value =
-															e.target.value;
-														field.onChange(
-															value === ""
-																? undefined
-																: parseFloat(
-																		value
-																	)
-														);
-													}}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
+									render={({ field }) => {
+										const getStepValue = () => {
+											if (
+												selectedTokenMetadata?.priceUsd
+											) {
+												if (
+													selectedTokenMetadata.priceUsd >=
+													1
+												)
+													return 0.000001;
+												if (
+													selectedTokenMetadata.priceUsd >=
+													0.01
+												)
+													return 0.01;
+												if (
+													selectedTokenMetadata.priceUsd >=
+													0.001
+												)
+													return 0.1;
+												return 1;
+											}
+
+											// For STX or when no metadata, calculate based on minPoolSize precision
+											const minStr =
+												minPoolSize.toString();
+											if (minStr.includes(".")) {
+												const decimals =
+													minStr.split(".")[1].length;
+												return (
+													1 / Math.pow(10, decimals)
+												);
+											}
+
+											return 0.01; // Default step for STX
+										};
+
+										return (
+											<FormItem className="w-full">
+												<FormControl>
+													<Input
+														type="number"
+														placeholder={`Min: ${minPoolSize}`}
+														min={minPoolSize}
+														step={getStepValue()}
+														value={
+															field.value || ""
+														}
+														onChange={(e) => {
+															const value =
+																e.target.value;
+															field.onChange(
+																value === ""
+																	? undefined
+																	: parseFloat(
+																			value
+																		)
+															);
+														}}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										);
+									}}
 								/>
 							</div>
 
@@ -588,23 +631,18 @@ export default function CreateSponsoredLobbyForm({
 									<>
 										<br />
 										<span className="font-medium">
-											Minimum: {formatNumber(minPoolSize)}{" "}
-											{selectedTokenMetadata.symbol}
-											(≈$
-											{(
-												minPoolSize *
-												selectedTokenMetadata.priceUsd
-											).toFixed(2)}{" "}
-											USD)
+											Minimum: {minPoolSize}{" "}
+											{selectedTokenMetadata.symbol} (≈$
+											30 USD)
 										</span>
 									</>
 								)}
-								{selectedToken === "STX" && (
+								{!selectedTokenMetadata && selectedToken && (
 									<>
 										<br />
 										<span className="font-medium">
-											Minimum: {formatNumber(minPoolSize)}{" "}
-											STX (≈$30 USD)
+											Minimum: {minPoolSize}{" "}
+											{selectedToken} (≈$30 USD)
 										</span>
 									</>
 								)}

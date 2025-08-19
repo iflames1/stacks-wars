@@ -1,10 +1,10 @@
 export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
 	return `
 ;; ==============================
-;; Stacks Wars - Sponsored Pool Contract (Same Interface)
+;; Stacks Wars - Sponsored Pool Contract
 ;; ==============================
 ;; author: flames.stx
-;; summary: Modified version where deployer's join/leave handles pool funding
+;; summary: Sponsored pool using STX
 
 ;; ----------------------
 ;; CONSTANTS
@@ -12,11 +12,14 @@ export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
 
 (define-constant STACKS_WARS_FEE_WALLET 'SP39V8Q7KATNA4B0ZKD6QNTMHDNH5VJXRBG7PB8G2)
 (define-constant TRUSTED_PUBLIC_KEY 0x03ffe7c30724197e226ddc09b6340c078e7f42e3751c3d0654d067798850d22d09)
+(define-constant FEE_PERCENTAGE u2)
 (define-constant DEPLOYER '${deployer})
 (define-constant POOL_SIZE u${poolSize}000000) ;; Pool funding amount in microSTX
-(define-constant FEE_PERCENTAGE u2)
 
+;; ----------------------
 ;; Error codes
+;; ----------------------
+
 (define-constant ERR_ALREADY_JOINED u5)
 (define-constant ERR_INSUFFICIENT_FUNDS u6)
 (define-constant ERR_TRANSFER_FAILED u7)
