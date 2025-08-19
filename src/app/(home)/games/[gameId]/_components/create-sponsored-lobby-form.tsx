@@ -46,6 +46,7 @@ import {
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { useConnectUser } from "@/contexts/ConnectWalletContext";
 import { TokenMetadata } from "@/types/schema/token";
+import { formatNumber } from "@/lib/utils";
 
 const formSchema = z.object({
 	name: z.string().min(3, {
@@ -526,17 +527,15 @@ export default function CreateSponsoredLobbyForm({
 																					token.symbol
 																				}
 																			</span>
-																			<span className="text-xs text-muted-foreground ml-2">
-																				{(
+																			<span className="text-xs text-muted-foreground ml-2 font-mono">
+																				{formatNumber(
 																					parseInt(
 																						token.balance
 																					) /
-																					Math.pow(
-																						10,
-																						token.decimals
-																					)
-																				).toFixed(
-																					2
+																						Math.pow(
+																							10,
+																							token.decimals
+																						)
 																				)}
 																			</span>
 																		</div>
@@ -589,8 +588,7 @@ export default function CreateSponsoredLobbyForm({
 									<>
 										<br />
 										<span className="font-medium">
-											Minimum:{" "}
-											{minPoolSize.toLocaleString()}{" "}
+											Minimum: {formatNumber(minPoolSize)}{" "}
 											{selectedTokenMetadata.symbol}
 											(≈$
 											{(
@@ -605,8 +603,8 @@ export default function CreateSponsoredLobbyForm({
 									<>
 										<br />
 										<span className="font-medium">
-											Minimum: {minPoolSize} STX (≈$30
-											USD)
+											Minimum: {formatNumber(minPoolSize)}{" "}
+											STX (≈$30 USD)
 										</span>
 									</>
 								)}
