@@ -16,6 +16,8 @@ export interface Lobby {
 	contractAddress: string | null;
 	entryAmount: number | null;
 	currentAmount: number | null;
+	tokenSymbol: string;
+	tokenId: `${string}.${string}::${string}` | null;
 }
 
 export interface LobbyExtended {

@@ -116,7 +116,7 @@ export default function CreateSponsoredLobbyForm({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: "",
-			token: "STX",
+			token: "stx",
 		},
 		mode: "onChange",
 	});
@@ -160,33 +160,53 @@ export default function CreateSponsoredLobbyForm({
 		prevTokenRef.current = selectedToken;
 	}, [deployedContract, poolSize, selectedToken]);
 
-	const fetchTokenMetadata = useCallback(async (contract_id: string) => {
-		try {
-			const metadata = await apiRequest<TokenMetadata>({
-				path: `/token_info/testnet/${contract_id}`,
-				method: "GET",
-			});
+	const updateTokenInfo = useCallback(
+		(contractId: string, metadata: TokenMetadata) => {
+			setAvailableTokens((prevTokens) =>
+				prevTokens.map((token) =>
+					token.contract === contractId
+						? {
+								...token,
+								symbol: metadata.symbol,
+								decimals: metadata.decimals,
+								name: metadata.name,
+							}
+						: token
+				)
+			);
+		},
+		[]
+	);
 
-			setSelectedTokenMetadata(metadata);
-			setMinPoolSize(metadata.minimumAmount);
-		} catch (error) {
-			console.error("Failed to fetch token metadata:", error);
-			setMinPoolSize(0);
-			toast.error("Failed to load token information");
-		}
-	}, []);
+	const fetchTokenMetadata = useCallback(
+		async (contract_id: string) => {
+			try {
+				const metadata = await apiRequest<TokenMetadata>({
+					path: `/token_info/testnet/${contract_id}`,
+					method: "GET",
+				});
+
+				setSelectedTokenMetadata(metadata);
+				setMinPoolSize(metadata.minimumAmount);
+
+				updateTokenInfo(contract_id, metadata);
+			} catch (error) {
+				console.error("Failed to fetch token metadata:", error);
+				setMinPoolSize(0);
+				toast.error("Failed to load token information");
+			}
+		},
+		[updateTokenInfo]
+	);
 
 	// Fetch token metadata and calculate minimum pool size
 	useEffect(() => {
-		if (selectedToken && selectedToken !== "STX") {
+		if (selectedToken) {
 			fetchTokenMetadata(selectedToken);
-		} else if (selectedToken === "STX") {
-			fetchTokenMetadata("stx");
 		} else {
 			setSelectedTokenMetadata(null);
-			setMinPoolSize(0);
 		}
-	}, [selectedToken, fetchTokenMetadata, form]);
+	}, [selectedToken, fetchTokenMetadata]);
 
 	const fetchAvailableTokens = async (walletAddress: string) => {
 		setLoadingTokens(true);
@@ -198,7 +218,7 @@ export default function CreateSponsoredLobbyForm({
 
 			const tokens: TokenBalance[] = [
 				{
-					contract: "STX",
+					contract: "stx",
 					symbol: "STX",
 					name: "Stacks",
 					balance: data.stx.balance,
@@ -214,8 +234,6 @@ export default function CreateSponsoredLobbyForm({
 					const tokenBalance = tokenData as { balance: string };
 
 					if (parseInt(tokenBalance.balance) > 0) {
-						// Extract token name from contract address
-						// Format: CONTRACT_ADDRESS::TOKEN_NAME
 						const parts = contractFull.split("::");
 						if (parts.length === 2) {
 							const contract = parts[0];
@@ -223,7 +241,7 @@ export default function CreateSponsoredLobbyForm({
 
 							tokens.push({
 								contract,
-								symbol: tokenName.toUpperCase(),
+								symbol: tokenName.toUpperCase(), // Default, will be updated with metadata
 								name: tokenName,
 								balance: tokenBalance.balance,
 								decimals: 6, // Default, will be updated with metadata
@@ -256,11 +274,9 @@ export default function CreateSponsoredLobbyForm({
 			let contractInfo = deployedContract;
 
 			if (!contractInfo) {
-				let tokenSymbol = "stx";
-				if (values.token === "STX") {
-					tokenSymbol = "stx";
-				} else if (selectedTokenMetadata) {
-					tokenSymbol = selectedTokenMetadata.symbol.toLowerCase();
+				let tokenSymbol = "stacks";
+				if (values.token !== "stx" && selectedTokenMetadata) {
+					tokenSymbol = selectedTokenMetadata.symbol;
 				}
 
 				const contractName = `${nanoid(5)}-sponsored-${tokenSymbol}-wars`;
@@ -268,7 +284,7 @@ export default function CreateSponsoredLobbyForm({
 
 				let deployTx;
 
-				if (values.token === "STX") {
+				if (values.token === "stx") {
 					deployTx = await createSponsoredGamePool(
 						values.poolSize,
 						contractName,
@@ -281,7 +297,7 @@ export default function CreateSponsoredLobbyForm({
 					const tokenContract: `'${string}.${string}` = `'${values.token as `${string}.${string}`}`;
 					deployTx = await createSponsoredFtGamePool(
 						tokenContract,
-						selectedTokenMetadata.symbol.toLowerCase(),
+						selectedTokenMetadata.name,
 						values.poolSize,
 						contractName,
 						deployerAddress
@@ -296,20 +312,19 @@ export default function CreateSponsoredLobbyForm({
 
 				try {
 					await waitForTxConfirmed(deployTx.txid);
+					contractInfo = {
+						contractName,
+						contractAddress: contract,
+						poolSize: values.poolSize,
+						txId: deployTx.txid,
+						token: values.token,
+					};
+					setDeployedContract(contractInfo);
 					console.log("✅ Sponsored Deploy Transaction confirmed!");
 				} catch (err) {
 					console.error("❌ TX failed or aborted:", err);
 					throw err;
 				}
-
-				contractInfo = {
-					contractName,
-					contractAddress: contract,
-					poolSize: values.poolSize,
-					txId: deployTx.txid,
-					token: values.token,
-				};
-				setDeployedContract(contractInfo);
 			}
 
 			let joinInfo = joined;
@@ -324,7 +339,7 @@ export default function CreateSponsoredLobbyForm({
 			} else {
 				let joinTxId;
 
-				if (values.token === "STX") {
+				if (values.token === "stx") {
 					joinTxId = await joinSponsoredGamePool(
 						contractInfo.contractAddress,
 						true,
@@ -352,26 +367,25 @@ export default function CreateSponsoredLobbyForm({
 				try {
 					await waitForTxConfirmed(joinTxId);
 					console.log("✅ Sponsored Join Transaction confirmed!");
+					joinInfo = {
+						contractAddress: contractInfo.contractAddress,
+						txId: joinTxId,
+						poolSize: contractInfo.poolSize,
+						token: values.token,
+					};
+					setJoined(joinInfo);
+					tx_id = joinTxId;
 				} catch (err) {
 					console.error("❌ TX failed or aborted:", err);
 					throw err;
 				}
-
-				joinInfo = {
-					contractAddress: contractInfo.contractAddress,
-					txId: joinTxId,
-					poolSize: contractInfo.poolSize,
-					token: values.token,
-				};
-				setJoined(joinInfo);
-				tx_id = joinTxId;
 			}
 
 			let tokenSymbol = "STX";
-			if (values.token === "STX") {
-				tokenSymbol = "STX";
-			} else if (selectedTokenMetadata) {
-				tokenSymbol = selectedTokenMetadata.symbol.toUpperCase();
+			let tokenId = null;
+			if (values.token !== "stx" && selectedTokenMetadata) {
+				tokenSymbol = selectedTokenMetadata.symbol;
+				tokenId = `${values.token}::${selectedTokenMetadata.name}`;
 			}
 
 			const apiParams: ApiRequestProps = {
@@ -380,12 +394,13 @@ export default function CreateSponsoredLobbyForm({
 				body: {
 					name: values.name,
 					description: values.description || null,
-					entry_amount: 0, // Entry fee is 0 for sponsored lobbies
-					current_amount: contractInfo.poolSize, // Pool size is the amount sponsor put in
+					entry_amount: 0,
+					current_amount: contractInfo.poolSize,
 					contract_address: contractInfo.contractAddress,
 					tx_id,
 					game_id: gameId,
 					token_symbol: tokenSymbol,
+					token_id: tokenId,
 				},
 				tag: "lobby",
 				revalidateTag: "lobby",

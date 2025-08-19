@@ -15,7 +15,7 @@ export const getSponsoredFtClarityCode = (
 ;; TOKEN CONFIGURATION
 ;; ----------------------
 
-(define-constant TOKEN_NAME ${tokenName})
+(define-constant TOKEN_NAME "${tokenName}")
 
 ;; ----------------------
 ;; CONSTANTS

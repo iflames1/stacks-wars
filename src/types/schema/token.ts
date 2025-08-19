@@ -3,5 +3,6 @@ export interface TokenMetadata {
 	symbol: string;
 	name: string;
 	priceUsd: number;
+	decimals: number;
 	minimumAmount: number;
 }

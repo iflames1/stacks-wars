@@ -55,6 +55,7 @@ export const leaveSponsoredGamePool = async (
 	if (!walletAddress) {
 		throw new Error("No wallet address found");
 	}
+	amount = amount * 1_000_000;
 
 	try {
 		const signature = await generateSignature(
@@ -70,7 +71,7 @@ export const leaveSponsoredGamePool = async (
 				type: "stx-postcondition",
 				address: contract,
 				condition: "eq",
-				amount: amount * 1_000_000,
+				amount: amount,
 			};
 			postConditions = [stxPostCondition];
 		}
@@ -92,8 +93,7 @@ export const leaveSponsoredGamePool = async (
 
 export const leaveSponsoredFtGamePool = async (
 	contract: `${string}.${string}`,
-	tokenContract: `${string}.${string}`,
-	tokenName: string,
+	tokenId: `${string}.${string}::${string}`,
 	isCreator: boolean,
 	amount: number
 ) => {
@@ -101,6 +101,7 @@ export const leaveSponsoredFtGamePool = async (
 	if (!walletAddress) {
 		throw new Error("No wallet address found");
 	}
+	amount = amount * 1_000_000;
 
 	try {
 		const signature = await generateSignature(
@@ -116,8 +117,8 @@ export const leaveSponsoredFtGamePool = async (
 				type: "ft-postcondition",
 				address: contract,
 				condition: "eq",
-				asset: `${tokenContract}::${tokenName}`,
-				amount: amount * 1_000_000,
+				asset: tokenId,
+				amount: amount,
 			};
 			postConditions = [ftPostCondition];
 		}

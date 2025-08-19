@@ -25,6 +25,7 @@ import {
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import {
 	leaveGamePool,
+	leaveSponsoredFtGamePool,
 	leaveSponsoredGamePool,
 } from "@/lib/actions/leaveGamePool";
 import { useRouter } from "next/navigation";
@@ -79,18 +80,36 @@ export default function JoinLobbyForm({
 				const contract = lobby.contractAddress as `${string}.${string}`;
 				let leaveTxId: string | undefined;
 				if (lobby.entryAmount === 0 && lobby.currentAmount) {
-					if (isCreator) {
-						leaveTxId = await leaveSponsoredGamePool(
-							contract,
-							isCreator,
-							lobby.currentAmount
-						);
-					} else {
-						leaveTxId = await leaveSponsoredGamePool(
-							contract,
-							isCreator,
-							lobby.entryAmount
-						);
+					if (lobby.tokenSymbol === "STX") {
+						if (isCreator) {
+							leaveTxId = await leaveSponsoredGamePool(
+								contract,
+								isCreator,
+								lobby.currentAmount
+							);
+						} else {
+							leaveTxId = await leaveSponsoredGamePool(
+								contract,
+								isCreator,
+								lobby.entryAmount
+							);
+						}
+					} else if (lobby.tokenId) {
+						if (isCreator) {
+							leaveTxId = await leaveSponsoredFtGamePool(
+								contract,
+								lobby.tokenId,
+								isCreator,
+								lobby.currentAmount
+							);
+						} else {
+							leaveTxId = await leaveSponsoredFtGamePool(
+								contract,
+								lobby.tokenId,
+								isCreator,
+								lobby.entryAmount
+							);
+						}
 					}
 				} else {
 					leaveTxId = await leaveGamePool(

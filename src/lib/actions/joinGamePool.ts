@@ -42,6 +42,7 @@ export const joinSponsoredGamePool = async (
 	if (!address) {
 		throw new Error("No wallet address found");
 	}
+
 	try {
 		let postConditions: StxPostCondition[] = [];
 
