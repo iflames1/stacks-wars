@@ -2,7 +2,7 @@ import { Player, PlayerStanding } from "@/types/schema/player";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type LexiWarsServerMessage =
-	| { type: "turn"; currentTurn: Player }
+	| { type: "turn"; currentTurn: Player; countdown: number }
 	| { type: "rule"; rule: string }
 	| { type: "countdown"; time: number }
 	| { type: "rank"; rank: string }

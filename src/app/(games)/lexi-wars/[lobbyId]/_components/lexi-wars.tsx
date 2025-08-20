@@ -29,7 +29,13 @@ interface LexiWarsProps {
 export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
 
-	const [currentTurn, setCurrentTurn] = useState<Player | null>(null);
+	const [turnState, setTurnState] = useState<{
+		currentPlayer: Player | null;
+		countdown: number | null;
+	}>({
+		currentPlayer: null,
+		countdown: null,
+	});
 	const [rule, setRule] = useState<string>(
 		"Word must be at least 4 characters!"
 	);
@@ -63,7 +69,10 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 			}
 			switch (message.type) {
 				case "turn":
-					setCurrentTurn(message.currentTurn);
+					setTurnState({
+						currentPlayer: message.currentTurn,
+						countdown: message.countdown,
+					});
 					break;
 				case "rule":
 					setRule(message.rule);
@@ -246,8 +255,9 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 
 					<div className="border border-primary/10 p-3 sm:p-4 bg-primary/10 rounded-xl shadow-sm space-y-4 sm:space-y-5">
 						<TurnIndicator
-							currentPlayer={currentTurn}
+							currentPlayer={turnState.currentPlayer}
 							userId={userId}
+							countdown={turnState.countdown}
 						/>
 						<LexiInputForm
 							word={word}
