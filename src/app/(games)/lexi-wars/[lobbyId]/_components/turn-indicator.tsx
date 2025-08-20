@@ -6,11 +6,13 @@ import { useEffect, useState } from "react";
 interface TurnIndicatorProps {
 	currentPlayer: Player | null;
 	userId: string;
+	countdown: number | null;
 }
 
 export default function TurnIndicator({
 	currentPlayer,
 	userId,
+	countdown,
 }: TurnIndicatorProps) {
 	const [isCurrentPlayer, setIsCurrentPlayer] = useState<boolean>(false);
 
@@ -50,7 +52,7 @@ export default function TurnIndicator({
 									truncateAddress(
 										currentPlayer?.user.walletAddress
 									)
-								}`}
+								}${countdown !== null ? ` (${countdown}s)` : ""}`}
 					</h3>
 				</div>
 			</div>

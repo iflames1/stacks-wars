@@ -46,6 +46,7 @@ export default function Lobby({
 	const [joinState, setJoinState] = useState<JoinState | null>(null);
 	const [latency, setLatency] = useState<number | null>(null);
 	const [readyPlayers, setReadyPlayers] = useState<string[] | null>(null);
+	const [prefetched, setPrefetched] = useState(false);
 
 	const router = useRouter();
 
@@ -161,10 +162,20 @@ export default function Lobby({
 	}, [isParticipant, joined]);
 
 	useEffect(() => {
+		if (countdown !== null && countdown < 15 && !prefetched) {
+			console.log(
+				`🚀 Prefetching /lexi-wars/${lobbyId} at countdown: ${countdown}`
+			);
+			router.prefetch(`/lexi-wars/${lobbyId}`);
+			setPrefetched(true);
+		}
+	}, [countdown, lobbyId, prefetched, router]);
+
+	useEffect(() => {
 		if (readyPlayers && countdown === 0 && lobbyState === "inProgress") {
 			disconnect();
 			if (readyPlayers.includes(userId)) {
-				router.replace(`/lexi-wars/${lobbyId}`);
+				router.push(`/lexi-wars/${lobbyId}`);
 			} else {
 				router.replace(`/lobby`);
 			}
@@ -196,6 +207,10 @@ export default function Lobby({
 				<div className="flex items-center justify-between ">
 					<Link
 						href="/lobby"
+						onClick={() => {
+							disconnect();
+							disconnectChat();
+						}}
 						className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
 					>
 						<ArrowLeft className="h-4 w-4" />

@@ -82,7 +82,7 @@ export default function Header() {
 										key={link.href}
 										variant={"ghost"}
 										asChild
-										className="flex items-center gap-2 text-sm  w-fit"
+										className="flex justify-start gap-2 text-sm"
 										onClick={() => setSheetOpen(false)}
 									>
 										<Link href={link.href}>
@@ -90,7 +90,7 @@ export default function Header() {
 										</Link>
 									</Button>
 								))}
-								<ThemeToggle className="w-fit" />
+								<ThemeToggle className="justify-start" />
 								{!isConnected ? (
 									<Button
 										variant="ghost"
@@ -115,7 +115,7 @@ export default function Header() {
 										<Button
 											variant={"ghost"}
 											asChild
-											className="flex items-center gap-2 text-sm  w-fit px-0"
+											className="flex items-center gap-2 text-sm justify-start px-0"
 											onClick={() => {
 												setSheetOpen(false);
 											}}
@@ -134,7 +134,7 @@ export default function Header() {
 												setSheetOpen(false);
 											}}
 											disabled={isConnecting}
-											className="flex items-center gap-2 text-sm text-destructive w-fit px-0"
+											className="flex items-center gap-2 text-sm text-destructive justify-start px-0"
 										>
 											{isConnecting ? (
 												<Loader className="mr-2 h-4 w-4 animate-spin" />

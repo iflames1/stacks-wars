@@ -16,16 +16,15 @@ export default function OpenLobby({ lobby }: OpenLobbyProps) {
 		<>
 			{isConnected ? (
 				<Button
-					variant={lobby.state === "waiting" ? "default" : "outline"}
+					variant={"default"}
 					className="w-full gap-1.5 "
-					disabled={lobby.state !== "waiting"}
 					onClick={() => router.push(`/lobby/${lobby.id}`)}
 				>
 					{lobby.state === "waiting"
 						? "Open Lobby"
 						: lobby.state === "inProgress"
 							? "In Progress"
-							: "Closed"}
+							: "Finished"}
 				</Button>
 			) : (
 				<Button
