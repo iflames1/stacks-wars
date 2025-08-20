@@ -1,5 +1,4 @@
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -11,22 +10,36 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function Back({ gameOver }: { gameOver: boolean }) {
+interface BackProps {
+	isOver: boolean;
+	disconnect: () => void;
+	disconnectChat: () => void;
+}
+
+export default function Back({
+	isOver,
+	disconnect,
+	disconnectChat,
+}: BackProps) {
 	const [open, setOpen] = useState(false);
+	const router = useRouter();
 
 	return (
 		<>
-			{gameOver ? (
+			{isOver ? (
 				<Button
-					asChild
 					variant={"link"}
 					className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4 sm:mb-6"
+					onClick={() => {
+						disconnect();
+						disconnectChat();
+						router.back();
+					}}
 				>
-					<Link href={"/lobby"} replace>
-						<ArrowLeft className="h-4 w-4" />
-						Back to Games
-					</Link>
+					<ArrowLeft className="h-4 w-4" />
+					Back
 				</Button>
 			) : (
 				<Dialog open={open} onOpenChange={setOpen}>
@@ -58,10 +71,14 @@ export default function Back({ gameOver }: { gameOver: boolean }) {
 							</Button>
 							<Button
 								variant="destructive"
-								asChild
-								onClick={() => setOpen(false)}
+								onClick={() => {
+									setOpen(false);
+									disconnect();
+									disconnectChat();
+									router.back();
+								}}
 							>
-								<Link href="/lobby">Quit Game</Link>
+								Quit Game
 							</Button>
 						</DialogFooter>
 					</DialogContent>
