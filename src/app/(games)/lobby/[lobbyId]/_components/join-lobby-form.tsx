@@ -251,7 +251,6 @@ export default function JoinLobbyForm({
 				</CardFooter>
 			</Card>
 
-			{/* Leave Confirmation Dialog */}
 			<Dialog
 				open={showLeaveConfirmation}
 				onOpenChange={setShowLeaveConfirmation}
@@ -260,12 +259,28 @@ export default function JoinLobbyForm({
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2 text-destructive">
 							<AlertTriangle className="h-5 w-5" />
-							Confirm Leave Lobby
+							{isCreator
+								? "Confirm Delete Lobby"
+								: "Confirm Leave Lobby"}
 						</DialogTitle>
 						<DialogDescription className="text-left">
-							⚠️ You will lose <strong>10 Wars Points</strong> for
-							leaving this lobby. Are you sure you want to
-							continue?
+							{isCreator ? (
+								<>
+									⚠️ Continuing will{" "}
+									<strong>
+										permanently delete this lobby
+									</strong>
+									. This action cannot be undone. Are you sure
+									you want to continue?
+								</>
+							) : (
+								<>
+									⚠️ You will lose{" "}
+									<strong>10 Wars Points</strong> for leaving
+									this lobby. Are you sure you want to
+									continue?
+								</>
+							)}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter className="gap-2">
@@ -284,7 +299,7 @@ export default function JoinLobbyForm({
 							{loading && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 							)}
-							Continue & Leave
+							{isCreator ? "Delete Lobby" : "Continue & Leave"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
