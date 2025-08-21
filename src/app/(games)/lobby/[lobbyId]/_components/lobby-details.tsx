@@ -48,7 +48,9 @@ export default function LobbyDetails({
 			? "Start Game"
 			: lobbyState === "inProgress" && countdown && countdown > 0
 				? "Wait"
-				: "Loading...";
+				: lobbyState === "finished"
+					? "Ended"
+					: "Loading...";
 
 	const isDisabled =
 		loading ||
@@ -139,6 +141,17 @@ export default function LobbyDetails({
 							</div>
 						</div>
 					)}
+
+				{lobbyState === "finished" && (
+					<div className="mt-6 p-4 rounded-md bg-destructive/10 border border-destructive/20">
+						<div className="flex items-center justify-center gap-2 text-center">
+							<Info className="h-5 w-5 text-destructive shrink-0" />
+							<span className="text-sm sm:text-lg font-semibold text-destructive">
+								This lobby has been closed
+							</span>
+						</div>
+					</div>
+				)}
 
 				{userId === lobby.creator.id && (
 					<Button
