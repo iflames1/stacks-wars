@@ -50,7 +50,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [latency, setLatency] = useState<number | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [gameStarted, setGameStarted] = useState<boolean>(false);
-	const [startCountdown, setStartCountdown] = useState<number>(10);
+	const [startCountdown, setStartCountdown] = useState<number>(15);
 	const [messageReceived, setMessageReceived] = useState<boolean>(false);
 	const [gameOver, setGameOver] = useState<boolean>(false);
 	const [alreadyStarted, setAlreadyStarted] = useState<boolean>(false);
@@ -137,9 +137,6 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					setGameStarted(message.started);
 					break;
 				case "startFailed":
-					toast.error("Failed to start the game.", {
-						description: "Not enough players connected.",
-					});
 					setStartFailed(true);
 					break;
 				case "alreadyStarted":
@@ -182,6 +179,9 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 
 	useEffect(() => {
 		if (startFailed) {
+			toast.error("Failed to start the game.", {
+				description: "Not enough players connected.",
+			});
 			disconnect();
 			router.replace(`/lobby/${lobbyId}`);
 		}
