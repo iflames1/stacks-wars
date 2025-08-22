@@ -55,6 +55,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [gameOver, setGameOver] = useState<boolean>(false);
 	const [alreadyStarted, setAlreadyStarted] = useState<boolean>(false);
 	const [warsPoint, setWarsPoint] = useState<number | null>(null);
+	const [startFailed, setStartFailed] = useState<boolean>(false);
 
 	const router = useRouter();
 
@@ -139,7 +140,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					toast.error("Failed to start the game.", {
 						description: "Not enough players connected.",
 					});
-					router.replace(`/lobby/${lobbyId}`);
+					setStartFailed(true);
 					break;
 				case "alreadyStarted":
 					setAlreadyStarted(true);
@@ -148,7 +149,7 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[userId, contract, router, lobbyId]
+		[userId, contract]
 	);
 
 	const {
@@ -178,6 +179,13 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 			}
 		}
 	}, [alreadyStarted, disconnect, contract, lobbyId, router]);
+
+	useEffect(() => {
+		if (startFailed) {
+			disconnect();
+			router.replace(`/lobby/${lobbyId}`);
+		}
+	}, [startFailed, disconnect, lobbyId, router]);
 
 	const { disconnectChat } = useChatSocketContext();
 
