@@ -34,7 +34,7 @@ export const leaveGamePool = async (
 
 		const response = await request("stx_callContract", {
 			contract,
-			functionName: "leave-pool",
+			functionName: "leave",
 			functionArgs: [{ type: ClarityType.Buffer, value: signature }],
 			network: "testnet",
 			postConditionMode: "deny",
@@ -79,7 +79,7 @@ export const leaveSponsoredGamePool = async (
 
 		const response = await request("stx_callContract", {
 			contract,
-			functionName: "leave-pool",
+			functionName: "leave",
 			functionArgs: [{ type: ClarityType.Buffer, value: signature }],
 			network: "testnet",
 			postConditionMode: "deny",
@@ -126,7 +126,7 @@ export const leaveSponsoredFtGamePool = async (
 
 		const response = await request("stx_callContract", {
 			contract,
-			functionName: "leave-pool",
+			functionName: "leave",
 			functionArgs: [{ type: ClarityType.Buffer, value: signature }],
 			network: "testnet",
 			postConditionMode: "deny",

@@ -24,7 +24,7 @@ export const joinGamePool = async (
 
 		const response = await request("stx_callContract", {
 			contract,
-			functionName: "join-pool",
+			functionName: "join",
 			functionArgs: [],
 			network: "testnet",
 			postConditionMode: "deny",
@@ -64,7 +64,7 @@ export const joinSponsoredGamePool = async (
 
 		const response = await request("stx_callContract", {
 			contract,
-			functionName: "join-pool",
+			functionName: "join",
 			functionArgs: [],
 			network: "testnet",
 			postConditionMode: "deny",
@@ -104,7 +104,7 @@ export const joinSponsoredFtGamePool = async (
 
 		const response = await request("stx_callContract", {
 			contract,
-			functionName: "join-pool",
+			functionName: "join",
 			functionArgs: [],
 			network: "testnet",
 			postConditionMode: "deny",
