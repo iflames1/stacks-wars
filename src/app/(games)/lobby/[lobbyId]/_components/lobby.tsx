@@ -113,7 +113,7 @@ export default function Lobby({
 					break;
 				case "allowed":
 					setJoinState(message.type);
-					toast.success("Join request approved!");
+					if (!isParticipant) toast.success("Join request approved!");
 					break;
 				case "rejected":
 					setJoinState(message.type);
@@ -136,7 +136,7 @@ export default function Lobby({
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[userId]
+		[userId, isParticipant]
 	);
 
 	const {

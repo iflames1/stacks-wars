@@ -11,6 +11,8 @@ export const useConnectUser = () => {
 	const [isConnecting, setIsConnecting] = useState(false);
 
 	const checkConnection = async () => {
+		if (typeof window === "undefined") return;
+
 		const jwtWalletAddress = await getClaimFromJwt<string>("wallet");
 
 		if (!jwtWalletAddress || getWalletAddress() !== jwtWalletAddress) {
