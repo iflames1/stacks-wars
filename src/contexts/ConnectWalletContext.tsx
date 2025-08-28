@@ -95,6 +95,8 @@ export const ConnectUserProvider = ({ children }: { children: ReactNode }) => {
 			await connectOrCreateUser(address);
 			await checkConnection();
 			toast.success("Wallet connected successfully!");
+
+			window.location.reload();
 		} catch (error) {
 			toast.error("Something went wrong, try again later.");
 			console.error("Error connecting wallet:", error);
@@ -110,6 +112,8 @@ export const ConnectUserProvider = ({ children }: { children: ReactNode }) => {
 			setIsConnected(false);
 			setWalletAddress(undefined);
 			setUser(null);
+
+			window.location.reload();
 		} catch (error) {
 			console.error(error);
 			toast.error("Failed to disconnect wallet. Please try again.");
