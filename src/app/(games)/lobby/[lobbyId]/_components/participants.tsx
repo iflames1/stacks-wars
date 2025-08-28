@@ -8,6 +8,9 @@ import { useState } from "react";
 import { EXPLORER_BASE_URL } from "@/lib/constants";
 import { Lobby, PendingJoin } from "@/types/schema/lobby";
 import { Player, PlayerStatus } from "@/types/schema/player";
+import { kickFromFtPool, kickFromPool } from "@/lib/actions/kickPlayer";
+import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
+import { toast } from "sonner";
 
 interface ParticipantProps {
 	lobby: Lobby;
@@ -15,6 +18,8 @@ interface ParticipantProps {
 	pendingPlayers: PendingJoin[];
 	userId: string;
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
+	isKicking: boolean;
+	setIsKicking: (kicking: boolean) => void;
 }
 
 export default function Participants({
@@ -23,22 +28,55 @@ export default function Participants({
 	pendingPlayers,
 	userId,
 	sendMessage,
+	isKicking,
+	setIsKicking,
 }: ParticipantProps) {
 	const currentPlayer = players.find((p) => p.id === userId);
 	const isReady = currentPlayer?.state === "ready";
 	const [isUpdating, setIsUpdating] = useState(false);
-	const [isKicking, setIsKicking] = useState(false);
 	const [isHandlingJoin, setIsHandlingJoin] = useState(false);
 
-	const handleKickPlayer = async (playerId: string) => {
+	const handleKickPlayer = async (
+		playerId: string,
+		playerAddress: string
+	) => {
 		setIsKicking(true);
 		try {
+			if (lobby.contractAddress && lobby.entryAmount !== null) {
+				let kickTxId;
+				if (lobby.tokenSymbol === "STX") {
+					kickTxId = await kickFromPool(
+						lobby.contractAddress as `${string}.${string}`,
+						playerAddress,
+						lobby.entryAmount
+					);
+				} else {
+					if (!lobby.tokenId) {
+						throw new Error("Token Id is missing");
+					}
+					kickTxId = await kickFromFtPool(
+						lobby.contractAddress as `${string}.${string}`,
+						lobby.tokenId,
+						playerAddress,
+						lobby.entryAmount
+					);
+				}
+
+				if (!kickTxId) {
+					throw new Error(
+						"Failed to leave game pool: missing transaction ID"
+					);
+				}
+
+				await waitForTxConfirmed(kickTxId);
+			}
 			await sendMessage({
 				type: "kickPlayer",
 				playerId,
 			});
 		} catch (error) {
 			console.error("Error kicking player:", error);
+			toast.error("Failed to kick player");
 		} finally {
 			setIsKicking(false);
 		}
@@ -179,10 +217,10 @@ export default function Participants({
 												</div>
 											</div>
 										</div>
-										<div className="shrink-0 ml-2 flex flex-col items-end gap-1">
+										<div className="shrink-0 ml-2 flex items-center gap-2">
 											{player.txId &&
 												lobby.entryAmount !== null && (
-													<>
+													<div className="flex flex-col items-end gap-1">
 														<span className="text-sm sm:text-base font-bold whitespace-nowrap">
 															{isCreator &&
 															lobby.entryAmount ===
@@ -210,28 +248,28 @@ export default function Participants({
 																</span>
 															</Link>
 														</Button>
-													</>
+													</div>
 												)}
-											{isSelfCreator &&
-												!isCreator &&
-												!lobby.contractAddress && (
-													<Button
-														variant="destructive"
-														size="sm"
-														className="text-xs"
-														disabled={isKicking}
-														onClick={() =>
-															handleKickPlayer(
-																player.id
-															)
-														}
-													>
-														{isKicking && (
-															<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-														)}
-														Kick
-													</Button>
-												)}
+											{isSelfCreator && !isCreator && (
+												<Button
+													variant="destructive"
+													size="sm"
+													className="text-xs"
+													disabled={isKicking}
+													onClick={() =>
+														handleKickPlayer(
+															player.id,
+															player.user
+																.walletAddress
+														)
+													}
+												>
+													{isKicking && (
+														<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+													)}
+													Kick
+												</Button>
+											)}
 										</div>
 									</div>
 								);

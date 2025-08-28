@@ -1,5 +1,6 @@
 export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
 	return `
+
 ;; ==============================
 ;; Stacks Wars - Sponsored Pool Contract
 ;; ==============================
@@ -14,7 +15,7 @@ export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
 (define-constant TRUSTED_PUBLIC_KEY 0x03ffe7c30724197e226ddc09b6340c078e7f42e3751c3d0654d067798850d22d09)
 (define-constant FEE_PERCENTAGE u2)
 (define-constant DEPLOYER '${deployer})
-(define-constant POOL_SIZE u${poolSize}000000) ;; Pool funding amount in microSTX
+(define-constant POOL_SIZE u${poolSize}000000)
 
 ;; ----------------------
 ;; Error codes
@@ -31,6 +32,7 @@ export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
 (define-constant ERR_NOT_JOINED u14)
 (define-constant ERR_NOT_SPONSORED u15)
 (define-constant ERR_POOL_NOT_EMPTY u16)
+(define-constant ERR_UNAUTHORIZED u17)
 
 ;; ----------------------
 ;; DATA VARIABLES
@@ -63,9 +65,8 @@ export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
 ;; PUBLIC FUNCTIONS
 ;; ----------------------
 
-(define-public (join-pool)
+(define-public (join)
     (begin
-        ;; Check if player has already joined
         (asserts! (not (is-some (map-get? players {player: tx-sender}))) (err ERR_ALREADY_JOINED))
 
         (if (is-eq tx-sender DEPLOYER)
@@ -74,7 +75,6 @@ export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
                 ;; Ensure pool isn't already funded
                 (asserts! (not (var-get pool-funded)) (err ERR_ALREADY_JOINED))
 
-                ;; Transfer pool size from deployer to contract
                 (match (stx-transfer? POOL_SIZE tx-sender (as-contract tx-sender))
                     success
                     (begin
@@ -99,14 +99,11 @@ export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
     )
 )
 
-(define-public (leave-pool (signature (buff 65)))
+(define-public (leave (signature (buff 65)))
     (begin
-        ;; Ensure player has joined
         (let ((player-data (unwrap! (map-get? players {player: tx-sender}) (err ERR_NOT_JOINED))))
             (if (get is-sponsor player-data)
-                ;; Sponsor leaving - withdraw balance
                 (begin
-                    ;; Ensure no other players are still in the pool
                     (asserts! (is-eq (var-get total-players) u1) (err ERR_POOL_NOT_EMPTY))
 
                     ;; Verify signature for pool size amount
@@ -127,9 +124,8 @@ export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
                         )
                     )
                 )
-                ;; Regular player leaving
+
                 (begin
-                    ;; Verify signature for amount 0
                     (let ((msg-hash (try! (construct-message-hash u0))))
                         (asserts! (secp256k1-verify msg-hash signature TRUSTED_PUBLIC_KEY) (err ERR_INVALID_SIGNATURE))
 
@@ -153,19 +149,16 @@ export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
             (recipient tx-sender)
             (fee (/ (* amount FEE_PERCENTAGE) u100))
             (net-amount (- amount fee))
-            (has-paid-fee (has-paid-entry-fee tx-sender))  ;; Check if fee already paid
+            (has-paid-fee (has-paid-entry-fee tx-sender))
         )
             (asserts! (secp256k1-verify msg-hash signature TRUSTED_PUBLIC_KEY) (err ERR_INVALID_SIGNATURE))
             (asserts! (>= (stx-get-balance (as-contract tx-sender)) amount) (err ERR_INSUFFICIENT_FUNDS))
 
-            ;; Handle the fee payment conditionally
             (let ((fee-result
                 (if (not has-paid-fee)
-                    ;; Transfer fee if not already paid
                     (match (as-contract (stx-transfer? fee tx-sender STACKS_WARS_FEE_WALLET))
                         fee-success
                         (begin
-                            ;; Mark fee as collected
                             (map-set collected-fees {player: tx-sender} {paid: true})
                             (ok true)
                         )
@@ -173,24 +166,41 @@ export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
                             (err ERR_FEE_TRANSFER_FAILED)
                         )
                     )
-                    (ok true)  ;; Skip fee if already paid
+                    (ok true)
                 )))
 
-                ;; Check if fee payment was successful
                 (try! fee-result)
 
-                ;; Second transfer: Send net reward to player
+                ;; Transfer reward to player
                 (match (as-contract (stx-transfer? net-amount tx-sender recipient))
                     reward-success
                     (begin
                         (map-set claimed-rewards {player: recipient} {claimed: true, amount: amount})
                         (ok true)
                     )
-                    reward-error
-                    (begin
-                        (err ERR_TRANSFER_FAILED)
-                    )
+                    reward-error (err ERR_TRANSFER_FAILED)
                 )
+            )
+        )
+    )
+)
+
+(define-public (kick (player-to-kick principal))
+    (begin
+        (asserts! (is-eq tx-sender DEPLOYER) (err ERR_UNAUTHORIZED))
+
+        (asserts! (is-some (map-get? players {player: player-to-kick})) (err ERR_NOT_JOINED))
+
+        (asserts! (not (is-eq player-to-kick DEPLOYER)) (err ERR_UNAUTHORIZED))
+
+        (asserts! (not (has-claimed-reward player-to-kick)) (err ERR_REWARD_ALREADY_CLAIMED))
+
+        (let ((player-data (unwrap! (map-get? players {player: player-to-kick}) (err ERR_NOT_JOINED))))
+            (begin
+                (map-delete players {player: player-to-kick})
+                (var-set total-players (- (var-get total-players) u1))
+
+                (ok true)
             )
         )
     )
@@ -223,5 +233,6 @@ export const getSponsoredClarityCode = (poolSize: number, deployer: string) => {
 (define-read-only (has-paid-entry-fee (player principal))
     (default-to false (get paid (map-get? collected-fees {player: player})))
 )
+
 `;
 };

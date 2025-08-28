@@ -279,7 +279,7 @@ export default function CreateSponsoredLobbyForm({
 			let tokenId: AssetString | null = null;
 			if (values.token !== "stx" && selectedTokenMetadata) {
 				tokenSymbol = selectedTokenMetadata.symbol;
-				tokenId = `'${values.token as ContractIdString}::${selectedTokenMetadata.name}`;
+				tokenId = `${values.token as ContractIdString}::${selectedTokenMetadata.name}`;
 			}
 
 			if (!contractInfo) {
