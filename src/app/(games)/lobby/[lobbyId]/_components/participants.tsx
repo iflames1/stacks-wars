@@ -8,7 +8,7 @@ import { useState } from "react";
 import { EXPLORER_BASE_URL } from "@/lib/constants";
 import { Lobby, PendingJoin } from "@/types/schema/lobby";
 import { Player, PlayerStatus } from "@/types/schema/player";
-import { kickFromPool } from "@/lib/actions/kickPlayer";
+import { kickFromFtPool, kickFromPool } from "@/lib/actions/kickPlayer";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { toast } from "sonner";
 
@@ -43,11 +43,24 @@ export default function Participants({
 		setIsKicking(true);
 		try {
 			if (lobby.contractAddress && lobby.entryAmount !== null) {
-				const kickTxId = await kickFromPool(
-					lobby.contractAddress as `${string}.${string}`,
-					playerAddress,
-					lobby.entryAmount
-				);
+				let kickTxId;
+				if (lobby.tokenSymbol === "STX") {
+					kickTxId = await kickFromPool(
+						lobby.contractAddress as `${string}.${string}`,
+						playerAddress,
+						lobby.entryAmount
+					);
+				} else {
+					if (!lobby.tokenId) {
+						throw new Error("Token Id is missing");
+					}
+					kickTxId = await kickFromFtPool(
+						lobby.contractAddress as `${string}.${string}`,
+						lobby.tokenId,
+						playerAddress,
+						lobby.entryAmount
+					);
+				}
 
 				if (!kickTxId) {
 					throw new Error(

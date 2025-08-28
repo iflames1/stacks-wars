@@ -1,4 +1,9 @@
-import { ClarityType, StxPostCondition } from "@stacks/transactions";
+import {
+	AssetString,
+	ClarityType,
+	FungiblePostCondition,
+	StxPostCondition,
+} from "@stacks/transactions";
 import { request } from "@stacks/connect";
 
 export const kickFromPool = async (
@@ -27,6 +32,42 @@ export const kickFromPool = async (
 			network: "testnet",
 			postConditionMode: "deny",
 			postConditions: [stxPostCondition],
+		});
+		return response.txid;
+	} catch (error) {
+		console.error("Wallet returned an error:", error);
+		throw error;
+	}
+};
+
+export const kickFromFtPool = async (
+	contract: `${string}.${string}`,
+	tokenId: AssetString,
+	playerAddress: string,
+	amount: number
+) => {
+	try {
+		amount = amount * 1_000_000;
+
+		console.log(contract);
+
+		const ftPostCondition: FungiblePostCondition = {
+			type: "ft-postcondition",
+			address: contract,
+			condition: "eq",
+			asset: tokenId,
+			amount,
+		};
+
+		const response = await request("stx_callContract", {
+			contract,
+			functionName: "kick",
+			functionArgs: [
+				{ type: ClarityType.PrincipalStandard, value: playerAddress },
+			],
+			network: "testnet",
+			postConditionMode: "deny",
+			postConditions: [ftPostCondition],
 		});
 		return response.txid;
 	} catch (error) {
