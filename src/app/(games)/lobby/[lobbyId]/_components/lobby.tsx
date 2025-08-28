@@ -47,6 +47,7 @@ export default function Lobby({
 	const [latency, setLatency] = useState<number | null>(null);
 	const [readyPlayers, setReadyPlayers] = useState<string[] | null>(null);
 	const [prefetched, setPrefetched] = useState(false);
+	const [isKicking, setIsKicking] = useState(false);
 
 	const router = useRouter();
 
@@ -73,11 +74,11 @@ export default function Lobby({
 					break;
 				case "notifyKicked":
 					toast.info("You were kicked from the lobby.");
-					setJoinState(null);
+					window.location.reload();
 					break;
 				case "left":
 					toast.info("You left the lobby.");
-					setJoinState(null);
+					window.location.reload();
 					break;
 				case "countdown":
 					setCountdown(message.time);
@@ -237,6 +238,7 @@ export default function Lobby({
 							lobbyState={lobbyState}
 							sendMessage={sendMessage}
 							userId={userId}
+							isKicking={isKicking}
 						/>
 						<Participants
 							lobby={lobby}
@@ -244,6 +246,8 @@ export default function Lobby({
 							pendingPlayers={pendingPlayers}
 							userId={userId}
 							sendMessage={sendMessage}
+							isKicking={isKicking}
+							setIsKicking={setIsKicking}
 						/>
 					</div>
 					<div className="space-y-4 sm:space-y-6">

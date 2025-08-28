@@ -17,6 +17,7 @@ interface LobbyDetailsProps {
 	lobbyState: lobbyState;
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
 	userId: string;
+	isKicking: boolean;
 }
 
 export default function LobbyDetails({
@@ -26,12 +27,17 @@ export default function LobbyDetails({
 	lobbyState,
 	sendMessage,
 	userId,
+	isKicking,
 }: LobbyDetailsProps) {
 	const [loading, setLoading] = useState<boolean>(false);
 
 	const handleLobbyState = async (state: lobbyState) => {
 		setLoading(true);
 		try {
+			if (isKicking) {
+				toast.info("Can't start game while kicking a player.");
+				return;
+			}
 			await sendMessage({
 				type: "updateLobbyState",
 				newState: state,
