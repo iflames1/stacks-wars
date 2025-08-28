@@ -76,7 +76,7 @@ export const getSponsoredFtClarityCode = (
 ;; PUBLIC FUNCTIONS
 ;; ----------------------
 
-(define-public (join-pool)
+(define-public (join)
     (begin
         (asserts! (not (is-some (map-get? players {player: tx-sender}))) (err ERR_ALREADY_JOINED))
 
@@ -110,7 +110,7 @@ export const getSponsoredFtClarityCode = (
     )
 )
 
-(define-public (leave-pool (signature (buff 65)))
+(define-public (leave (signature (buff 65)))
     (begin
         (let ((player-data (unwrap! (map-get? players {player: tx-sender}) (err ERR_NOT_JOINED))))
             (if (get is-sponsor player-data)
