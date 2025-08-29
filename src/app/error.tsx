@@ -7,7 +7,6 @@ import { RefreshCw, Home, Bug } from "lucide-react";
 
 export default function GlobalError({
 	error,
-	reset,
 }: {
 	error: Error;
 	reset: () => void;
@@ -19,7 +18,7 @@ export default function GlobalError({
 	}, [error]);
 
 	const handleRefresh = () => {
-		reset();
+		window.location.reload();
 	};
 
 	const handleGoHome = () => {
