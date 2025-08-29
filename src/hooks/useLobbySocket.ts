@@ -171,7 +171,6 @@ export function useLobbySocket({
 		lastPingInProgress.current = true;
 		try {
 			await sendMessage({ type: "lastPing", ts: Date.now() });
-			console.log("last ping sent");
 		} catch (error) {
 			console.error("❌ LastPing failed:", error);
 		} finally {
@@ -206,7 +205,14 @@ export function useLobbySocket({
 			setReconnecting(false);
 			reconnectAttempts.current = 0;
 
-			// Start the ping cycles
+			sendMessage({ type: "ping", ts: Date.now() }).catch((error) =>
+				console.error("❌ Initial ping failed:", error)
+			);
+			sendMessage({ type: "lastPing", ts: Date.now() }).catch((error) =>
+				console.error("❌ Initial lastPing failed:", error)
+			);
+
+			// Start the ping cycles for subsequent pings
 			pingIntervalRef.current = setTimeout(schedulePing, PING_INTERVAL);
 			lastPingIntervalRef.current = setTimeout(
 				scheduleLastPing,
@@ -277,7 +283,14 @@ export function useLobbySocket({
 				socketRef.current = null;
 			}
 		};
-	}, [lobbyId, userId, processMessageQueue, schedulePing, scheduleLastPing]);
+	}, [
+		lobbyId,
+		userId,
+		processMessageQueue,
+		schedulePing,
+		scheduleLastPing,
+		sendMessage,
+	]);
 
 	useEffect(() => {
 		connectSocket();

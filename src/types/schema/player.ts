@@ -17,6 +17,7 @@ export interface Player {
 	txId: string | null;
 	claim: ClaimState | null;
 	prize: number | null;
+	lastPing: number | null;
 	user: User;
 }
 
