@@ -4,7 +4,7 @@ import OpenLobby from "./open-lobby";
 import ActiveLobbyHeader from "./active-lobby-header";
 import { LobbyExtended } from "@/types/schema/lobby";
 
-export default async function ActiveLobbies({
+export default function ActiveLobbies({
 	lobbies,
 }: {
 	lobbies: LobbyExtended[];

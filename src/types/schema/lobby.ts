@@ -19,6 +19,7 @@ export interface Lobby {
 	currentAmount: number | null;
 	tokenSymbol: string;
 	tokenId: AssetString | null;
+	creatorLastPing: number | null;
 }
 
 export interface LobbyExtended {

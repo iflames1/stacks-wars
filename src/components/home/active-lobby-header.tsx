@@ -6,22 +6,40 @@ import { Lobby } from "@/types/schema/lobby";
 interface LobbyProps {
 	lobby: Lobby;
 }
-export default async function ActiveLobbyHeader({ lobby }: LobbyProps) {
+export default function ActiveLobbyHeader({ lobby }: LobbyProps) {
+	const now = Date.now();
+	const creatorLastPingTime = lobby.creatorLastPing;
+	const isCreatorActive = creatorLastPingTime
+		? now - creatorLastPingTime <= 60000 // 60 seconds
+		: false; // If no creatorLastPing, consider inactive
+
 	return (
 		<CardHeader className="pb-3">
 			<div className="flex justify-between items-start">
 				<CardTitle>{lobby.name}</CardTitle>
-				<Badge
-					variant={
-						lobby.state === "waiting" ? "default" : "secondary"
-					}
-				>
-					{lobby.state === "waiting"
-						? "Open"
-						: lobby.state === "inProgress"
-							? "In Progress"
-							: "Closed"}
-				</Badge>
+				<div className="flex items-center gap-2">
+					{/*<Badge
+						variant={
+							lobby.state === "waiting" ? "default" : "secondary"
+						}
+					>
+						{lobby.state === "waiting"
+							? "Open"
+							: lobby.state === "inProgress"
+								? "In Progress"
+								: "Closed"}
+					</Badge>*/}
+					<Badge
+						variant="outline"
+						className={`text-xs ${
+							isCreatorActive
+								? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+								: "border-red-500/20 bg-red-500/10 text-red-500"
+						}`}
+					>
+						{isCreatorActive ? "Active" : "Inactive"}
+					</Badge>
+				</div>
 			</div>
 			<CardDescription className="flex gap-1 justify-between items-center">
 				<p>

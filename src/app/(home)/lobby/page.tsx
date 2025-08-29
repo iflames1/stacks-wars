@@ -1,17 +1,46 @@
+"use client";
 import ActiveLobbies from "@/components/home/active-lobbies";
 import { Button } from "@/components/ui/button";
+import Loading from "@/app/loading";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api";
 import { LobbyExtended } from "@/types/schema/lobby";
+import { useEffect, useState } from "react";
 
-export default async function LobbyPage() {
-	const lobbies = await apiRequest<LobbyExtended[]>({
-		path: `/lobby/extended?page=1&lobby_state=waiting,inProgress`,
-		auth: false,
-		cache: "no-store",
-		tag: "lobby",
-	});
+export default function LobbyPage() {
+	const [lobbies, setLobbies] = useState<LobbyExtended[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+
+	const fetchLobbies = async () => {
+		try {
+			const data = await apiRequest<LobbyExtended[]>({
+				path: `/lobby/extended?page=1&lobby_state=waiting,inProgress`,
+				auth: false,
+				cache: "no-store",
+			});
+			setLobbies(data);
+		} catch (error) {
+			console.error("Failed to fetch lobbies:", error);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		// Initial fetch
+		fetchLobbies();
+
+		// Set up interval to fetch every 60 seconds
+		const interval = setInterval(fetchLobbies, 60000);
+
+		// Cleanup interval on component unmount
+		return () => clearInterval(interval);
+	}, []);
+
+	if (isLoading) {
+		return <Loading />;
+	}
 
 	return (
 		<>
