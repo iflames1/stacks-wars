@@ -30,6 +30,10 @@ export type LobbyClientMessage =
 	| {
 			type: "ping";
 			ts: number;
+	  }
+	| {
+			type: "lastPing";
+			ts: number;
 	  };
 
 export type LobbyServerMessage =
@@ -84,8 +88,11 @@ export function useLobbySocket({
 	const messageHandlerRef = useRef<typeof onMessage | null>(null);
 	const messageQueue = useRef<QueuedMessage[]>([]);
 	const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+	const lastPingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const pingInProgress = useRef(false);
+	const lastPingInProgress = useRef(false);
 	const PING_INTERVAL = 5000; // 5 seconds
+	const LAST_PING_INTERVAL = 45000; // 45 seconds
 
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
 		WebSocket.CLOSED
@@ -158,6 +165,28 @@ export function useLobbySocket({
 		}
 	}, [sendMessage]);
 
+	const scheduleLastPing = useCallback(async () => {
+		if (lastPingInProgress.current || !socketRef.current) return;
+
+		lastPingInProgress.current = true;
+		try {
+			await sendMessage({ type: "lastPing", ts: Date.now() });
+			console.log("last ping sent");
+		} catch (error) {
+			console.error("❌ LastPing failed:", error);
+		} finally {
+			lastPingInProgress.current = false;
+
+			// Schedule next lastPing only after current one completes
+			if (socketRef.current?.readyState === WebSocket.OPEN) {
+				lastPingIntervalRef.current = setTimeout(
+					scheduleLastPing,
+					LAST_PING_INTERVAL
+				);
+			}
+		}
+	}, [sendMessage]);
+
 	const connectSocket = useCallback(() => {
 		if (!lobbyId || !userId) return;
 		if (socketRef.current) return; // already connecting or connected
@@ -177,8 +206,12 @@ export function useLobbySocket({
 			setReconnecting(false);
 			reconnectAttempts.current = 0;
 
-			// Start the ping cycle
+			// Start the ping cycles
 			pingIntervalRef.current = setTimeout(schedulePing, PING_INTERVAL);
+			lastPingIntervalRef.current = setTimeout(
+				scheduleLastPing,
+				LAST_PING_INTERVAL
+			);
 
 			processMessageQueue();
 		};
@@ -198,10 +231,16 @@ export function useLobbySocket({
 			setReadyState(WebSocket.CLOSED);
 			socketRef.current = null;
 			pingInProgress.current = false;
+			lastPingInProgress.current = false;
 
 			if (pingIntervalRef.current) {
 				clearTimeout(pingIntervalRef.current);
 				pingIntervalRef.current = null;
+			}
+
+			if (lastPingIntervalRef.current) {
+				clearTimeout(lastPingIntervalRef.current);
+				lastPingIntervalRef.current = null;
 			}
 
 			if (
@@ -238,7 +277,7 @@ export function useLobbySocket({
 				socketRef.current = null;
 			}
 		};
-	}, [lobbyId, userId, processMessageQueue, schedulePing]);
+	}, [lobbyId, userId, processMessageQueue, schedulePing, scheduleLastPing]);
 
 	useEffect(() => {
 		connectSocket();
@@ -254,6 +293,7 @@ export function useLobbySocket({
 	const disconnect = useCallback(() => {
 		manuallyDisconnectedRef.current = true;
 		pingInProgress.current = false;
+		lastPingInProgress.current = false;
 
 		if (reconnectTimeoutRef.current)
 			clearTimeout(reconnectTimeoutRef.current);
@@ -261,6 +301,11 @@ export function useLobbySocket({
 		if (pingIntervalRef.current) {
 			clearTimeout(pingIntervalRef.current);
 			pingIntervalRef.current = null;
+		}
+
+		if (lastPingIntervalRef.current) {
+			clearTimeout(lastPingIntervalRef.current);
+			lastPingIntervalRef.current = null;
 		}
 
 		// Reject all queued messages
