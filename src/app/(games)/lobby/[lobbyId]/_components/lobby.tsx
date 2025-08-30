@@ -48,6 +48,11 @@ export default function Lobby({
 	const [readyPlayers, setReadyPlayers] = useState<string[] | null>(null);
 	const [prefetched, setPrefetched] = useState(false);
 	const [isKicking, setIsKicking] = useState(false);
+	const [leaveCheckCallback, setLeaveCheckCallback] = useState<
+		((isConnected: boolean) => void) | null
+	>(null);
+	const [cachedPlayerConnectionStatus, setCachedPlayerConnectionStatus] =
+		useState<boolean | null>(null);
 
 	const router = useRouter();
 
@@ -133,11 +138,23 @@ export default function Lobby({
 				case "pong":
 					setLatency(message.pong);
 					break;
+				case "isConnectedPlayer":
+					setCachedPlayerConnectionStatus(message.response);
+					if (leaveCheckCallback) {
+						leaveCheckCallback(message.response);
+						setLeaveCheckCallback(null);
+					}
+					break;
 				default:
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[userId, isParticipant]
+		[
+			userId,
+			isParticipant,
+			leaveCheckCallback,
+			setCachedPlayerConnectionStatus,
+		]
 	);
 
 	const {
@@ -153,6 +170,18 @@ export default function Lobby({
 	});
 
 	const { disconnectChat } = useChatSocketContext();
+
+	const handleLeaveCheck = useCallback(
+		(callback: (isConnected: boolean) => void) => {
+			if (cachedPlayerConnectionStatus !== null) {
+				callback(cachedPlayerConnectionStatus);
+				return;
+			}
+
+			setLeaveCheckCallback(() => callback);
+		},
+		[cachedPlayerConnectionStatus]
+	);
 
 	useEffect(() => {
 		if (isParticipant && !joined) {
@@ -268,6 +297,10 @@ export default function Lobby({
 									sendMessage={sendMessage}
 									disconnect={disconnect}
 									chatDisconnect={disconnectChat}
+									onLeaveCheck={handleLeaveCheck}
+									cachedPlayerConnectionStatus={
+										cachedPlayerConnectionStatus
+									}
 								/>
 							</Suspense>
 							<GamePreview game={game} />
