@@ -180,7 +180,7 @@ export default function Participants({
 											<div className="min-w-0 flex-1">
 												<div className="flex items-center gap-2 flex-wrap">
 													<Link
-														href={`/${identifier}`}
+														href={`/u/${identifier}`}
 														className="flex flex-col truncate "
 													>
 														<span className="text-sm sm:text-base font-medium truncate hover:underline">
@@ -323,7 +323,7 @@ export default function Participants({
 													</div>
 													<div className="min-w-0 flex-1">
 														<Link
-															href={`/${identifier}`}
+															href={`/u/${identifier}`}
 															className="flex flex-col truncate "
 														>
 															<span className="text-sm sm:text-base font-medium truncate hover:underline">

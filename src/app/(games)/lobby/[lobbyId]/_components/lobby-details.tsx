@@ -86,7 +86,7 @@ export default function LobbyDetails({
 							</div>
 							<div className="min-w-0 flex-1">
 								<Link
-									href={`/${identifier}`}
+									href={`/u/${identifier}`}
 									className="flex flex-col truncate w-fit"
 								>
 									<span className="text-sm sm:text-base font-medium truncate hover:underline">
