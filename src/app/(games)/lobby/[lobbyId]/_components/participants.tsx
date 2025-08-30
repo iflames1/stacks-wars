@@ -7,7 +7,10 @@ import { LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { useState } from "react";
 import { EXPLORER_BASE_URL } from "@/lib/constants";
 import { Lobby, PendingJoin } from "@/types/schema/lobby";
-import { Player, PlayerStatus } from "@/types/schema/player";
+import {
+	Player,
+	//PlayerStatus
+} from "@/types/schema/player";
 import { kickFromFtPool, kickFromPool } from "@/lib/actions/kickPlayer";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { toast } from "sonner";
@@ -31,9 +34,9 @@ export default function Participants({
 	isKicking,
 	setIsKicking,
 }: ParticipantProps) {
-	const currentPlayer = players.find((p) => p.id === userId);
-	const isReady = currentPlayer?.state === "ready";
-	const [isUpdating, setIsUpdating] = useState(false);
+	//const currentPlayer = players.find((p) => p.id === userId);
+	//const isReady = currentPlayer?.state === "ready";
+	//const [isUpdating, setIsUpdating] = useState(false);
 	const [isHandlingJoin, setIsHandlingJoin] = useState(false);
 
 	const handleKickPlayer = async (
@@ -82,19 +85,19 @@ export default function Participants({
 		}
 	};
 
-	const handleUpdatePlayerStatus = async (status: PlayerStatus) => {
-		setIsUpdating(true);
-		try {
-			await sendMessage({
-				type: "updatePlayerState",
-				newState: status,
-			});
-		} catch (error) {
-			console.error("Error updating status:", error);
-		} finally {
-			setIsUpdating(false);
-		}
-	};
+	//const handleUpdatePlayerStatus = async (status: PlayerStatus) => {
+	//	setIsUpdating(true);
+	//	try {
+	//		await sendMessage({
+	//			type: "updatePlayerState",
+	//			newState: status,
+	//		});
+	//	} catch (error) {
+	//		console.error("Error updating status:", error);
+	//	} finally {
+	//		setIsUpdating(false);
+	//	}
+	//};
 
 	const handleJoinRequest = async (userId: string, allow: boolean) => {
 		setIsHandlingJoin(true);
@@ -119,7 +122,7 @@ export default function Participants({
 						<Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
 						<span className="truncate">Current Participants</span>
 					</CardTitle>
-					{userId !== lobby.creator.id &&
+					{/*{userId !== lobby.creator.id &&
 						!lobby.contractAddress &&
 						players.some((p) => p.id === userId) && (
 							<Button
@@ -138,7 +141,7 @@ export default function Participants({
 								)}
 								{isReady ? "Unready" : "Ready"}
 							</Button>
-						)}
+						)}*/}
 				</div>
 			</CardHeader>
 			<CardContent className="p-4 sm:p-6">
@@ -158,6 +161,12 @@ export default function Participants({
 								const isSelfCreator =
 									userId === lobby.creator.id;
 								const isSelf = userId === player.id;
+
+								const now = Date.now();
+								const lastPingTime = player.lastPing;
+								const isActive = lastPingTime
+									? now - lastPingTime <= 30000 // 30 seconds
+									: false;
 
 								return (
 									<div
@@ -200,7 +209,7 @@ export default function Participants({
 																You
 															</span>
 														)}
-														<span
+														{/*<span
 															className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
 																player.state ===
 																"ready"
@@ -212,6 +221,17 @@ export default function Participants({
 															"ready"
 																? "Ready"
 																: "Not Ready"}
+														</span>*/}
+														<span
+															className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
+																isActive
+																	? "bg-emerald-500/10 text-emerald-500"
+																	: "bg-red-500/10 text-red-500"
+															}`}
+														>
+															{isActive
+																? "Active"
+																: "Inactive"}
 														</span>
 													</div>
 												</div>
