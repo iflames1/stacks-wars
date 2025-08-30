@@ -41,6 +41,8 @@ interface JoinLobbyFormProps {
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
 	disconnect: () => void;
 	chatDisconnect: () => void;
+	onLeaveCheck?: (callback: (isConnected: boolean) => void) => void;
+	cachedPlayerConnectionStatus?: boolean | null;
 }
 
 export default function JoinLobbyForm({
@@ -51,10 +53,13 @@ export default function JoinLobbyForm({
 	sendMessage,
 	disconnect,
 	chatDisconnect,
+	onLeaveCheck,
+	cachedPlayerConnectionStatus,
 }: JoinLobbyFormProps) {
 	const [joined, setJoined] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
+	const [pendingLeaveCheck, setPendingLeaveCheck] = useState(false);
 	const isParticipant = players.some((p) => p.id === userId);
 	const isCreator = userId === lobby.creator.id;
 
@@ -67,6 +72,7 @@ export default function JoinLobbyForm({
 
 	const handleLeave = async () => {
 		setLoading(true);
+		setPendingLeaveCheck(true);
 
 		try {
 			if (isCreator && players.length > 1) {
@@ -76,6 +82,54 @@ export default function JoinLobbyForm({
 				});
 				return;
 			}
+
+			if (cachedPlayerConnectionStatus !== null) {
+				if (cachedPlayerConnectionStatus) {
+					toast.error("Cannot leave lobby", {
+						description:
+							"You have already played in this lobby and cannot withdraw from the pool.",
+					});
+					setLoading(false);
+					setPendingLeaveCheck(false);
+					setShowLeaveConfirmation(false);
+					return;
+				}
+
+				await proceedWithLeave();
+				return;
+			}
+
+			await sendMessage({ type: "requestLeave" });
+
+			if (onLeaveCheck) {
+				onLeaveCheck(async (isConnected: boolean) => {
+					if (isConnected) {
+						toast.error("Cannot leave lobby", {
+							description:
+								"You have already played in this lobby and cannot withdraw from the pool.",
+						});
+						setLoading(false);
+						setPendingLeaveCheck(false);
+						setShowLeaveConfirmation(false);
+						return;
+					}
+
+					await proceedWithLeave();
+				});
+			} else {
+				await proceedWithLeave();
+			}
+		} catch (error) {
+			console.error("An error occurred:", error);
+			toast.error("Failed. Please try again.");
+			setLoading(false);
+			setPendingLeaveCheck(false);
+			setShowLeaveConfirmation(false);
+		}
+	};
+
+	const proceedWithLeave = async () => {
+		try {
 			if (lobby.contractAddress && lobby.entryAmount !== null) {
 				const contract = lobby.contractAddress as `${string}.${string}`;
 				let leaveTxId: string | undefined;
@@ -133,10 +187,11 @@ export default function JoinLobbyForm({
 				router.replace(`/lobby`);
 			}
 		} catch (error) {
-			console.error("An error occured:", error);
+			console.error("An error occurred:", error);
 			toast.error("Failed. Please try again.");
 		} finally {
 			setLoading(false);
+			setPendingLeaveCheck(false);
 			setShowLeaveConfirmation(false);
 		}
 	};
@@ -201,6 +256,9 @@ export default function JoinLobbyForm({
 
 	const getButtonText = () => {
 		if (loading || joinState === "pending") {
+			if (pendingLeaveCheck) {
+				return "Checking...";
+			}
 			return joined ? "Leaving..." : "Processing...";
 		}
 

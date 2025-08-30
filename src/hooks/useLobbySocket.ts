@@ -28,6 +28,9 @@ export type LobbyClientMessage =
 			txId: string | undefined;
 	  }
 	| {
+			type: "requestLeave";
+	  }
+	| {
 			type: "ping";
 			ts: number;
 	  }
@@ -58,6 +61,10 @@ export type LobbyServerMessage =
 	| { type: "allowed" }
 	| { type: "rejected" }
 	| { type: "pending" }
+	| {
+			type: "isConnectedPlayer";
+			response: boolean;
+	  }
 	| {
 			type: "error";
 			message: string;
