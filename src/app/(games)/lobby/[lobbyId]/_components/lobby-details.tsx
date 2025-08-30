@@ -167,16 +167,54 @@ export default function LobbyDetails({
 						disabled={isDisabled}
 						className="w-full mt-6"
 						onClick={() => {
-							if (
-								lobbyState === "waiting" &&
-								players.length < 2
-							) {
-								toast.info(
-									"At least 2 players are required to start the game."
+							if (lobbyState === "waiting") {
+								const now = Date.now();
+								const activePlayers = players.filter(
+									(player) => {
+										const lastPingTime = player.lastPing;
+										return lastPingTime
+											? now - lastPingTime <= 30000
+											: false;
+									}
 								);
-							} else if (lobbyState === "waiting")
+
+								const totalPlayers = players.length;
+								const activeCount = activePlayers.length;
+								const requiredActive = Math.ceil(
+									totalPlayers * 0.5
+								);
+
+								// Check if at least 2 active players
+								if (activeCount < 2) {
+									const inactiveCount =
+										totalPlayers - activeCount;
+									toast.info(
+										"You need at least one more active player to start the game.",
+										{
+											description:
+												inactiveCount > 0
+													? `Consider removing ${inactiveCount} inactive player${inactiveCount > 1 ? "s" : ""} and inviting active ones.`
+													: "Invite at least one more player to join the game.",
+										}
+									);
+									return;
+								}
+
+								// Check if at least 50% of players are active
+								if (activeCount < requiredActive) {
+									const inactiveCount =
+										totalPlayers - activeCount;
+									toast.info(
+										`Need ${requiredActive} active players out of ${totalPlayers} to start (50% minimum).`,
+										{
+											description: `Currently ${activeCount} active, ${inactiveCount} inactive. Remove inactive players or wait for them to reconnect.`,
+										}
+									);
+									return;
+								}
+
 								handleLobbyState("inProgress");
-							else if (lobbyState === "inProgress")
+							} else if (lobbyState === "inProgress")
 								handleLobbyState("waiting");
 						}}
 					>
