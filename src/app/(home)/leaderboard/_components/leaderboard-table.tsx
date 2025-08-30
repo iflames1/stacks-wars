@@ -111,7 +111,7 @@ export default function LeaderboardTable({ data }: LeaderboardTableProps) {
 
 				return (
 					<Link
-						href={`/${identifier}`}
+						href={`/u/${identifier}`}
 						className="flex items-center space-x-3 "
 					>
 						<Avatar className="h-8 w-8">
