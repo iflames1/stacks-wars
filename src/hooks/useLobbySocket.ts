@@ -92,7 +92,7 @@ export function useLobbySocket({
 	const pingInProgress = useRef(false);
 	const lastPingInProgress = useRef(false);
 	const PING_INTERVAL = 5000; // 5 seconds
-	const LAST_PING_INTERVAL = 45000; // 45 seconds
+	const LAST_PING_INTERVAL = 15000; // 15 seconds
 
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
 		WebSocket.CLOSED

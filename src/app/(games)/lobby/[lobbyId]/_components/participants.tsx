@@ -165,7 +165,7 @@ export default function Participants({
 								const now = Date.now();
 								const lastPingTime = player.lastPing;
 								const isActive = lastPingTime
-									? now - lastPingTime <= 60000 // 60 seconds
+									? now - lastPingTime <= 30000 // 30 seconds
 									: false;
 
 								return (
