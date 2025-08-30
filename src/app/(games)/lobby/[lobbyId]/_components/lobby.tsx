@@ -45,7 +45,7 @@ export default function Lobby({
 	const [pendingPlayers, setPendingPlayers] = useState<PendingJoin[]>([]);
 	const [joinState, setJoinState] = useState<JoinState | null>(null);
 	const [latency, setLatency] = useState<number | null>(null);
-	const [readyPlayers, setReadyPlayers] = useState<string[] | null>(null);
+	//const [readyPlayers, setReadyPlayers] = useState<string[] | null>(null);
 	const [prefetched, setPrefetched] = useState(false);
 	const [isKicking, setIsKicking] = useState(false);
 	const [leaveCheckCallback, setLeaveCheckCallback] = useState<
@@ -90,7 +90,7 @@ export default function Lobby({
 					break;
 				case "lobbyState":
 					setLobbyState(message.state);
-					setReadyPlayers(message.readyPlayers);
+					//setReadyPlayers(message.readyPlayers);
 					break;
 				case "pendingPlayers":
 					setPendingPlayers(
@@ -202,12 +202,12 @@ export default function Lobby({
 	}, [countdown, lobbyId, prefetched, router]);
 
 	useEffect(() => {
-		if (readyPlayers && countdown === 0 && lobbyState === "inProgress") {
+		if (countdown === 0 && lobbyState === "inProgress") {
 			disconnect();
-			if (readyPlayers.includes(userId)) {
+			if (isParticipant) {
 				router.push(`/lexi-wars/${lobbyId}`);
 			} else {
-				router.replace(`/lobby`);
+				//router.replace(`/lobby`);
 			}
 			console.log("🔌 Lobby in progress, disconnecting...");
 		} else if (lobbyState === "waiting") {
@@ -217,9 +217,9 @@ export default function Lobby({
 			console.log("🔌 Game finished, disconnecting chat...");
 		}
 	}, [
-		readyPlayers,
 		countdown,
 		lobbyState,
+		isParticipant,
 		userId,
 		router,
 		lobbyId,
