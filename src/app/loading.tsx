@@ -7,7 +7,7 @@ export default function Loading() {
 				<div className="min-h-[70vh] flex flex-col items-center justify-center space-y-8">
 					<div className="animate-bounce">
 						<Image
-							src="/logo.png"
+							src="/logo.webp"
 							alt="Stacks Wars"
 							width={200}
 							height={200}

@@ -84,19 +84,19 @@ export const metadata: Metadata = {
 		images: [
 			{
 				//url: "https://stackswars.com/og-image.png",
-				url: "/logo.png",
+				url: "/logo.webp",
 				width: 1200,
 				height: 630,
 				alt: "Stacks Wars - Web3 Gaming Platform",
-				type: "image/png",
+				type: "image/webp",
 			},
 			{
 				//url: "https://stackswars.com/og-image-square.png",
-				url: "/logo.png",
+				url: "/logo.webp",
 				width: 600,
 				height: 600,
 				alt: "Stacks Wars Logo",
-				type: "image/png",
+				type: "image/webp",
 			},
 		],
 	},
@@ -109,7 +109,7 @@ export const metadata: Metadata = {
 			"🎮 Skill-based Web3 gaming on Stacks blockchain\n🏆 Compete in tournaments & earn STX rewards\n🎯 Fair play, transparent gaming\n🔥 Join the competition now!",
 		images: {
 			//url: "https://stackswars.com/twitter-image.png",
-			url: "/logo.png",
+			url: "/logo.webp",
 			alt: "Stacks Wars - Web3 Gaming Platform",
 		},
 	},
