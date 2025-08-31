@@ -8,12 +8,11 @@ export default function HeroSection() {
 			<div className="max-w-7xl mx-auto px-4 md:px-6">
 				<div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
 					<Image
-						src="/hero.png?height=550&width=550"
+						src="/hero.webp?height=550&width=550"
 						width={550}
 						height={550}
 						alt="Stacks Wars Lobby"
 						className="mx-auto aspect-square overflow-hidden rounded-xl object-cover object-center sm:w-full lg:order-last"
-						priority={true}
 					/>
 					<div className="flex flex-col justify-center space-y-4">
 						<div className="space-y-2">

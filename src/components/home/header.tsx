@@ -35,7 +35,7 @@ export default function Header() {
 				<Link href={"/"}>
 					<div className="flex items-center gap-2">
 						<Image
-							src="/logo.png?height=32&width=32"
+							src="/logo.webp?height=32&width=32"
 							alt="Stacks Wars Logo"
 							width={32}
 							height={32}

@@ -11,7 +11,7 @@ export default function Loading({
 				<div className="min-h-[70vh] flex flex-col items-center justify-center space-y-8">
 					<div className="animate-bounce">
 						<Image
-							src="/logos/lexi-wars.png"
+							src="/logos/lexi-wars.webp"
 							alt="Lexi Wars"
 							width={300}
 							height={300}
