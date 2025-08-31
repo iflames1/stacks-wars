@@ -65,6 +65,7 @@ export default function LobbyDetails({
 
 	const creator = players.find((p) => p.id === lobby.creator.id);
 	const identifier = creator?.user.username || creator?.user.walletAddress;
+	const isParticipant = players.some((p) => p.id === userId);
 
 	return (
 		<Card className="overflow-hidden bg-primary/10">
@@ -148,6 +149,23 @@ export default function LobbyDetails({
 						</div>
 					)}
 
+				{lobbyState === "inProgress" && countdown === 0 && (
+					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted flex flex-col items-center justify-center text-center">
+						<Info className="h-5 w-5 text-muted-foreground mb-2" />
+						<span className="text-sm sm:text-lg md:text-xl font-semibold text-primary mb-2">
+							This game has already started.
+						</span>
+						{isParticipant &&
+							lobby.entryAmount !== null &&
+							lobby.entryAmount > 0 && (
+								<span className="text-xs sm:text-sm text-muted-foreground">
+									Try leaving the lobby to withraw your entry
+									fee.
+								</span>
+							)}
+					</div>
+				)}
+
 				{lobbyState === "finished" && (
 					<div className="mt-6 p-4 rounded-md bg-destructive/10 border border-destructive/20">
 						<div className="flex items-center justify-center gap-2 text-center">
@@ -155,6 +173,14 @@ export default function LobbyDetails({
 							<span className="text-sm sm:text-lg font-semibold text-destructive">
 								This lobby has been closed
 							</span>
+							{isParticipant &&
+								lobby.entryAmount !== null &&
+								lobby.entryAmount > 0 && (
+									<span className="text-xs sm:text-sm text-muted-foreground">
+										Try leaving the lobby to withraw your
+										entry fee, if you were unable to play.
+									</span>
+								)}
 						</div>
 					</div>
 				)}
