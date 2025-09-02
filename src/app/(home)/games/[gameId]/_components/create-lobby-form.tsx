@@ -33,8 +33,14 @@ import { createGamePool } from "@/lib/actions/createGamePool";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { useConnectUser } from "@/contexts/ConnectWalletContext";
-// import { useConnectUser } from "@/contexts/ConnectWalletContext";}
-// import { NotifierClient } from "@/lib/notifier";
+import {
+	saveLobbyRecoveryData,
+	updateLobbyRecoveryData,
+	deleteLobbyRecoveryData,
+	getLobbyRecoveryData,
+	type LobbyRecoveryData,
+} from "@/lib/db/lobby-recovery";
+import LobbyRecoveryCard from "@/components/ui/lobby-recovery-card";
 
 const formSchema = z.object({
 	name: z.string().min(3, {
@@ -81,6 +87,11 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 		txId: string;
 		entryAmount: number;
 	} | null>(null);
+	const [recoveryData, setRecoveryData] = useState<LobbyRecoveryData | null>(
+		null
+	);
+	const [showRecovery, setShowRecovery] = useState(false);
+	const recoveryIdRef = useRef<string | null>(null);
 	const prevAmountRef = useRef<number | undefined>(undefined);
 
 	const form = useForm<FormData>({
@@ -91,6 +102,48 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 		},
 		mode: "onChange",
 	});
+
+	// Check for recovery data on component mount
+	useEffect(() => {
+		const checkRecoveryData = async () => {
+			try {
+				const userAddress = await getClaimFromJwt<string>("wallet");
+				if (!userAddress) return;
+
+				const data = await getLobbyRecoveryData(userAddress, gameId);
+				if (data) {
+					setRecoveryData(data);
+					setShowRecovery(true);
+					recoveryIdRef.current = data.id;
+
+					// Restore deployed contract state if exists
+					if (data.deployedContract) {
+						setDeployedContract({
+							contractName: data.deployedContract.contractName,
+							contractAddress:
+								data.deployedContract.contractAddress,
+							entryAmount: data.deployedContract.entryAmount,
+							txId: data.deployedContract.txId,
+						});
+					}
+
+					// Restore joined state if exists
+					if (data.joinedContract) {
+						setJoined({
+							contractAddress:
+								data.joinedContract.contractAddress,
+							txId: data.joinedContract.txId,
+							entryAmount: data.joinedContract.entryAmount,
+						});
+					}
+				}
+			} catch (error) {
+				console.error("Error checking recovery data:", error);
+			}
+		};
+
+		checkRecoveryData();
+	}, [gameId]);
 
 	//const amount = form.watch("amount");
 	const amount = useWatch({
@@ -114,6 +167,57 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 
 	const withPool = form.watch("withPool");
 
+	// Recovery handlers
+	const handleContinueRecovery = async () => {
+		if (!recoveryData) return;
+
+		// Restore form values
+		form.reset({
+			name: recoveryData.formData.name,
+			description: recoveryData.formData.description,
+			withPool: recoveryData.formData.withPool,
+			amount: recoveryData.formData.amount,
+		});
+
+		setShowRecovery(false);
+
+		// If we're at the deployed stage, continue with joining
+		if (
+			recoveryData.status === "deployed" &&
+			recoveryData.deployedContract &&
+			!recoveryData.joinedContract
+		) {
+			// Set the deployed contract state and continue to join
+			const contractInfo = {
+				contractName: recoveryData.deployedContract.contractName,
+				contractAddress: recoveryData.deployedContract.contractAddress,
+				entryAmount: recoveryData.deployedContract.entryAmount,
+				txId: recoveryData.deployedContract.txId,
+			};
+			setDeployedContract(contractInfo);
+
+			// Trigger the join process
+			setTimeout(() => {
+				form.handleSubmit(onSubmit)();
+			}, 100);
+		} else if (recoveryData.status === "pending") {
+			setTimeout(() => {
+				form.handleSubmit(onSubmit)();
+			}, 100);
+		}
+	};
+
+	const handleDiscardRecovery = async () => {
+		if (recoveryData?.id) {
+			await deleteLobbyRecoveryData(recoveryData.id);
+		}
+		setRecoveryData(null);
+		setShowRecovery(false);
+		setDeployedContract(null);
+		setJoined(null);
+		recoveryIdRef.current = null;
+	};
+
 	const onSubmit = async (values: FormData) => {
 		setIsLoading(true);
 
@@ -130,6 +234,17 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 					toast.error("You need to connect your wallet first.");
 					setIsLoading(false);
 					return;
+				}
+
+				// Save initial recovery data if not continuing from recovery
+				if (!recoveryIdRef.current) {
+					const recoveryId = await saveLobbyRecoveryData({
+						userAddress: deployerAddress,
+						gameId,
+						formData: values,
+						status: "pending",
+					});
+					recoveryIdRef.current = recoveryId;
 				}
 
 				let contractInfo = deployedContract;
@@ -166,6 +281,19 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 						txId: deployTx.txid,
 					};
 					setDeployedContract(contractInfo);
+
+					// Update recovery data with deployed contract info
+					if (recoveryIdRef.current) {
+						await updateLobbyRecoveryData(recoveryIdRef.current, {
+							deployedContract: {
+								contractName,
+								contractAddress: contract,
+								entryAmount: entry_amount,
+								txId: deployTx.txid,
+							},
+							status: "deployed",
+						});
+					}
 				}
 
 				let joinInfo = joined;
@@ -203,6 +331,19 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 						entryAmount: contractInfo.entryAmount,
 					};
 					setJoined(joinInfo);
+
+					// Update recovery data with joined contract info
+					if (recoveryIdRef.current) {
+						await updateLobbyRecoveryData(recoveryIdRef.current, {
+							joinedContract: {
+								contractAddress: contractInfo.contractAddress,
+								txId: joinTxId,
+								entryAmount: contractInfo.entryAmount,
+							},
+							status: "joined",
+						});
+					}
+
 					tx_id = joinTxId;
 				}
 
@@ -238,8 +379,16 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 			}
 			const lobbyId = await apiRequest<string>(apiParams);
 
+			// Delete recovery data
+			if (recoveryIdRef.current) {
+				await deleteLobbyRecoveryData(recoveryIdRef.current);
+			}
+
 			setDeployedContract(null);
 			setJoined(null);
+			setRecoveryData(null);
+			setShowRecovery(false);
+			recoveryIdRef.current = null;
 
 			toast.info("Please wait while we redirect you to your lobby");
 			router.replace(`/lobby/${lobbyId}`);
@@ -253,156 +402,170 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 	};
 
 	return (
-		<Card className="bg-primary/30">
-			<CardHeader>
-				<CardTitle className="text-2xl">Create a Lobby</CardTitle>
-				<CardDescription>
-					Set up a new lobby and invite friends to join
-				</CardDescription>
-			</CardHeader>
-			<Form {...form}>
-				<form
-					onSubmit={form.handleSubmit(onSubmit)}
-					className="space-y-4"
-				>
-					<CardContent className="space-y-4">
-						<FormField
-							control={form.control}
-							name="name"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel className="inline-flex items-center gap-1">
-										Lobby Name
-										<span className="text-destructive">
-											*
-										</span>
-									</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="Enter lobby name"
-											{...field}
-										/>
-									</FormControl>
-									<FormDescription>
-										Give your lobby a descriptive name
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+		<div className="space-y-6">
+			{showRecovery && recoveryData && (
+				<LobbyRecoveryCard
+					recoveryData={recoveryData}
+					onContinue={handleContinueRecovery}
+					onDiscard={handleDiscardRecovery}
+					isSponsored={false}
+				/>
+			)}
 
-						<FormField
-							control={form.control}
-							name="description"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Description</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="Enter lobby description"
-											{...field}
-										/>
-									</FormControl>
-									<FormDescription>
-										Provide additional details about your
-										lobby
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						<FormField
-							control={form.control}
-							name="withPool"
-							render={({ field }) => (
-								<FormItem className="flex flex-row items-center space-x-2 space-y-0">
-									<FormControl>
-										<Switch
-											checked={field.value}
-											onCheckedChange={field.onChange}
-										/>
-									</FormControl>
-									<FormLabel>
-										Create lobby with pool
-									</FormLabel>
-								</FormItem>
-							)}
-						/>
-						{withPool && (
+			<Card className="bg-primary/30">
+				<CardHeader>
+					<CardTitle className="text-2xl">Create a Lobby</CardTitle>
+					<CardDescription>
+						Set up a new lobby and invite friends to join
+					</CardDescription>
+				</CardHeader>
+				<Form {...form}>
+					<form
+						onSubmit={form.handleSubmit(onSubmit)}
+						className="space-y-4"
+					>
+						<CardContent className="space-y-4">
 							<FormField
 								control={form.control}
-								name="amount"
+								name="name"
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel className="inline-flex items-center gap-1">
-											Pool Amount (STX)
+											Lobby Name
 											<span className="text-destructive">
 												*
 											</span>
 										</FormLabel>
 										<FormControl>
 											<Input
-												type="number"
-												placeholder="Enter amount in STX"
-												value={field.value || ""}
-												onChange={(e) => {
-													const value =
-														e.target.value;
-													field.onChange(
-														value === ""
-															? undefined
-															: parseFloat(value)
-													);
-												}}
+												placeholder="Enter lobby name"
+												{...field}
 											/>
 										</FormControl>
 										<FormDescription>
-											This is the initial amount
-											you&apos;ll contribute to the pool
-											and entry fee for other players
+											Give your lobby a descriptive name
 										</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
 							/>
-						)}
-					</CardContent>
-					<CardFooter className="flex justify-end">
-						{!isConnected ? (
-							<Button
-								onClick={handleConnect}
-								type="button"
-								disabled={isConnecting}
-							>
-								{isConnecting && (
-									<Loader
-										className="h-4 w-4 mr-1 animate-spin"
-										size={17}
-									/>
+
+							<FormField
+								control={form.control}
+								name="description"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Description</FormLabel>
+										<FormControl>
+											<Input
+												placeholder="Enter lobby description"
+												{...field}
+											/>
+										</FormControl>
+										<FormDescription>
+											Provide additional details about
+											your lobby
+										</FormDescription>
+										<FormMessage />
+									</FormItem>
 								)}
-								{isConnecting
-									? "Connecting..."
-									: "Connect wallet to create lobby"}
-							</Button>
-						) : (
-							<Button type="submit" disabled={isLoading}>
-								{isLoading && (
-									<Loader
-										className="h-4 w-4 mr-1 animate-spin"
-										size={17}
-									/>
+							/>
+
+							<FormField
+								control={form.control}
+								name="withPool"
+								render={({ field }) => (
+									<FormItem className="flex flex-row items-center space-x-2 space-y-0">
+										<FormControl>
+											<Switch
+												checked={field.value}
+												onCheckedChange={field.onChange}
+											/>
+										</FormControl>
+										<FormLabel>
+											Create lobby with pool
+										</FormLabel>
+									</FormItem>
 								)}
-								{isLoading
-									? "Creating..."
-									: deployedContract
-										? "Join Deployed Lobby"
-										: "Create Lobby"}
-							</Button>
-						)}
-					</CardFooter>
-				</form>
-			</Form>
-		</Card>
+							/>
+							{withPool && (
+								<FormField
+									control={form.control}
+									name="amount"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel className="inline-flex items-center gap-1">
+												Pool Amount (STX)
+												<span className="text-destructive">
+													*
+												</span>
+											</FormLabel>
+											<FormControl>
+												<Input
+													type="number"
+													placeholder="Enter amount in STX"
+													value={field.value || ""}
+													onChange={(e) => {
+														const value =
+															e.target.value;
+														field.onChange(
+															value === ""
+																? undefined
+																: parseFloat(
+																		value
+																	)
+														);
+													}}
+												/>
+											</FormControl>
+											<FormDescription>
+												This is the initial amount
+												you&apos;ll contribute to the
+												pool and entry fee for other
+												players
+											</FormDescription>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							)}
+						</CardContent>
+						<CardFooter className="flex justify-end">
+							{!isConnected ? (
+								<Button
+									onClick={handleConnect}
+									type="button"
+									disabled={isConnecting}
+								>
+									{isConnecting && (
+										<Loader
+											className="h-4 w-4 mr-1 animate-spin"
+											size={17}
+										/>
+									)}
+									{isConnecting
+										? "Connecting..."
+										: "Connect wallet to create lobby"}
+								</Button>
+							) : (
+								<Button type="submit" disabled={isLoading}>
+									{isLoading && (
+										<Loader
+											className="h-4 w-4 mr-1 animate-spin"
+											size={17}
+										/>
+									)}
+									{isLoading
+										? "Creating..."
+										: deployedContract
+											? "Join Deployed Lobby"
+											: "Create Lobby"}
+								</Button>
+							)}
+						</CardFooter>
+					</form>
+				</Form>
+			</Card>
+		</div>
 	);
 }
