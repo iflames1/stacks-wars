@@ -7,7 +7,7 @@ export const claimPoolReward = async (
 	contract: `${string}.${string}`,
 	amount: number
 ) => {
-	amount = amount * 1_000_000;
+	amount = Math.floor(amount * 1_000_000);
 
 	try {
 		const signature = await generateSignature(
