@@ -29,7 +29,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { nanoid } from "nanoid";
-import { createGamePool } from "@/lib/actions/createGamePool";
+import { createGamePool, transferFee } from "@/lib/actions/createGamePool";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { useConnectUser } from "@/contexts/ConnectWalletContext";
@@ -364,6 +364,28 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 					revalidatePath: "/lobby",
 				};
 			} else {
+				const feeWallet = process.env.NEXT_PUBLIC_FEE_WALLET;
+				if (!feeWallet) {
+					throw new Error("Fee wallet address not configured");
+				}
+
+				// Transfer 0.2 STX fee
+				const feeTransferTx = await transferFee(feeWallet);
+
+				if (!feeTransferTx.txid) {
+					throw new Error(
+						"Failed to transfer fee: missing transaction ID"
+					);
+				}
+
+				try {
+					await waitForTxConfirmed(feeTransferTx.txid);
+					console.log("✅ Fee transfer confirmed!");
+				} catch (err) {
+					console.error("❌ Fee transfer failed or aborted:", err);
+					throw err;
+				}
+
 				apiParams = {
 					path: "/lobby",
 					method: "POST",
@@ -371,6 +393,7 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 						name: values.name,
 						description: values.description || null,
 						game_id: gameId,
+						tx_id: feeTransferTx.txid,
 					},
 					tag: "lobby",
 					revalidateTag: "lobby",
@@ -397,8 +420,9 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 				description: "Please try again",
 			});
 			console.error("An error occured while creating lobby:", error);
+		} finally {
+			setIsLoading(false);
 		}
-		setIsLoading(false);
 	};
 
 	return (

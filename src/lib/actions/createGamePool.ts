@@ -3,6 +3,21 @@ import { getClarityCode } from "@/lib/poolClarityCode";
 import { getSponsoredClarityCode } from "../sponsoredPoolClarityCode";
 import { getSponsoredFtClarityCode } from "../sponsoredFtPoolClarityCode";
 
+export const transferFee = async (feeWallet: string) => {
+	const feeAmount = 0.2 * 1_000_000; // 0.2 STX in microSTX
+
+	try {
+		return await request("stx_transferStx", {
+			recipient: feeWallet,
+			amount: feeAmount,
+			network: "testnet",
+		});
+	} catch (error) {
+		console.error("Failed to transfer fee", error);
+		throw error;
+	}
+};
+
 export const createGamePool = async (
 	amount: number,
 	name: string,

@@ -22,9 +22,11 @@ export default function OpenLobby({ lobby }: OpenLobbyProps) {
 				>
 					{lobby.state === "waiting"
 						? "Open Lobby"
-						: lobby.state === "inProgress"
-							? "In Progress"
-							: "Finished"}
+						: lobby.state === "starting"
+							? "Starting"
+							: lobby.state === "inProgress"
+								? "In Progress"
+								: "Finished"}
 				</Button>
 			) : (
 				<Button
