@@ -261,7 +261,10 @@ export default function LexiWars({
 
 					<GameTimer timeLeft={countdown} />
 
-					<GameRule currentRule={rule} />
+					{turnState.currentPlayer &&
+						turnState.currentPlayer.id === userId && (
+							<GameRule currentRule={rule} />
+						)}
 
 					<div className="border border-primary/10 p-3 sm:p-4 bg-primary/10 rounded-xl shadow-sm space-y-4 sm:space-y-5">
 						<TurnIndicator
