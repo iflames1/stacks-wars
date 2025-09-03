@@ -29,7 +29,7 @@ export default function ActiveLobbies({ identifier }: ActiveLobbiesProps) {
 		const fetchActiveLobbies = async () => {
 			try {
 				const response = await apiRequest<PlayerLobbyInfo[]>({
-					path: `/user/lobbies?identifier=${encodeURIComponent(identifier)}&lobby_state=waiting,inProgress`,
+					path: `/user/lobbies?identifier=${encodeURIComponent(identifier)}&lobby_state=waiting,starting,inProgress`,
 					method: "GET",
 					auth: false,
 				});
@@ -49,6 +49,8 @@ export default function ActiveLobbies({ identifier }: ActiveLobbiesProps) {
 		switch (state) {
 			case "waiting":
 				return <Clock className="h-4 w-4" />;
+			case "starting":
+				return <Loader2 className="h-4 w-4 animate-spin" />;
 			case "inProgress":
 				return <Play className="h-4 w-4" />;
 			default:
@@ -60,6 +62,8 @@ export default function ActiveLobbies({ identifier }: ActiveLobbiesProps) {
 		switch (state) {
 			case "waiting":
 				return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400";
+			case "starting":
+				return "bg-blue-500/10 text-blue-700 dark:text-blue-400";
 			case "inProgress":
 				return "bg-green-500/10 text-green-700 dark:text-green-400";
 			default:

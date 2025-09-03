@@ -15,7 +15,7 @@ export default function LobbyPage() {
 	const fetchLobbies = async () => {
 		try {
 			const data = await apiRequest<LobbyExtended[]>({
-				path: `/lobby/extended?page=1&lobby_state=waiting,inProgress`,
+				path: `/lobby/extended?page=1&lobby_state=waiting,starting,inProgress`,
 				auth: false,
 				cache: "no-store",
 			});
