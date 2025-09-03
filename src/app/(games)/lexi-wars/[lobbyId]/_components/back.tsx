@@ -13,22 +13,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface BackProps {
-	isOver: boolean;
+	isOut: boolean;
 	disconnect: () => void;
 	disconnectChat: () => void;
 }
 
-export default function Back({
-	isOver,
-	disconnect,
-	disconnectChat,
-}: BackProps) {
+export default function Back({ isOut, disconnect, disconnectChat }: BackProps) {
 	const [open, setOpen] = useState(false);
 	const router = useRouter();
 
 	return (
 		<>
-			{isOver ? (
+			{isOut ? (
 				<Button
 					variant={"link"}
 					className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4 sm:mb-6"

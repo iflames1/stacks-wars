@@ -51,7 +51,6 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [gameStarted, setGameStarted] = useState<boolean>(false);
 	const [startCountdown, setStartCountdown] = useState<number>(15);
-	const [messageReceived, setMessageReceived] = useState<boolean>(false);
 	const [gameOver, setGameOver] = useState<boolean>(false);
 	const [alreadyStarted, setAlreadyStarted] = useState<boolean>(false);
 	const [warsPoint, setWarsPoint] = useState<number | null>(null);
@@ -61,13 +60,6 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 
 	const handleMessage = useCallback(
 		(message: LexiWarsServerMessage) => {
-			if (
-				message.type !== "startFailed" &&
-				message.type !== "start" &&
-				message.type !== "pong"
-			) {
-				setMessageReceived(true);
-			}
 			switch (message.type) {
 				case "turn":
 					setTurnState({
@@ -165,15 +157,10 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		if (alreadyStarted) {
 			disconnect();
 
-			if (contract) {
-				toast.error("Failed to join game: Game already started", {
-					description: "Leave the lobby to withdraw your entry fee.",
-				});
-				router.replace(`/lobby/${lobbyId}`);
-			} else {
-				toast.error("Failed to join game: Game already started");
-				router.replace(`/lobby`);
-			}
+			toast.error("Failed to join game: Game already started", {
+				description: "Leave the lobby to withdraw your entry fee.",
+			});
+			router.replace(`/lobby/${lobbyId}`);
 		}
 	}, [alreadyStarted, disconnect, contract, lobbyId, router]);
 
@@ -228,12 +215,13 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 			setWord("");
 		} catch (error) {
 			console.error("Failed to send word:", error);
+			toast.error("Failed to send word. Please try again.");
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
-	if (!gameStarted && !messageReceived) {
+	if (!gameStarted) {
 		return <Loading startCountdown={startCountdown} />;
 	}
 
@@ -242,7 +230,11 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 			<div className="max-w-3xl mx-auto p-4 sm:p-6 ">
 				<div className="flex justify-between">
 					<Back
-						isOver={rank !== null ? true : false}
+						isOut={
+							rank !== null || finalStanding !== null
+								? true
+								: false
+						}
 						disconnect={disconnect}
 						disconnectChat={disconnectChat}
 					/>

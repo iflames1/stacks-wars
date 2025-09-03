@@ -3,7 +3,7 @@ import { GameType } from "./game";
 import { ClaimState, Player } from "./player";
 import { User } from "./user";
 
-export type lobbyState = "waiting" | "inProgress" | "finished";
+export type lobbyState = "waiting" | "starting" | "inProgress" | "finished";
 
 export interface Lobby {
 	id: string;
