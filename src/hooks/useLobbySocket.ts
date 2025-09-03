@@ -257,8 +257,24 @@ export function useLobbySocket({
 				lastPingIntervalRef.current = null;
 			}
 
+			// Check both reason text and specific close codes that indicate game end
+			const isGameFinished =
+				(event.reason &&
+					event.reason.toLowerCase().includes("finished")) ||
+				event.code === 1000; // Normal closure often indicates game end
+
+			console.log(
+				"game finished? ",
+				isGameFinished,
+				"event reason",
+				event.reason,
+				"event code",
+				event.code
+			);
+
 			if (
 				!manuallyDisconnectedRef.current &&
+				!isGameFinished &&
 				reconnectAttempts.current < maxReconnectAttempts
 			) {
 				reconnectAttempts.current++;
@@ -270,6 +286,11 @@ export function useLobbySocket({
 					connectSocket();
 				}, timeout);
 			} else {
+				if (isGameFinished) {
+					console.log(
+						"🏁 Game finished, not reconnecting LobbySocket"
+					);
+				}
 				// Reject all queued messages if we can't reconnect
 				while (messageQueue.current.length > 0) {
 					const queuedMessage = messageQueue.current.shift();

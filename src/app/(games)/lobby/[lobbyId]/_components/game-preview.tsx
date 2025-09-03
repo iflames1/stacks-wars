@@ -25,7 +25,7 @@ export default function GamePreview({ game }: { game: GameType }) {
 					height={300}
 					alt="Game preview"
 					className="w-full h-auto object-cover"
-					loading="lazy"
+					priority={false}
 				/>
 			</CardContent>
 			<CardFooter className="flex justify-between p-3 sm:p-4 bg-muted/30">

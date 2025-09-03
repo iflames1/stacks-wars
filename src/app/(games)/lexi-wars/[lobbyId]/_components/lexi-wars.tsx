@@ -24,9 +24,15 @@ interface LexiWarsProps {
 	lobbyId: string;
 	userId: string;
 	contract: string | null;
+	entryAmount: number | null;
 }
 
-export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
+export default function LexiWars({
+	lobbyId,
+	userId,
+	contract,
+	entryAmount,
+}: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
 
 	const [turnState, setTurnState] = useState<{
@@ -157,12 +163,16 @@ export default function LexiWars({ lobbyId, userId, contract }: LexiWarsProps) {
 		if (alreadyStarted) {
 			disconnect();
 
-			toast.error("Failed to join game: Game already started", {
-				description: "Leave the lobby to withdraw your entry fee.",
-			});
+			if (contract && entryAmount !== null && entryAmount > 0) {
+				toast.error("Failed to join game: Game already started", {
+					description: "Leave the lobby to withdraw your entry fee.",
+				});
+			} else {
+				toast.error("Failed to join game: Game already started");
+			}
 			router.replace(`/lobby/${lobbyId}`);
 		}
-	}, [alreadyStarted, disconnect, contract, lobbyId, router]);
+	}, [alreadyStarted, disconnect, contract, entryAmount, lobbyId, router]);
 
 	useEffect(() => {
 		if (startFailed) {

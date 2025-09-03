@@ -199,8 +199,13 @@ export function useChatSocket({
 				pingIntervalRef.current = null;
 			}
 
+			// Check if the close is due to game finished - if so, don't reconnect
+			const isGameFinished =
+				event.reason && event.reason.toLowerCase().includes("finished");
+
 			if (
 				!manuallyDisconnectedRef.current &&
+				!isGameFinished &&
 				reconnectAttempts.current < maxReconnectAttempts
 			) {
 				reconnectAttempts.current++;
@@ -212,6 +217,11 @@ export function useChatSocket({
 					connectSocket();
 				}, timeout);
 			} else {
+				if (isGameFinished) {
+					console.log(
+						"🏁 Game finished, not reconnecting ChatSocket"
+					);
+				}
 				// Reject all queued messages if we can't reconnect
 				while (messageQueue.current.length > 0) {
 					const queuedMessage = messageQueue.current.shift();
