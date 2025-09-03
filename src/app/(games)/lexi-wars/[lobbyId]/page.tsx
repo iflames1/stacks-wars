@@ -22,7 +22,12 @@ export default async function LexiWarsPage({
 		cache: "no-store",
 	});
 
-	const contract = lobby.contractAddress;
-
-	return <LexiWars lobbyId={lobbyId} userId={userId} contract={contract} />;
+	return (
+		<LexiWars
+			lobbyId={lobbyId}
+			userId={userId}
+			contract={lobby.contractAddress}
+			entryAmount={lobby.entryAmount}
+		/>
+	);
 }

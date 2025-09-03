@@ -91,7 +91,6 @@ export default function Lobby({
 					break;
 				case "lobbyState":
 					setLobbyState(message.state);
-					console.log(message.started);
 					setStarted(message.started);
 					//setReadyPlayers(message.readyPlayers);
 					break;
@@ -216,9 +215,24 @@ export default function Lobby({
 		} else if (lobbyState === "waiting") {
 			//setCountdown(15);
 		} else if (lobbyState === "finished") {
-			disconnect();
-			disconnectChat();
-			console.log("🔌 Game finished, disconnecting chat...");
+			if (isParticipant) {
+				// Check connection status for participants before disconnecting
+				handleLeaveCheck((isConnected: boolean) => {
+					console.log("is connected", isConnected);
+					if (isConnected) {
+						// Player was connected, they can't leave - disconnect both
+						disconnect();
+						disconnectChat();
+					} else {
+						// Player wasn't connected, they can leave - only disconnect chat
+						disconnectChat();
+					}
+				});
+			} else {
+				// Non-participants can always disconnect both
+				disconnect();
+				disconnectChat();
+			}
 		}
 	}, [
 		started,
@@ -228,6 +242,7 @@ export default function Lobby({
 		lobbyId,
 		disconnect,
 		disconnectChat,
+		handleLeaveCheck,
 	]);
 
 	if (lobbyState === "starting" && countdown === 0) {
@@ -272,6 +287,10 @@ export default function Lobby({
 							userId={userId}
 							isKicking={isKicking}
 							started={started}
+							onLeaveCheck={handleLeaveCheck}
+							cachedPlayerConnectionStatus={
+								cachedPlayerConnectionStatus
+							}
 						/>
 						<Participants
 							lobby={lobby}

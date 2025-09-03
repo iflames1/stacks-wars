@@ -2,7 +2,7 @@ import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { Info, Timer, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LobbyClientMessage } from "@/hooks/useLobbySocket";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { EXPLORER_BASE_URL } from "@/lib/constants";
 import Link from "next/link";
@@ -19,6 +19,8 @@ interface LobbyDetailsProps {
 	userId: string;
 	isKicking: boolean;
 	started: boolean;
+	onLeaveCheck?: (callback: (isConnected: boolean) => void) => void;
+	cachedPlayerConnectionStatus?: boolean | null;
 }
 
 export default function LobbyDetails({
@@ -30,8 +32,12 @@ export default function LobbyDetails({
 	userId,
 	isKicking,
 	started,
+	onLeaveCheck,
+	cachedPlayerConnectionStatus,
 }: LobbyDetailsProps) {
 	const [loading, setLoading] = useState<boolean>(false);
+	const [connectionCheckLoading, setConnectionCheckLoading] =
+		useState<boolean>(false);
 
 	const handleLobbyState = async (state: lobbyState) => {
 		setLoading(true);
@@ -50,6 +56,27 @@ export default function LobbyDetails({
 			setLoading(false);
 		}
 	};
+
+	const checkConnectionStatus = async () => {
+		if (!onLeaveCheck) return;
+
+		setConnectionCheckLoading(true);
+		try {
+			onLeaveCheck(() => {
+				setConnectionCheckLoading(false);
+			});
+		} catch (error) {
+			console.error("Failed to check connection status:", error);
+			setConnectionCheckLoading(false);
+		}
+	};
+
+	// Reset connection check loading when connection status is received
+	useEffect(() => {
+		if (cachedPlayerConnectionStatus !== null && connectionCheckLoading) {
+			setConnectionCheckLoading(false);
+		}
+	}, [cachedPlayerConnectionStatus, connectionCheckLoading]);
 
 	const buttonLabel =
 		lobbyState === "waiting"
@@ -151,38 +178,96 @@ export default function LobbyDetails({
 				)}
 
 				{started && (
-					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted flex flex-col items-center justify-center text-center">
-						<Info className="h-5 w-5 text-muted-foreground mb-2" />
-						<span className="text-sm sm:text-lg md:text-xl font-semibold text-primary mb-2">
-							This game has already started.
-						</span>
+					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted space-y-3">
+						<div className="flex items-center justify-center gap-2 text-center">
+							<Info className="h-5 w-5 text-muted-foreground shrink-0" />
+							<span className="text-sm sm:text-lg md:text-xl font-semibold text-primary">
+								This game has already started.
+							</span>
+						</div>
 						{isParticipant &&
 							lobby.entryAmount !== null &&
 							lobby.entryAmount > 0 && (
-								<span className="text-xs sm:text-sm text-muted-foreground">
-									Try leaving the lobby to withraw your entry
-									fee.
-								</span>
+								<div className="text-center space-y-2">
+									{cachedPlayerConnectionStatus === null ? (
+										<div className="space-y-2">
+											<span className="text-xs sm:text-sm text-muted-foreground block">
+												Checking game state...
+											</span>
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={checkConnectionStatus}
+												disabled={
+													connectionCheckLoading
+												}
+												className="text-xs"
+											>
+												{connectionCheckLoading && (
+													<Loader2 className="h-3 w-3 mr-1 animate-spin" />
+												)}
+												Check Status
+											</Button>
+										</div>
+									) : (
+										cachedPlayerConnectionStatus ===
+											false && (
+											<span className="text-xs sm:text-sm text-muted-foreground">
+												You were unable to play, leave
+												the lobby to withdraw your entry
+												fee.
+											</span>
+										)
+									)}
+								</div>
 							)}
 					</div>
 				)}
 
 				{lobbyState === "finished" && (
-					<div className="mt-6 p-4 rounded-md bg-destructive/10 border border-destructive/20">
+					<div className="mt-6 p-4 rounded-md bg-destructive/10 border border-destructive/20 space-y-3">
 						<div className="flex items-center justify-center gap-2 text-center">
 							<Info className="h-5 w-5 text-destructive shrink-0" />
 							<span className="text-sm sm:text-lg font-semibold text-destructive">
 								This lobby has been closed
 							</span>
-							{isParticipant &&
-								lobby.entryAmount !== null &&
-								lobby.entryAmount > 0 && (
-									<span className="text-xs sm:text-sm text-muted-foreground">
-										Try leaving the lobby to withraw your
-										entry fee, if you were unable to play.
-									</span>
-								)}
 						</div>
+						{isParticipant &&
+							lobby.entryAmount !== null &&
+							lobby.entryAmount > 0 && (
+								<div className="text-center space-y-2">
+									{cachedPlayerConnectionStatus === null ? (
+										<div className="space-y-2">
+											<span className="text-xs sm:text-sm text-muted-foreground block">
+												Checking game state...
+											</span>
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={checkConnectionStatus}
+												disabled={
+													connectionCheckLoading
+												}
+												className="text-xs"
+											>
+												{connectionCheckLoading && (
+													<Loader2 className="h-3 w-3 mr-1 animate-spin" />
+												)}
+												Check Status
+											</Button>
+										</div>
+									) : (
+										cachedPlayerConnectionStatus ===
+											false && (
+											<span className="text-xs sm:text-sm text-muted-foreground">
+												You were unable to play, leave
+												the lobby to withdraw your entry
+												fee.
+											</span>
+										)
+									)}
+								</div>
+							)}
 					</div>
 				)}
 
