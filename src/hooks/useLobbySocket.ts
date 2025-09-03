@@ -51,6 +51,7 @@ export type LobbyServerMessage =
 	| {
 			type: "lobbyState";
 			state: lobbyState;
+			started: boolean;
 			readyPlayers: string[] | null;
 	  }
 	| {

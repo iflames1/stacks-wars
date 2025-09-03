@@ -48,6 +48,7 @@ export default function Lobby({
 	//const [readyPlayers, setReadyPlayers] = useState<string[] | null>(null);
 	const [prefetched, setPrefetched] = useState(false);
 	const [isKicking, setIsKicking] = useState(false);
+	const [started, setStarted] = useState(false);
 	const [leaveCheckCallback, setLeaveCheckCallback] = useState<
 		((isConnected: boolean) => void) | null
 	>(null);
@@ -90,6 +91,8 @@ export default function Lobby({
 					break;
 				case "lobbyState":
 					setLobbyState(message.state);
+					console.log(message.started);
+					setStarted(message.started);
 					//setReadyPlayers(message.readyPlayers);
 					break;
 				case "pendingPlayers":
@@ -202,7 +205,7 @@ export default function Lobby({
 	}, [countdown, lobbyId, prefetched, router]);
 
 	useEffect(() => {
-		if (countdown === 0 && lobbyState === "inProgress") {
+		if (lobbyState === "inProgress" && !started) {
 			disconnect();
 			if (isParticipant) {
 				router.push(`/lexi-wars/${lobbyId}`);
@@ -213,21 +216,21 @@ export default function Lobby({
 		} else if (lobbyState === "waiting") {
 			//setCountdown(15);
 		} else if (lobbyState === "finished") {
+			disconnect();
 			disconnectChat();
 			console.log("🔌 Game finished, disconnecting chat...");
 		}
 	}, [
-		countdown,
+		started,
 		lobbyState,
 		isParticipant,
-		userId,
 		router,
 		lobbyId,
 		disconnect,
 		disconnectChat,
 	]);
 
-	if (lobbyState === "inProgress" && countdown === 0) {
+	if (lobbyState === "starting" && countdown === 0) {
 		return <Loading />;
 	}
 
@@ -268,6 +271,7 @@ export default function Lobby({
 							sendMessage={sendMessage}
 							userId={userId}
 							isKicking={isKicking}
+							started={started}
 						/>
 						<Participants
 							lobby={lobby}

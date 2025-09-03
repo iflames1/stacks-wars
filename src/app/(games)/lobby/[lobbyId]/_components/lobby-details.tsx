@@ -18,6 +18,7 @@ interface LobbyDetailsProps {
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
 	userId: string;
 	isKicking: boolean;
+	started: boolean;
 }
 
 export default function LobbyDetails({
@@ -28,6 +29,7 @@ export default function LobbyDetails({
 	sendMessage,
 	userId,
 	isKicking,
+	started,
 }: LobbyDetailsProps) {
 	const [loading, setLoading] = useState<boolean>(false);
 
@@ -52,7 +54,7 @@ export default function LobbyDetails({
 	const buttonLabel =
 		lobbyState === "waiting"
 			? "Start Game"
-			: lobbyState === "inProgress" && countdown && countdown > 0
+			: lobbyState === "starting" && countdown && countdown > 0
 				? "Wait"
 				: lobbyState === "finished"
 					? "Ended"
@@ -61,7 +63,8 @@ export default function LobbyDetails({
 	const isDisabled =
 		loading ||
 		lobbyState === "finished" ||
-		(lobbyState === "inProgress" && countdown === 0);
+		lobbyState === "inProgress" ||
+		(lobbyState === "starting" && countdown === 0);
 
 	const creator = players.find((p) => p.id === lobby.creator.id);
 	const identifier = creator?.user.username || creator?.user.walletAddress;
@@ -136,20 +139,18 @@ export default function LobbyDetails({
 				</div>
 
 				{/* Countdown Timer */}
-				{lobbyState === "inProgress" &&
-					countdown &&
-					countdown <= 15 && (
-						<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted">
-							<div className="flex items-center justify-center gap-2 text-center">
-								<Timer className="h-5 w-5 text-muted-foreground shrink-0" />
-								<span className="text-sm sm:text-lg md:text-xl font-semibold text-primary">
-									Game starting in {countdown} seconds
-								</span>
-							</div>
+				{lobbyState === "starting" && (
+					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted">
+						<div className="flex items-center justify-center gap-2 text-center">
+							<Timer className="h-5 w-5 text-muted-foreground shrink-0" />
+							<span className="text-sm sm:text-lg md:text-xl font-semibold text-primary">
+								Game starting in {countdown} seconds
+							</span>
 						</div>
-					)}
+					</div>
+				)}
 
-				{lobbyState === "inProgress" && countdown === 0 && (
+				{started && (
 					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted flex flex-col items-center justify-center text-center">
 						<Info className="h-5 w-5 text-muted-foreground mb-2" />
 						<span className="text-sm sm:text-lg md:text-xl font-semibold text-primary mb-2">
@@ -239,8 +240,8 @@ export default function LobbyDetails({
 									return;
 								}
 
-								handleLobbyState("inProgress");
-							} else if (lobbyState === "inProgress")
+								handleLobbyState("starting");
+							} else if (lobbyState === "starting")
 								handleLobbyState("waiting");
 						}}
 					>
