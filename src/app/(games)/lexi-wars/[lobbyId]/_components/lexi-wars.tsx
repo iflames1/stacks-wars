@@ -232,7 +232,15 @@ export default function LexiWars({
 	};
 
 	if (!gameStarted) {
-		return <Loading startCountdown={startCountdown} />;
+		return (
+			<Loading 
+				startCountdown={startCountdown}
+				readyState={readyState}
+				reconnecting={reconnecting}
+				latency={latency}
+				onForceReconnect={forceReconnect}
+			/>
+		);
 	}
 
 	return (
