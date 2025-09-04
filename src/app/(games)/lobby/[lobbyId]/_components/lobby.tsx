@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import ConnectionStatus from "@/components/connection-status";
 import ShareLinkButton from "./share-link-button";
 import Link from "next/link";
-import Loading from "@/app/(games)/lexi-wars/[lobbyId]/loading";
+//import Loading from "@/app/(games)/lexi-wars/[lobbyId]/loading";
 import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
 import { GameType } from "@/types/schema/game";
 import {
@@ -245,9 +245,9 @@ export default function Lobby({
 		handleLeaveCheck,
 	]);
 
-	if (lobbyState === "starting" && countdown === 0) {
-		return <Loading />;
-	}
+	//if (lobbyState === "starting" && countdown === 0) {
+	//	return <Loading />;
+	//}
 
 	return (
 		<section className="bg-gradient-to-b from-primary/10 to-primary/30">

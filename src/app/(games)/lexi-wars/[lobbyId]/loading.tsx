@@ -1,10 +1,21 @@
 import Image from "next/image";
+import ConnectionStatus from "@/components/connection-status";
+
+interface LoadingProps {
+	startCountdown?: number;
+	readyState?: number;
+	reconnecting?: boolean;
+	latency?: number | null;
+	onForceReconnect?: () => void;
+}
 
 export default function Loading({
 	startCountdown,
-}: {
-	startCountdown?: number;
-}) {
+	readyState,
+	reconnecting,
+	latency,
+	onForceReconnect,
+}: LoadingProps) {
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30">
 			<div className="max-w-3xl mx-auto p-4 sm:p-6">
@@ -37,16 +48,41 @@ export default function Loading({
 							)}
 						</div>
 
+						{/* Connection Status */}
+						{readyState !== undefined && (
+							<div className="flex justify-center">
+								<ConnectionStatus
+									readyState={readyState}
+									latency={latency ?? null}
+									reconnecting={reconnecting ?? false}
+									onReconnect={onForceReconnect}
+									className="px-3 py-2 rounded-lg bg-background/50 border border-primary/20"
+								/>
+							</div>
+						)}
+
 						{/* Game Tip */}
 						<div className="mt-8 p-4 bg-primary/10 rounded-lg border border-primary/20 max-w-md mx-auto">
-							<p className="text-sm text-muted-foreground">
-								<span className="font-semibold text-primary">
-									💡 Game Tip:
-								</span>
-								<br />
-								Always look at the turn indicator to know when
-								it&apos;s your turn
-							</p>
+							{readyState !== undefined &&
+							readyState !== WebSocket.OPEN ? (
+								<p className="text-sm text-muted-foreground">
+									<span className="font-semibold text-yellow-400">
+										⚠️ Connection Issue:
+									</span>
+									<br />
+									If you&apos;re stuck here, try the retry
+									button above or refresh the page.
+								</p>
+							) : (
+								<p className="text-sm text-muted-foreground">
+									<span className="font-semibold text-primary">
+										💡 Game Tip:
+									</span>
+									<br />
+									Always look at the turn indicator to know
+									when it&apos;s your turn
+								</p>
+							)}
 						</div>
 					</div>
 
