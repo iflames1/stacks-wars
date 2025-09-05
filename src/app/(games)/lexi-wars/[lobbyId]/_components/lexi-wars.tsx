@@ -233,7 +233,7 @@ export default function LexiWars({
 
 	if (!gameStarted) {
 		return (
-			<Loading 
+			<Loading
 				startCountdown={startCountdown}
 				readyState={readyState}
 				reconnecting={reconnecting}

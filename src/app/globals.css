@@ -140,6 +140,14 @@
 	animation: blink 1s step-end infinite;
 }
 
+.unselectable {
+  user-select: none;          /* Standard */
+  -webkit-user-select: none;  /* Chrome/Safari/Brave */
+  -moz-user-select: none;     /* Firefox */
+  -ms-user-select: none;      /* Old IE/Edge */
+}
+
+
 /** {
   outline: 1px solid red !important;
 }*/
