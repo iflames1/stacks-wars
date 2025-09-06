@@ -276,7 +276,7 @@ export default function Chat() {
 										</div>
 										<div className="text-center space-y-1">
 											<h3 className="text-lg font-medium">
-												Chat Restricted
+												Chat is not availble
 											</h3>
 											<p className="text-muted-foreground max-w-md">
 												You need to join the lobby to

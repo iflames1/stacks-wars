@@ -43,7 +43,7 @@ export const ChatSocketProvider = ({ children }: ChatProviderProps) => {
 		return <Loading />;
 	}
 
-	if (!userId || !lobbyId) {
+	if (!userId) {
 		return <RequireAuth />;
 	}
 
