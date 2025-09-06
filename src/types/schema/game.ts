@@ -4,6 +4,5 @@ export interface GameType {
 	description: string;
 	imageUrl: string;
 	minPlayers: number;
-	activeLobbies: number;
 	tags: string[] | null;
 }
