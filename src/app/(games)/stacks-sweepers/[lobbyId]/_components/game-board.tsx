@@ -1,13 +1,14 @@
 import { Flag, Bomb } from "lucide-react";
 import Image from "next/image";
-import { Cell, GameState } from "./stacks-sweepers";
+import { Cell } from "./stacks-sweepers";
+import { GameState } from "@/hooks/useStacksSweepers";
 
 interface GameBoardProps {
 	board: Cell[];
 	boardSize: number;
 	blindMode: boolean;
 	gameState: GameState;
-	onCellClick: (cellId: string, isRightClick?: boolean) => void;
+	onCellClick: (x: number, y: number, isRightClick?: boolean) => void;
 }
 
 export default function GameBoard({
@@ -101,14 +102,16 @@ export default function GameBoard({
 		event.preventDefault();
 		if (gameState === "won" || gameState === "lost") return;
 
-		onCellClick(cellId, false);
+		const [x, y] = cellId.split("-").map(Number);
+		onCellClick(x, y, false);
 	};
 
 	const handleCellRightClick = (cellId: string, event: React.MouseEvent) => {
 		event.preventDefault();
 		if (gameState === "won" || gameState === "lost") return;
 
-		onCellClick(cellId, true);
+		const [x, y] = cellId.split("-").map(Number);
+		onCellClick(x, y, true);
 	};
 
 	// Calculate responsive grid sizing

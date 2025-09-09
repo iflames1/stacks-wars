@@ -1,11 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GameState } from "@/hooks/useStacksSweepers";
 import { Clock, Flag, Play, Trophy, Skull, Settings } from "lucide-react";
-import { GameState } from "./stacks-sweepers";
 
 interface GameStatusProps {
 	gameState: GameState;
-	timeLeft: number;
+	timeLeft: number | null;
 	totalMines: number;
 	flaggedCount: number;
 	isFirstMove: boolean;
@@ -85,16 +85,18 @@ export default function GameStatus({
 					</div>
 
 					{/* Timer */}
-					<div className="flex items-center gap-1">
-						<Clock
-							className={`h-3 w-3 sm:h-4 sm:w-4 ${timeLeft <= 10 ? "text-red-500" : "text-primary"}`}
-						/>
-						<span
-							className={`text-xs sm:text-sm font-bold ${timeLeft <= 10 ? "text-red-500" : "text-foreground"}`}
-						>
-							{formatTime(timeLeft)}
-						</span>
-					</div>
+					{timeLeft !== null && (
+						<div className="flex items-center gap-1">
+							<Clock
+								className={`h-3 w-3 sm:h-4 sm:w-4 ${timeLeft <= 10 ? "text-red-500" : "text-primary"}`}
+							/>
+							<span
+								className={`text-xs sm:text-sm font-bold ${timeLeft <= 10 ? "text-red-500" : "text-foreground"}`}
+							>
+								{formatTime(timeLeft)}
+							</span>
+						</div>
+					)}
 
 					{/* Flags */}
 					<div className="flex items-center gap-1">
@@ -106,7 +108,7 @@ export default function GameStatus({
 				</div>
 
 				{/* New Game button */}
-				{(gameState === "playing" || gameState === "waiting") && (
+				{(gameState === "won" || gameState === "lost") && (
 					<Button
 						variant="outline"
 						size="sm"

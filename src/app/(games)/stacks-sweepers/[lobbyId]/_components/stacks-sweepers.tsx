@@ -5,20 +5,15 @@ import GameHeader from "./game-header";
 import GameBoard from "./game-board";
 import GameStatus from "./game-status";
 import GameControls from "./game-controls";
-import GameOverModal from "./game-over-modal";
 import BackToGames from "@/components/back-to-games";
-
-// Mock WebSocket hook - we'll implement this later
-const useMockWebSocket = () => ({
-	readyState: WebSocket.OPEN,
-	reconnecting: false,
-	latency: 45,
-	forceReconnect: () => {},
-	disconnect: () => {},
-});
+import {
+	GameState,
+	useStacksSweepers,
+	type StacksSweeperServerMessage,
+} from "@/hooks/useStacksSweepers";
+import { toast } from "sonner";
 
 export type CellState = "hidden" | "revealed" | "flagged" | "mine" | "gem";
-export type GameState = "waiting" | "playing" | "won" | "lost";
 export type Difficulty = "easy" | "medium" | "hard";
 
 export interface Cell {
@@ -31,55 +26,213 @@ export interface Cell {
 	isGem: boolean;
 }
 
-export default function StacksSweepers() {
-	// Game state
+interface StacksSweeperProps {
+	userId: string;
+}
+
+export default function StacksSweepers({ userId }: StacksSweeperProps) {
 	const [gameState, setGameState] = useState<GameState>("waiting");
-	const [boardSize, setBoardSize] = useState(5); // 5x5 default
+	const [boardSize, setBoardSize] = useState<number | null>(null);
 	const [difficulty, setDifficulty] = useState<Difficulty>("medium");
 	const [blindMode, setBlindMode] = useState(false);
-	const [timeLeft, setTimeLeft] = useState(60);
-	const [totalMines, setTotalMines] = useState(6);
+	const [timeLeft, setTimeLeft] = useState<number | null>(null);
+	const [totalMines, setTotalMines] = useState<number | null>(null);
 	const [flaggedCount, setFlaggedCount] = useState(0);
 	const [isFirstMove, setIsFirstMove] = useState(true);
 	const [board, setBoard] = useState<Cell[]>([]);
-	const [showGameOverModal, setShowGameOverModal] = useState(false);
 	const [showNewGameDialog, setShowNewGameDialog] = useState(false);
+	const [latency, setLatency] = useState<number | null>(null);
 
-	// Mock WebSocket connection
-	const { readyState, reconnecting, latency, forceReconnect } =
-		useMockWebSocket();
+	// Handle WebSocket messages
+	const handleMessage = useCallback((message: StacksSweeperServerMessage) => {
+		switch (message.type) {
+			case "gameBoard":
+				console.log(message.cells);
+				console.log(message.gameState);
+				setTimeLeft(message.timeRemaining || 60);
 
-	// Initialize empty board
-	useEffect(() => {
-		const newBoard: Cell[] = [];
-		for (let row = 0; row < boardSize; row++) {
-			for (let col = 0; col < boardSize; col++) {
-				newBoard.push({
-					id: `${row}-${col}`,
-					row,
-					col,
+				setBoardSize(message.boardSize);
+				setTotalMines(message.mines);
+
+				// Calculate flagged count from server data
+				const flagged = message.cells.filter(
+					(cell) => cell.state === "flagged"
+				).length;
+				setFlaggedCount(flagged);
+
+				const convertedBoard: Cell[] = message.cells.map((cell) => {
+					let cellState: CellState = "hidden";
+					let adjacentMines = 0;
+					let isMine = false;
+
+					if (cell.state === "flagged") {
+						cellState = "flagged";
+					} else if (cell.state === "mine") {
+						cellState = "mine";
+						isMine = true;
+					} else if (cell.state === "gem") {
+						cellState = "gem";
+					} else if (cell.state && typeof cell.state === "object" && "adjacent" in cell.state) {
+						cellState = "revealed";
+						adjacentMines = cell.state.adjacent.count;
+					} else if (cell.state === null) {
+						cellState = "hidden";
+					}
+
+					return {
+						id: `${cell.x}-${cell.y}`,
+						row: cell.y,
+						col: cell.x,
+						state: cellState,
+						adjacentMines,
+						isMine,
+						isGem: cellState === "gem",
+					};
+				});
+				setBoard(convertedBoard);
+				setGameState(message.gameState);
+				break;
+			case "boardCreated":
+				setBoardSize(message.boardSize);
+				setTotalMines(message.mines);
+
+				// Convert and set initial board
+				const initialBoard: Cell[] = message.cells.map((cell) => ({
+					id: `${cell.x}-${cell.y}`,
+					row: cell.y,
+					col: cell.x,
 					state: "hidden",
 					adjacentMines: 0,
 					isMine: false,
 					isGem: false,
+				}));
+				setBoard(initialBoard);
+				setGameState("playing");
+				setIsFirstMove(false);
+				toast.success("New board created! Start playing!");
+				break;
+			case "noBoard":
+				toast.info(message.message);
+				setShowNewGameDialog(true);
+				break;
+			case "gameOver":
+				setGameState(message.won ? "won" : "lost");
+				setTimeLeft(0);
+
+				setBoardSize(message.boardSize);
+				setTotalMines(message.mines);
+
+				// Calculate flagged count from server data
+				const gameOverFlagged = message.cells.filter(
+					(cell) => cell.state === "flagged"
+				).length;
+				setFlaggedCount(gameOverFlagged);
+
+				// Update final board state with unmasked data
+				const finalBoard: Cell[] = message.cells.map((cell) => {
+					let cellState: CellState = "revealed";
+					let adjacentMines = 0;
+					let isMine = false;
+
+					if (cell.state === "flagged") {
+						cellState = "flagged";
+					} else if (cell.state === "mine") {
+						cellState = "mine";
+						isMine = true;
+					} else if (cell.state === "gem") {
+						cellState = "gem";
+					} else if (cell.state && typeof cell.state === "object" && "adjacent" in cell.state) {
+						cellState = "revealed";
+						adjacentMines = cell.state.adjacent.count;
+					}
+
+					return {
+						id: `${cell.x}-${cell.y}`,
+						row: cell.y,
+						col: cell.x,
+						state: cellState,
+						adjacentMines,
+						isMine,
+						isGem: cellState === "gem",
+					};
 				});
-			}
+				setBoard(finalBoard);
+				toast.info(message.won ? "🎉 You won!" : "💥 Game over!");
+				break;
+			case "countdown":
+				setTimeLeft(message.timeRemaining);
+				break;
+			case "timeUp":
+				setGameState("lost");
+				setTimeLeft(0);
+
+				setBoardSize(message.boardSize);
+				setTotalMines(message.mines);
+
+				// Calculate flagged count from server data
+				const timeUpFlagged = message.cells.filter(
+					(cell) => cell.state === "flagged"
+				).length;
+				setFlaggedCount(timeUpFlagged);
+
+				// Update board with revealed mines (unmasked data)
+				const timeUpBoard: Cell[] = message.cells.map((cell) => {
+					let cellState: CellState = "revealed";
+					let adjacentMines = 0;
+					let isMine = false;
+
+					if (cell.state === "flagged") {
+						cellState = "flagged";
+					} else if (cell.state === "mine") {
+						cellState = "mine";
+						isMine = true;
+					} else if (cell.state === "gem") {
+						cellState = "gem";
+					} else if (cell.state && typeof cell.state === "object" && "adjacent" in cell.state) {
+						cellState = "revealed";
+						adjacentMines = cell.state.adjacent.count;
+					}
+
+					return {
+						id: `${cell.x}-${cell.y}`,
+						row: cell.y,
+						col: cell.x,
+						state: cellState,
+						adjacentMines,
+						isMine,
+						isGem: cellState === "gem",
+					};
+				});
+				setBoard(timeUpBoard);
+				toast.error("⏰ Time's up!");
+				break;
+			case "error":
+				toast.error("Game Error", { description: message.message });
+				break;
+			case "pong":
+				setLatency(message.pong);
+				break;
 		}
-		setBoard(newBoard);
-	}, [boardSize]);
+	}, []);
+
+	// WebSocket connection
+	const { sendMessage, readyState, reconnecting, forceReconnect } =
+		useStacksSweepers({
+			userId,
+			onMessage: handleMessage,
+		});
 
 	// Timer countdown
 	useEffect(() => {
 		let interval: NodeJS.Timeout;
-		if (gameState === "playing" && timeLeft > 0) {
+		if (gameState === "playing" && timeLeft !== null && timeLeft > 0) {
 			interval = setInterval(() => {
 				setTimeLeft((prev) => {
-					if (prev <= 1) {
+					if (prev !== null && prev <= 1) {
 						setGameState("lost");
-						setShowGameOverModal(true);
 						return 0;
 					}
-					return prev - 1;
+					return prev !== null ? prev - 1 : 0;
 				});
 			}, 1000);
 		}
@@ -87,57 +240,34 @@ export default function StacksSweepers() {
 	}, [gameState, timeLeft]);
 
 	const handleCellClick = useCallback(
-		(cellId: string, isRightClick: boolean = false) => {
-			if (gameState !== "playing" && gameState !== "waiting") return;
+		(x: number, y: number, isRightClick: boolean = false) => {
+			console.log(
+				"called with x:",
+				x,
+				"y:",
+				y,
+				"isRightClick:",
+				isRightClick
+			);
+			console.log("gameState:", gameState, "readyState:", readyState);
 
-			setBoard((prevBoard) => {
-				const newBoard = [...prevBoard];
-				const cellIndex = newBoard.findIndex(
-					(cell) => cell.id === cellId
-				);
-				const cell = newBoard[cellIndex];
-
-				if (isRightClick) {
-					// Flag/unflag cell
-					if (cell.state === "hidden") {
-						cell.state = "flagged";
-						setFlaggedCount((prev) => prev + 1);
-					} else if (cell.state === "flagged") {
-						cell.state = "hidden";
-						setFlaggedCount((prev) => prev - 1);
-					}
-				} else {
-					// Reveal cell
-					if (cell.state === "hidden") {
-						if (isFirstMove) {
-							setIsFirstMove(false);
-							setGameState("playing");
-						}
-
-						cell.state = "revealed";
-
-						// Mock game logic - randomly determine if it's a mine or gem
-						if (Math.random() < 0.2) {
-							// 20% chance of mine
-							cell.isMine = true;
-							cell.state = "mine";
-							setGameState("lost");
-							setShowGameOverModal(true);
-						} else if (Math.random() < 0.3) {
-							// 30% chance of gem
-							cell.isGem = true;
-							cell.state = "gem";
-						} else {
-							// Normal cell with adjacent mine count
-							cell.adjacentMines = Math.floor(Math.random() * 4);
-						}
-					}
-				}
-
-				return newBoard;
-			});
+			if (isRightClick) {
+				console.log("Sending flag message");
+				sendMessage({
+					type: "cellFlag",
+					x,
+					y,
+				});
+			} else {
+				console.log("Sending reveal message");
+				sendMessage({
+					type: "cellReveal",
+					x,
+					y,
+				});
+			}
 		},
-		[gameState, isFirstMove]
+		[gameState, readyState, sendMessage]
 	);
 
 	const handleNewGame = useCallback(() => {
@@ -145,37 +275,37 @@ export default function StacksSweepers() {
 		setTimeLeft(60);
 		setFlaggedCount(0);
 		setIsFirstMove(true);
-		setShowGameOverModal(false);
 		setShowNewGameDialog(false);
 
-		// Reset board
-		const newBoard: Cell[] = [];
-		for (let row = 0; row < boardSize; row++) {
-			for (let col = 0; col < boardSize; col++) {
-				newBoard.push({
-					id: `${row}-${col}`,
-					row,
-					col,
-					state: "hidden",
-					adjacentMines: 0,
-					isMine: false,
-					isGem: false,
-				});
-			}
-		}
-		setBoard(newBoard);
-	}, [boardSize]);
+		// Use default board size if not set
+		const currentBoardSize = boardSize || 5;
+
+		// Convert difficulty to risk value (0-100)
+		const riskMap = {
+			easy: 0.15,
+			medium: 0.25,
+			hard: 0.35,
+		};
+
+		sendMessage({
+			type: "createBoard",
+			size: currentBoardSize,
+			risk: riskMap[difficulty],
+			blind: blindMode,
+		});
+	}, [boardSize, difficulty, blindMode, sendMessage]);
 
 	const handleDifficultyChange = useCallback(
 		(newDifficulty: Difficulty) => {
 			setDifficulty(newDifficulty);
-			// Adjust mines based on difficulty
-			const mineCount = {
-				easy: Math.floor(boardSize * boardSize * 0.15),
-				medium: Math.floor(boardSize * boardSize * 0.25),
-				hard: Math.floor(boardSize * boardSize * 0.35),
-			};
-			setTotalMines(mineCount[newDifficulty]);
+			if (boardSize) {
+				const mineCount = {
+					easy: Math.floor(boardSize * boardSize * 0.15),
+					medium: Math.floor(boardSize * boardSize * 0.25),
+					hard: Math.floor(boardSize * boardSize * 0.35),
+				};
+				setTotalMines(mineCount[newDifficulty]);
+			}
 		},
 		[boardSize]
 	);
@@ -200,44 +330,40 @@ export default function StacksSweepers() {
 				<div className="flex-1 flex flex-col space-y-3">
 					<GameHeader />
 
-					<GameStatus
-						gameState={gameState}
-						timeLeft={timeLeft}
-						totalMines={totalMines}
-						flaggedCount={flaggedCount}
-						isFirstMove={isFirstMove}
-						onNewGame={() => setShowNewGameDialog(true)}
-					/>
+					{totalMines !== null && (
+						<GameStatus
+							gameState={gameState}
+							timeLeft={timeLeft}
+							totalMines={totalMines}
+							flaggedCount={flaggedCount}
+							isFirstMove={isFirstMove}
+							onNewGame={() => setShowNewGameDialog(true)}
+						/>
+					)}
 
 					<div className="flex-1 flex items-center justify-center">
-						<GameBoard
-							board={board}
-							boardSize={boardSize}
-							blindMode={blindMode}
-							onCellClick={handleCellClick}
-							gameState={gameState}
-						/>
+						{boardSize !== null && board.length > 0 ? (
+							<GameBoard
+								board={board}
+								boardSize={boardSize}
+								blindMode={blindMode}
+								onCellClick={handleCellClick}
+								gameState={gameState}
+							/>
+						) : (
+							<div className="text-center text-muted-foreground">
+								<p>Connecting to game...</p>
+							</div>
+						)}
 					</div>
 				</div>
-
-				{/* Game Over Modal */}
-				{showGameOverModal && (
-					<GameOverModal
-						gameState={gameState}
-						onNewGame={() => {
-							setShowGameOverModal(false);
-							setShowNewGameDialog(true);
-						}}
-						onClose={() => setShowGameOverModal(false)}
-					/>
-				)}
 
 				{/* New Game Settings Dialog */}
 				{showNewGameDialog && (
 					<GameControls
 						difficulty={difficulty}
 						blindMode={blindMode}
-						boardSize={boardSize}
+						boardSize={boardSize || 5}
 						onDifficultyChange={handleDifficultyChange}
 						onBlindModeToggle={setBlindMode}
 						onBoardSizeChange={setBoardSize}

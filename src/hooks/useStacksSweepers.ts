@@ -1,75 +1,116 @@
-import { Player } from "@/types/schema/player";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export interface ChatMessage {
-	id: string;
-	text: string;
-	sender: Player;
-	timestamp: string;
+// Supporting types
+export type GameState = "playing" | "won" | "lost" | "waiting";
+
+export type CellState = "flagged" | "mine" | "gem" | { adjacent: { count: number } };
+
+export interface MaskedCell {
+	x: number;
+	y: number;
+	state: CellState | null; // null if not revealed and not flagged
 }
 
-export type ChatServerMessage =
-	| { type: "permitChat"; allowed: boolean }
-	| { type: "chat"; message: ChatMessage }
-	| { type: "chatHistory"; messages: ChatMessage[] }
-	| { type: "pong"; ts: number; pong: number }
-	| { type: "error"; message: string };
+export type StacksSweeperServerMessage =
+	| {
+			type: "gameBoard";
+			cells: MaskedCell[];
+			gameState: GameState;
+			timeRemaining?: number;
+			mines: number;
+			boardSize: number;
+	  }
+	| {
+			type: "boardCreated";
+			cells: MaskedCell[];
+			gameState: GameState;
+			boardSize: number;
+			mines: number;
+	  }
+	| {
+			type: "noBoard";
+			message: string;
+	  }
+	| {
+			type: "gameOver";
+			won: boolean;
+			cells: MaskedCell[];
+			boardSize: number;
+			mines: number;
+	  }
+	| {
+			type: "countdown";
+			timeRemaining: number;
+	  }
+	| {
+			type: "timeUp";
+			cells: MaskedCell[];
+			boardSize: number;
+			mines: number;
+	  }
+	| {
+			type: "pong";
+			ts: number;
+			pong: number;
+	  }
+	| {
+			type: "error";
+			message: string;
+	  };
 
-export type ChatClientMessage =
-	| { type: "chat"; text: string }
+export type StacksSweeperClientMessage =
+	| {
+			type: "createBoard";
+			size: number;
+			risk: number;
+			blind: boolean;
+	  }
+	| {
+			type: "cellReveal";
+			x: number;
+			y: number;
+	  }
+	| {
+			type: "cellFlag";
+			x: number;
+			y: number;
+	  }
 	| {
 			type: "ping";
 			ts: number;
 	  };
 
 interface QueuedMessage {
-	data: ChatClientMessage;
+	data: StacksSweeperClientMessage;
 	resolve: () => void;
 	reject: (error: Error) => void;
 }
 
-interface UseChatSocketProps {
-	lobbyId: string;
+interface UseStacksSweeperProps {
+	//lobbyId: string;
 	userId: string;
-	disabled?: boolean;
+	onMessage?: (msg: StacksSweeperServerMessage) => void;
 }
 
-export interface UseChatSocketType {
-	sendMessage: (data: ChatClientMessage) => Promise<void>;
-	disconnectChat: () => void;
-	readyState: WebSocket["readyState"];
-	error: null | Event;
-	reconnecting: boolean;
-	forceReconnect: () => void;
-	messages: ChatMessage[];
-	unreadCount: number;
-	chatPermitted: boolean;
-	userId: string;
-	setOpen: (open: boolean) => void;
-}
-
-export function useChatSocket({
-	lobbyId,
+export function useStacksSweepers({
+	//lobbyId,
 	userId,
-	disabled = false,
-}: UseChatSocketProps): UseChatSocketType {
+	onMessage,
+}: UseStacksSweeperProps) {
 	const socketRef = useRef<WebSocket | null>(null);
 	const reconnectAttempts = useRef(0);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const manuallyDisconnectedRef = useRef(false);
+	const messageHandlerRef = useRef<typeof onMessage | null>(null);
 	const messageQueue = useRef<QueuedMessage[]>([]);
 	const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const pingInProgress = useRef(false);
-	const PING_INTERVAL = 10000; // 10 seconds
+	const PING_INTERVAL = 5000; // 5 seconds
 	const [readyState, setReadyState] = useState<WebSocket["readyState"]>(
 		WebSocket.CLOSED
 	);
 	const [error, setError] = useState<null | Event>(null);
 	const [reconnecting, setReconnecting] = useState(false);
-	const [messages, setMessages] = useState<ChatMessage[]>([]);
-	const [chatPermitted, setChatPermitted] = useState(false);
-	const [unreadCount, setUnreadCount] = useState(0);
-	const [open, setOpen] = useState(false);
 
 	const maxReconnectAttempts = 5;
 
@@ -91,8 +132,12 @@ export function useChatSocket({
 		}
 	}, []);
 
+	useEffect(() => {
+		messageHandlerRef.current = onMessage;
+	}, [onMessage]);
+
 	const sendMessage = useCallback(
-		(data: ChatClientMessage): Promise<void> => {
+		(data: StacksSweeperClientMessage): Promise<void> => {
 			return new Promise((resolve, reject) => {
 				const socket = socketRef.current;
 				if (socket?.readyState === WebSocket.OPEN) {
@@ -103,7 +148,9 @@ export function useChatSocket({
 						reject(error as Error);
 					}
 				} else {
-					console.log("⏳ Queuing Chat message (socket not ready)");
+					console.log(
+						"⏳ Queuing StacksSweeper message (socket not ready)"
+					);
 					messageQueue.current.push({ data, resolve, reject });
 				}
 			});
@@ -118,7 +165,7 @@ export function useChatSocket({
 		try {
 			await sendMessage({ type: "ping", ts: Date.now() });
 		} catch (error) {
-			console.error("❌ Chat Ping failed:", error);
+			console.error("❌ StacksSweeper Ping failed:", error);
 		} finally {
 			pingInProgress.current = false;
 
@@ -133,20 +180,19 @@ export function useChatSocket({
 	}, [sendMessage]);
 
 	const connectSocket = useCallback(() => {
-		if (disabled) return; // Don't connect if disabled
-		if (!lobbyId || !userId) return;
-		if (socketRef.current) return; // already connecting or connected
+		if (!userId) return;
+		if (socketRef.current) return;
 
-		console.log("🟢 Connecting ChatSocket...");
+		console.log("🟢 Connecting StacksSweeperSocket...");
 
 		const ws = new WebSocket(
-			`${process.env.NEXT_PUBLIC_WS_URL}/ws/chat/${lobbyId}?user_id=${userId}`
+			`${process.env.NEXT_PUBLIC_WS_URL}/ws/stacks-sweepers-single?user_id=${userId}`
 		);
 
 		socketRef.current = ws;
 
 		ws.onopen = () => {
-			console.log("✅ Chat connected");
+			console.log("✅ StacksSweeperSocket connected");
 			setReadyState(ws.readyState);
 			setError(null);
 			setReconnecting(false);
@@ -161,38 +207,19 @@ export function useChatSocket({
 		ws.onmessage = (event) => {
 			try {
 				const raw = typeof event.data === "string" ? event.data : "";
-				const data = JSON.parse(raw) as ChatServerMessage;
-
-				switch (data.type) {
-					case "permitChat":
-						setChatPermitted(data.allowed);
-						if (!data.allowed) setMessages([]);
-						break;
-					case "chat":
-						setMessages((prev) => [...prev, data.message]);
-						if (!open && data.message.sender.id !== userId) {
-							setUnreadCount((prev) => prev + 1);
-						}
-						break;
-					case "chatHistory":
-						setMessages(data.messages);
-						break;
-					case "pong":
-						// Optional latency tracking
-						break;
-					case "error":
-						console.error("Chat error:", data.message);
-						break;
-					default:
-						console.warn("Unknown chat message type", data);
-				}
+				const data = JSON.parse(raw) as StacksSweeperServerMessage;
+				messageHandlerRef.current?.(data);
 			} catch (err) {
-				console.error("❌ Failed to parse Chat message", err);
+				console.error("❌ Failed to parse StacksSweeper message", err);
 			}
 		};
 
 		ws.onclose = (event) => {
-			console.warn("🛑 Chat closed:", event.code, event.reason);
+			console.warn(
+				"🛑 StacksSweeperSocket closed:",
+				event.code,
+				event.reason
+			);
 			setReadyState(WebSocket.CLOSED);
 			socketRef.current = null;
 			pingInProgress.current = false;
@@ -204,7 +231,9 @@ export function useChatSocket({
 
 			// Check if the close is due to game finished - if so, don't reconnect
 			const isGameFinished =
-				event.reason && event.reason.toLowerCase().includes("finished");
+				(event.reason &&
+					event.reason.toLowerCase().includes("finished")) ||
+				event.code === 1000; // Normal closure often indicates game end
 
 			if (
 				!manuallyDisconnectedRef.current &&
@@ -213,7 +242,9 @@ export function useChatSocket({
 			) {
 				reconnectAttempts.current++;
 				const timeout = Math.pow(2, reconnectAttempts.current) * 1000;
-				console.log(`♻️ Chat Reconnecting in ${timeout / 1000}s...`);
+				console.log(
+					`♻️ StacksSweeper Reconnecting in ${timeout / 1000}s...`
+				);
 
 				setReconnecting(true);
 				reconnectTimeoutRef.current = setTimeout(() => {
@@ -222,7 +253,7 @@ export function useChatSocket({
 			} else {
 				if (isGameFinished) {
 					console.log(
-						"🏁 Game finished, not reconnecting ChatSocket"
+						"🏁 Game finished, not reconnecting StacksSweeperSocket"
 					);
 				}
 				// Reject all queued messages if we can't reconnect
@@ -236,7 +267,7 @@ export function useChatSocket({
 		};
 
 		ws.onerror = (err) => {
-			console.error("⚠️ Chat error:", err);
+			console.error("⚠️ StacksSweeperSocket error:", err);
 			setError(err);
 			setReadyState(WebSocket.CLOSED);
 
@@ -246,14 +277,7 @@ export function useChatSocket({
 				socketRef.current = null;
 			}
 		};
-	}, [lobbyId, userId, schedulePing, processMessageQueue, open, disabled]);
-
-	const setOpenWithUnreadReset = useCallback((newOpen: boolean) => {
-		setOpen(newOpen);
-		if (newOpen) {
-			setUnreadCount(0);
-		}
-	}, []);
+	}, [userId, processMessageQueue, schedulePing]);
 
 	useEffect(() => {
 		connectSocket();
@@ -266,7 +290,7 @@ export function useChatSocket({
 		};
 	}, [connectSocket]);
 
-	const disconnectChat = useCallback(() => {
+	const disconnect = useCallback(() => {
 		manuallyDisconnectedRef.current = true;
 		pingInProgress.current = false;
 
@@ -316,15 +340,10 @@ export function useChatSocket({
 
 	return {
 		sendMessage,
-		disconnectChat,
+		disconnect,
 		readyState,
 		error,
 		reconnecting,
 		forceReconnect,
-		messages,
-		unreadCount,
-		chatPermitted,
-		userId,
-		setOpen: setOpenWithUnreadReset,
 	};
 }

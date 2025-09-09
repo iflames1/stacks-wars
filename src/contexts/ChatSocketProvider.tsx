@@ -20,7 +20,14 @@ export const ChatSocketProvider = ({ children }: ChatProviderProps) => {
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const lobbyId = typeof params.lobbyId === "string" ? params.lobbyId : "";
 
-	const socketData = useChatSocket({ lobbyId, userId: userId ?? "" });
+	// Skip chat for single-player games
+	const isSinglePlayer = lobbyId === "1";
+
+	const socketData = useChatSocket({
+		lobbyId: isSinglePlayer ? "" : lobbyId,
+		userId: userId ?? "",
+		disabled: isSinglePlayer,
+	});
 
 	useEffect(() => {
 		const fetchUserId = async () => {
