@@ -8,7 +8,6 @@ interface GameStatusProps {
 	timeLeft: number | null;
 	totalMines: number;
 	flaggedCount: number;
-	isFirstMove: boolean;
 	onNewGame: () => void;
 }
 
@@ -17,7 +16,6 @@ export default function GameStatus({
 	timeLeft,
 	totalMines,
 	flaggedCount,
-	isFirstMove,
 	onNewGame,
 }: GameStatusProps) {
 	const getGameStateConfig = () => {
@@ -25,9 +23,7 @@ export default function GameStatus({
 			case "waiting":
 				return {
 					icon: <Play className="h-4 w-4" />,
-					text: isFirstMove
-						? "Click any cell to start"
-						: "Waiting...",
+					text: "Click any cell to start",
 					variant: "secondary" as const,
 					color: "text-blue-500",
 				};

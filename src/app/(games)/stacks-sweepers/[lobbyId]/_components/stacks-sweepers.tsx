@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import ConnectionStatus from "@/components/connection-status";
 import GameHeader from "./game-header";
 import GameBoard from "./game-board";
@@ -38,7 +38,6 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 	const [timeLeft, setTimeLeft] = useState<number | null>(null);
 	const [totalMines, setTotalMines] = useState<number | null>(null);
 	const [flaggedCount, setFlaggedCount] = useState(0);
-	const [isFirstMove, setIsFirstMove] = useState(true);
 	const [board, setBoard] = useState<Cell[]>([]);
 	const [showNewGameDialog, setShowNewGameDialog] = useState(false);
 	const [latency, setLatency] = useState<number | null>(null);
@@ -47,10 +46,6 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 	const handleMessage = useCallback((message: StacksSweeperServerMessage) => {
 		switch (message.type) {
 			case "gameBoard":
-				console.log(message.cells);
-				console.log(message.gameState);
-				setTimeLeft(message.timeRemaining || 60);
-
 				setBoardSize(message.boardSize);
 				setTotalMines(message.mines);
 
@@ -72,7 +67,11 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 						isMine = true;
 					} else if (cell.state === "gem") {
 						cellState = "gem";
-					} else if (cell.state && typeof cell.state === "object" && "adjacent" in cell.state) {
+					} else if (
+						cell.state &&
+						typeof cell.state === "object" &&
+						"adjacent" in cell.state
+					) {
 						cellState = "revealed";
 						adjacentMines = cell.state.adjacent.count;
 					} else if (cell.state === null) {
@@ -91,6 +90,7 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 				});
 				setBoard(convertedBoard);
 				setGameState(message.gameState);
+				setTimeLeft(message.timeRemaining || null);
 				break;
 			case "boardCreated":
 				setBoardSize(message.boardSize);
@@ -107,8 +107,7 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 					isGem: false,
 				}));
 				setBoard(initialBoard);
-				setGameState("playing");
-				setIsFirstMove(false);
+				setGameState(message.gameState);
 				toast.success("New board created! Start playing!");
 				break;
 			case "noBoard":
@@ -141,7 +140,11 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 						isMine = true;
 					} else if (cell.state === "gem") {
 						cellState = "gem";
-					} else if (cell.state && typeof cell.state === "object" && "adjacent" in cell.state) {
+					} else if (
+						cell.state &&
+						typeof cell.state === "object" &&
+						"adjacent" in cell.state
+					) {
 						cellState = "revealed";
 						adjacentMines = cell.state.adjacent.count;
 					}
@@ -188,7 +191,11 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 						isMine = true;
 					} else if (cell.state === "gem") {
 						cellState = "gem";
-					} else if (cell.state && typeof cell.state === "object" && "adjacent" in cell.state) {
+					} else if (
+						cell.state &&
+						typeof cell.state === "object" &&
+						"adjacent" in cell.state
+					) {
 						cellState = "revealed";
 						adjacentMines = cell.state.adjacent.count;
 					}
@@ -222,23 +229,6 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 			onMessage: handleMessage,
 		});
 
-	// Timer countdown
-	useEffect(() => {
-		let interval: NodeJS.Timeout;
-		if (gameState === "playing" && timeLeft !== null && timeLeft > 0) {
-			interval = setInterval(() => {
-				setTimeLeft((prev) => {
-					if (prev !== null && prev <= 1) {
-						setGameState("lost");
-						return 0;
-					}
-					return prev !== null ? prev - 1 : 0;
-				});
-			}, 1000);
-		}
-		return () => clearInterval(interval);
-	}, [gameState, timeLeft]);
-
 	const handleCellClick = useCallback(
 		(x: number, y: number, isRightClick: boolean = false) => {
 			console.log(
@@ -271,10 +261,6 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 	);
 
 	const handleNewGame = useCallback(() => {
-		setGameState("waiting");
-		setTimeLeft(60);
-		setFlaggedCount(0);
-		setIsFirstMove(true);
 		setShowNewGameDialog(false);
 
 		// Use default board size if not set
@@ -336,7 +322,6 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 							timeLeft={timeLeft}
 							totalMines={totalMines}
 							flaggedCount={flaggedCount}
-							isFirstMove={isFirstMove}
 							onNewGame={() => setShowNewGameDialog(true)}
 						/>
 					)}

@@ -60,7 +60,7 @@ export default function GameBoard({
 				} else {
 					return (
 						<div className="w-full h-full bg-background border border-border rounded flex items-center justify-center">
-							{cell.adjacentMines > 0 && (
+							{cell.adjacentMines && (
 								<span
 									className={`text-sm font-bold ${getNumberColor(cell.adjacentMines)}`}
 								>
