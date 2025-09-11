@@ -1,14 +1,22 @@
 import { request } from "@stacks/connect";
-import { getClarityCode } from "@/lib/poolClarityCode";
-import { getSponsoredClarityCode } from "../sponsoredPoolClarityCode";
-import { getSponsoredFtClarityCode } from "../sponsoredFtPoolClarityCode";
+import { getClarityCode } from "@/contracts/poolClarityCode";
+import { getSponsoredClarityCode } from "../../contracts/sponsoredPoolClarityCode";
+import { getSponsoredFtClarityCode } from "../../contracts/sponsoredFtPoolClarityCode";
 
-export const transferFee = async (feeWallet: string) => {
+const feeAddress = process.env.NEXT_PUBLIC_FEE_WALLET;
+const publicKey = process.env.NEXT_PUBLIC_TRUSTED_PUBLIC_KEY;
+
+export const transferFee = async () => {
+	if (!feeAddress) {
+		console.log("missing fee wallet");
+		throw new Error("Fee wallet address not configured");
+	}
+
 	const feeAmount = 0.2 * 1_000_000; // 0.2 STX in microSTX
 
 	try {
 		return await request("stx_transferStx", {
-			recipient: feeWallet,
+			recipient: feeAddress,
 			amount: feeAmount,
 			network: "testnet",
 		});
@@ -23,7 +31,10 @@ export const createGamePool = async (
 	name: string,
 	deployer: string
 ) => {
-	const clarityCode = getClarityCode(amount, deployer);
+	if (!feeAddress || !publicKey) {
+		throw new Error("fee wallet address or public key not configured");
+	}
+	const clarityCode = getClarityCode(amount, deployer, feeAddress, publicKey);
 	try {
 		return await request("stx_deployContract", {
 			name,
@@ -41,7 +52,15 @@ export const createSponsoredGamePool = async (
 	name: string,
 	deployer: string
 ) => {
-	const clarityCode = getSponsoredClarityCode(poolSize, deployer);
+	if (!feeAddress || !publicKey) {
+		throw new Error("fee wallet address or public key not configured");
+	}
+	const clarityCode = getSponsoredClarityCode(
+		poolSize,
+		deployer,
+		feeAddress,
+		publicKey
+	);
 	try {
 		return await request("stx_deployContract", {
 			name,
@@ -61,11 +80,16 @@ export const createSponsoredFtGamePool = async (
 	contractName: string,
 	deployer: string
 ) => {
+	if (!feeAddress || !publicKey) {
+		throw new Error("fee wallet address or public key not configured");
+	}
 	const clarityCode = getSponsoredFtClarityCode(
 		tokenContract,
 		tokenName,
 		poolSize,
-		deployer
+		deployer,
+		feeAddress,
+		publicKey
 	);
 	try {
 		return await request("stx_deployContract", {
