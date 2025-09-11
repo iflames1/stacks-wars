@@ -1,11 +1,14 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import ConnectionStatus from "@/components/connection-status";
 import GameHeader from "./game-header";
 import GameBoard from "./game-board";
 import GameStatus from "./game-status";
 import GameControls from "./game-controls";
 import BackToGames from "@/components/back-to-games";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Play, Settings } from "lucide-react";
 import {
 	GameState,
 	useStacksSweepers,
@@ -41,6 +44,12 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 	const [board, setBoard] = useState<Cell[]>([]);
 	const [showNewGameDialog, setShowNewGameDialog] = useState(false);
 	const [latency, setLatency] = useState<number | null>(null);
+	const [stakeAmount, setStakeAmount] = useState(10); // Default 10 STX
+	const [maxMultiplier, setMaxMultiplier] = useState<number | null>(null);
+	const [currentMultiplier, setCurrentMultiplier] = useState<number | null>(
+		null
+	);
+	const [revealedCount, setRevealedCount] = useState(0);
 
 	// Handle WebSocket messages
 	const handleMessage = useCallback((message: StacksSweeperServerMessage) => {
@@ -96,6 +105,10 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 				setBoardSize(message.boardSize);
 				setTotalMines(message.mines);
 
+				// Reset multiplier states for new game
+				setCurrentMultiplier(null);
+				setRevealedCount(0);
+
 				// Convert and set initial board
 				const initialBoard: Cell[] = message.cells.map((cell) => ({
 					id: `${cell.x}-${cell.y}`,
@@ -112,7 +125,8 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 				break;
 			case "noBoard":
 				toast.info(message.message);
-				setShowNewGameDialog(true);
+				// Just open the dialog, don't auto-create board
+				handleOpenGameControls();
 				break;
 			case "gameOver":
 				setGameState(message.won ? "won" : "lost");
@@ -164,6 +178,13 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 				break;
 			case "countdown":
 				setTimeLeft(message.timeRemaining);
+				break;
+			case "multiplierTarget":
+				setMaxMultiplier(message.maxMultiplier);
+				break;
+			case "cashout":
+				setCurrentMultiplier(message.currentMultiplier);
+				setRevealedCount(message.revealedCount);
 				break;
 			case "timeUp":
 				setGameState("lost");
@@ -268,15 +289,25 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 
 		// Convert difficulty to risk value (0-100)
 		const riskMap = {
-			easy: 0.15,
-			medium: 0.25,
-			hard: 0.35,
+			easy: 0.2,
+			medium: 0.3,
+			hard: 0.4,
 		};
 
+		const riskValue = riskMap[difficulty];
+
+		// First request the multiplier target
+		sendMessage({
+			type: "multiplierTarget",
+			size: currentBoardSize,
+			risk: riskValue,
+		});
+
+		// Then create the board
 		sendMessage({
 			type: "createBoard",
 			size: currentBoardSize,
-			risk: riskMap[difficulty],
+			risk: riskValue,
 			blind: blindMode,
 		});
 	}, [boardSize, difficulty, blindMode, sendMessage]);
@@ -284,17 +315,122 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 	const handleDifficultyChange = useCallback(
 		(newDifficulty: Difficulty) => {
 			setDifficulty(newDifficulty);
-			if (boardSize) {
-				const mineCount = {
-					easy: Math.floor(boardSize * boardSize * 0.15),
-					medium: Math.floor(boardSize * boardSize * 0.25),
-					hard: Math.floor(boardSize * boardSize * 0.35),
-				};
-				setTotalMines(mineCount[newDifficulty]);
-			}
+
+			const currentBoardSize = boardSize || 5;
+
+			const mineCount = {
+				easy: Math.floor(currentBoardSize * currentBoardSize * 0.2),
+				medium: Math.floor(currentBoardSize * currentBoardSize * 0.3),
+				hard: Math.floor(currentBoardSize * currentBoardSize * 0.4),
+			};
+			setTotalMines(mineCount[newDifficulty]);
+
+			// Always request new multiplier target when difficulty changes
+			const riskMap = {
+				easy: 0.2,
+				medium: 0.3,
+				hard: 0.4,
+			};
+
+			console.log(
+				"🎯 Requesting multiplier target on difficulty change:",
+				{
+					size: currentBoardSize,
+					risk: riskMap[newDifficulty],
+					difficulty: newDifficulty,
+				}
+			);
+
+			sendMessage({
+				type: "multiplierTarget",
+				size: currentBoardSize,
+				risk: riskMap[newDifficulty],
+			});
 		},
-		[boardSize]
+		[boardSize, sendMessage]
 	);
+
+	const handleBoardSizeChange = useCallback(
+		(newSize: number) => {
+			setBoardSize(newSize);
+
+			// Request new multiplier target when board size changes
+			const riskMap = {
+				easy: 0.2,
+				medium: 0.3,
+				hard: 0.4,
+			};
+
+			console.log(
+				"🎯 Requesting multiplier target on board size change:",
+				{
+					size: newSize,
+					risk: riskMap[difficulty],
+					difficulty,
+				}
+			);
+
+			sendMessage({
+				type: "multiplierTarget",
+				size: newSize,
+				risk: riskMap[difficulty],
+			});
+		},
+		[difficulty, sendMessage]
+	);
+
+	const handleOpenGameControls = useCallback(() => {
+		setShowNewGameDialog(true);
+
+		// Request multiplier target for current settings when dialog opens
+		const currentBoardSize = boardSize || 5;
+		const riskMap = {
+			easy: 0.2,
+			medium: 0.3,
+			hard: 0.4,
+		};
+		const riskValue = riskMap[difficulty];
+
+		console.log("🎯 Requesting multiplier target on dialog open:", {
+			size: currentBoardSize,
+			risk: riskValue,
+			difficulty,
+		});
+
+		sendMessage({
+			type: "multiplierTarget",
+			size: currentBoardSize,
+			risk: riskValue,
+		});
+	}, [boardSize, difficulty, sendMessage]);
+
+	// Request multiplier target when dialog opens
+	useEffect(() => {
+		if (showNewGameDialog && sendMessage) {
+			const currentBoardSize = boardSize || 5;
+			const riskMap = {
+				easy: 0.2,
+				medium: 0.3,
+				hard: 0.4,
+			};
+			const riskValue = riskMap[difficulty];
+
+			console.log(
+				"🎯 Requesting multiplier target on dialog open (effect):",
+				{
+					size: currentBoardSize,
+					risk: riskValue,
+					difficulty,
+				}
+			);
+
+			sendMessage({
+				type: "multiplierTarget",
+				size: currentBoardSize,
+				risk: riskValue,
+			});
+		}
+	}, [showNewGameDialog, boardSize, difficulty, sendMessage]);
 
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30 flex flex-col">
@@ -316,14 +452,42 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 				<div className="flex-1 flex flex-col space-y-3">
 					<GameHeader />
 
-					{totalMines !== null && (
+					{totalMines !== null ? (
 						<GameStatus
 							gameState={gameState}
 							timeLeft={timeLeft}
 							totalMines={totalMines}
 							flaggedCount={flaggedCount}
-							onNewGame={() => setShowNewGameDialog(true)}
+							stakeAmount={stakeAmount}
+							currentMultiplier={currentMultiplier}
+							revealedCount={revealedCount}
+							onNewGame={handleOpenGameControls}
 						/>
+					) : (
+						<div className="bg-primary/10 border rounded-xl p-3">
+							<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+								<div className="flex items-center gap-2">
+									<div className="size-5 sm:size-6 rounded-full bg-primary/10 flex items-center justify-center text-blue-500">
+										<Play className="h-4 w-4" />
+									</div>
+									<Badge
+										variant="secondary"
+										className="text-xs whitespace-nowrap"
+									>
+										No active game
+									</Badge>
+								</div>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleOpenGameControls}
+									className="flex items-center gap-1 self-start sm:self-auto"
+								>
+									<Settings className="h-3 w-3" />
+									<span className="text-xs">New Game</span>
+								</Button>
+							</div>
+						</div>
 					)}
 
 					<div className="flex-1 flex items-center justify-center">
@@ -349,9 +513,12 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 						difficulty={difficulty}
 						blindMode={blindMode}
 						boardSize={boardSize || 5}
+						stakeAmount={stakeAmount}
+						maxMultiplier={maxMultiplier}
 						onDifficultyChange={handleDifficultyChange}
 						onBlindModeToggle={setBlindMode}
-						onBoardSizeChange={setBoardSize}
+						onBoardSizeChange={handleBoardSizeChange}
+						onStakeAmountChange={setStakeAmount}
 						onNewGame={handleNewGame}
 						onClose={() => setShowNewGameDialog(false)}
 					/>

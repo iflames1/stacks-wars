@@ -49,6 +49,19 @@ export type StacksSweeperServerMessage =
 			mines: number;
 	  }
 	| {
+			type: "multiplierTarget";
+			maxMultiplier: number;
+			size: number;
+			risk: number;
+	  }
+	| {
+			type: "cashout";
+			currentMultiplier: number;
+			revealedCount: number;
+			size: number;
+			risk: number;
+	  }
+	| {
 			type: "pong";
 			ts: number;
 			pong: number;
@@ -74,6 +87,11 @@ export type StacksSweeperClientMessage =
 			type: "cellFlag";
 			x: number;
 			y: number;
+	  }
+	| {
+			type: "multiplierTarget";
+			size: number;
+			risk: number;
 	  }
 	| {
 			type: "ping";

@@ -1,13 +1,24 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GameState } from "@/hooks/useStacksSweepers";
-import { Clock, Flag, Play, Trophy, Skull, Settings } from "lucide-react";
+import {
+	Clock,
+	Flag,
+	Play,
+	Trophy,
+	Skull,
+	Settings,
+	TrendingUp,
+} from "lucide-react";
 
 interface GameStatusProps {
 	gameState: GameState;
 	timeLeft: number | null;
 	totalMines: number;
 	flaggedCount: number;
+	stakeAmount: number;
+	currentMultiplier: number | null;
+	revealedCount: number;
 	onNewGame: () => void;
 }
 
@@ -16,6 +27,9 @@ export default function GameStatus({
 	timeLeft,
 	totalMines,
 	flaggedCount,
+	stakeAmount,
+	currentMultiplier,
+	revealedCount,
 	onNewGame,
 }: GameStatusProps) {
 	const getGameStateConfig = () => {
@@ -101,10 +115,26 @@ export default function GameStatus({
 							{flaggedCount}/{totalMines}
 						</span>
 					</div>
+
+					{/* Current Multiplier & Cashout */}
+					{currentMultiplier !== null && revealedCount > 0 && (
+						<div className="flex items-center gap-1">
+							<TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
+							<span className="text-xs sm:text-sm font-bold text-green-600">
+								{currentMultiplier.toFixed(2)}x
+							</span>
+							<span className="text-xs text-muted-foreground">
+								({(stakeAmount * currentMultiplier).toFixed(2)}{" "}
+								STX)
+							</span>
+						</div>
+					)}
 				</div>
 
 				{/* New Game button */}
-				{(gameState === "won" || gameState === "lost") && (
+				{(gameState === "won" ||
+					gameState === "lost" ||
+					(gameState === "waiting" && totalMines > 0)) && (
 					<Button
 						variant="outline"
 						size="sm"

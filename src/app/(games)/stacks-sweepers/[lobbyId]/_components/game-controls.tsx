@@ -1,22 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { RotateCcw, Eye, EyeOff, Settings } from "lucide-react";
+import { RotateCcw, Eye, EyeOff, Settings, Coins } from "lucide-react";
 import { Difficulty } from "./stacks-sweepers";
 
 interface GameControlsProps {
 	difficulty: Difficulty;
 	blindMode: boolean;
 	boardSize: number;
+	stakeAmount: number;
+	maxMultiplier: number | null;
 	onDifficultyChange: (difficulty: Difficulty) => void;
 	onBlindModeToggle: (enabled: boolean) => void;
 	onBoardSizeChange: (size: number) => void;
+	onStakeAmountChange: (amount: number) => void;
 	onNewGame: () => void;
 	onClose: () => void;
 }
@@ -25,26 +29,29 @@ export default function GameControls({
 	difficulty,
 	blindMode,
 	boardSize,
+	stakeAmount,
+	maxMultiplier,
 	onDifficultyChange,
 	onBlindModeToggle,
 	onBoardSizeChange,
+	onStakeAmountChange,
 	onNewGame,
 	onClose,
 }: GameControlsProps) {
 	const difficultyConfig = {
 		easy: {
 			label: "Easy",
-			description: "15% mines",
+			description: "20% mines",
 			color: "bg-green-500/20 text-green-700 border-green-500/30",
 		},
 		medium: {
 			label: "Medium",
-			description: "25% mines",
+			description: "30% mines",
 			color: "bg-yellow-500/20 text-yellow-700 border-yellow-500/30",
 		},
 		hard: {
 			label: "Hard",
-			description: "35% mines",
+			description: "40% mines",
 			color: "bg-red-500/20 text-red-700 border-red-500/30",
 		},
 	};
@@ -62,6 +69,53 @@ export default function GameControls({
 				</DialogHeader>
 
 				<div className="space-y-6">
+					{/* Stake Amount */}
+					<div className="space-y-3">
+						<Label className="text-sm font-medium">
+							Stake Amount
+						</Label>
+						<div className="flex items-center gap-3">
+							<div className="relative flex-1">
+								<Input
+									type="number"
+									min="1"
+									max="1000"
+									value={stakeAmount}
+									onChange={(e) =>
+										onStakeAmountChange(
+											Number(e.target.value)
+										)
+									}
+									className="pr-12"
+								/>
+								<div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+									STX
+								</div>
+							</div>
+							<Coins className="h-5 w-5 text-primary" />
+						</div>
+						{maxMultiplier && (
+							<div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+								<div className="flex justify-between items-center">
+									<span className="text-sm text-muted-foreground">
+										Max Potential:
+									</span>
+									<span className="text-sm font-bold text-primary">
+										{(stakeAmount * maxMultiplier).toFixed(2)} STX
+									</span>
+								</div>
+								<div className="flex justify-between items-center mt-1">
+									<span className="text-xs text-muted-foreground">
+										Multiplier:
+									</span>
+									<span className="text-xs font-medium">
+										{maxMultiplier.toFixed(2)}x
+									</span>
+								</div>
+							</div>
+						)}
+					</div>
+
 					{/* Difficulty Selector */}
 					<div className="space-y-3">
 						<Label className="text-sm font-medium">
