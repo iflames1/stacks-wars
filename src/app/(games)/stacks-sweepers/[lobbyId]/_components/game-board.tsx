@@ -1,7 +1,7 @@
 import { Flag, Bomb } from "lucide-react";
 import Image from "next/image";
 import { Cell } from "./stacks-sweepers";
-import { GameState } from "@/hooks/useStacksSweepers";
+import { StacksSweeperGameState as GameState } from "@/hooks/useStacksSweepers";
 
 interface GameBoardProps {
 	board: Cell[];

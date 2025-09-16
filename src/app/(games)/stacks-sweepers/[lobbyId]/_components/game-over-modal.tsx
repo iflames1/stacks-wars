@@ -6,7 +6,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { GameState } from "@/hooks/useStacksSweepers";
+import { StacksSweeperGameState as GameState } from "@/hooks/useStacksSweepers";
 import { Trophy, Skull, RotateCcw, Home } from "lucide-react";
 
 interface GameOverModalProps {

@@ -9,12 +9,16 @@ import BackToGames from "@/components/back-to-games";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Settings } from "lucide-react";
+import { ClaimState } from "@/types/schema/player";
 import {
-	GameState,
+	StacksSweeperGameState as GameState,
 	useStacksSweepers,
 	type StacksSweeperServerMessage,
 } from "@/hooks/useStacksSweepers";
 import { toast } from "sonner";
+import { claimFromPool, depositToPool } from "@/lib/actions/poolActions";
+// import { claimFromPool } from "@/lib/actions/poolActions"; // TODO: Re-enable when server provides claim details
+import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 
 export type CellState = "hidden" | "revealed" | "flagged" | "mine" | "gem";
 export type Difficulty = "easy" | "medium" | "hard";
@@ -50,6 +54,14 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 		null
 	);
 	const [revealedCount, setRevealedCount] = useState(0);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [claimState, setClaimState] = useState<ClaimState | null>(null);
+	const [cashoutAmount, setCashoutAmount] = useState<number | null>(null);
+	const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
+	const [isProcessingCashout, setIsProcessingCashout] = useState(false);
+
+	// TODO: Use claimState to display claim information in UI
+	// TODO: Use isProcessingDeposit to disable New Game button during deposit
 
 	// Handle WebSocket messages
 	const handleMessage = useCallback((message: StacksSweeperServerMessage) => {
@@ -182,9 +194,15 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 			case "multiplierTarget":
 				setMaxMultiplier(message.maxMultiplier);
 				break;
-			case "cashout":
-				setCurrentMultiplier(message.currentMultiplier);
-				setRevealedCount(message.revealedCount);
+			case "claimInfo":
+				setClaimState(message.claimState);
+				setCashoutAmount(message.cashoutAmount);
+				if (message.currentMultiplier) {
+					setCurrentMultiplier(message.currentMultiplier);
+				}
+				if (message.revealedCount) {
+					setRevealedCount(message.revealedCount);
+				}
 				break;
 			case "timeUp":
 				setGameState("lost");
@@ -241,6 +259,7 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 				setLatency(message.pong);
 				break;
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	// WebSocket connection
@@ -281,36 +300,112 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 		[gameState, readyState, sendMessage]
 	);
 
-	const handleNewGame = useCallback(() => {
+	const handleNewGame = useCallback(async () => {
 		setShowNewGameDialog(false);
+		setIsProcessingDeposit(true);
 
-		// Use default board size if not set
-		const currentBoardSize = boardSize || 5;
+		try {
+			// Use default board size if not set
+			const currentBoardSize = boardSize || 5;
 
-		// Convert difficulty to risk value (0-100)
-		const riskMap = {
-			easy: 0.2,
-			medium: 0.3,
-			hard: 0.4,
-		};
+			// Convert difficulty to risk value (0-100)
+			const riskMap = {
+				easy: 0.2,
+				medium: 0.3,
+				hard: 0.4,
+			};
 
-		const riskValue = riskMap[difficulty];
+			const riskValue = riskMap[difficulty];
 
-		// First request the multiplier target
-		sendMessage({
-			type: "multiplierTarget",
-			size: currentBoardSize,
-			risk: riskValue,
-		});
+			// Make deposit to pool contract
+			const txId = await depositToPool(stakeAmount);
 
-		// Then create the board
-		sendMessage({
-			type: "createBoard",
-			size: currentBoardSize,
-			risk: riskValue,
-			blind: blindMode,
-		});
-	}, [boardSize, difficulty, blindMode, sendMessage]);
+			// Wait for transaction confirmation
+			toast.info("Waiting for transaction confirmation...");
+			await waitForTxConfirmed(txId);
+
+			// First request the multiplier target
+			sendMessage({
+				type: "multiplierTarget",
+				size: currentBoardSize,
+				risk: riskValue,
+			});
+
+			sendMessage({
+				type: "createBoard",
+				size: currentBoardSize,
+				risk: riskValue,
+				blind: blindMode,
+				amount: stakeAmount,
+				txId: txId,
+			});
+
+			toast.success(
+				`Transaction confirmed! ${stakeAmount} STX deposited to start game`
+			);
+		} catch (error) {
+			console.error("Failed to deposit:", error);
+			if (error instanceof Error) {
+				if (error.message.includes("User rejected")) {
+					toast.error("Transaction was rejected by user");
+				} else if (error.message.includes("Transaction failed")) {
+					toast.error("Transaction failed. Please try again.");
+				} else {
+					toast.error("Failed to deposit STX. Please try again.");
+				}
+			} else {
+				toast.error("Failed to deposit STX. Please try again.");
+			}
+		} finally {
+			setIsProcessingDeposit(false);
+		}
+	}, [boardSize, difficulty, blindMode, stakeAmount, sendMessage]);
+
+	const handleCashout = useCallback(async () => {
+		if (!cashoutAmount) {
+			toast.error("No cashout amount available");
+			return;
+		}
+
+		setIsProcessingCashout(true);
+		try {
+			const depositId = 1;
+			const claimTxId = await claimFromPool(depositId, cashoutAmount);
+
+			toast.info("Waiting for transaction confirmation...");
+			await waitForTxConfirmed(claimTxId);
+
+			sendMessage({
+				type: "cashout",
+				txId: claimTxId,
+			});
+
+			toast.success(
+				`Transaction confirmed! ${cashoutAmount / 1000000} STX claimed successfully`
+			);
+
+			toast.success(
+				"Cashout request sent - server will process the claim"
+			);
+		} catch (error) {
+			console.error("Failed to cashout:", error);
+			if (error instanceof Error) {
+				if (error.message.includes("User rejected")) {
+					toast.error("Cashout was rejected by user");
+				} else if (error.message.includes("Transaction failed")) {
+					toast.error(
+						"Cashout transaction failed. Please try again."
+					);
+				} else {
+					toast.error("Failed to process cashout. Please try again.");
+				}
+			} else {
+				toast.error("Failed to process cashout. Please try again.");
+			}
+		} finally {
+			setIsProcessingCashout(false);
+		}
+	}, [cashoutAmount, sendMessage]);
 
 	const handleDifficultyChange = useCallback(
 		(newDifficulty: Difficulty) => {
@@ -462,6 +557,8 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 							currentMultiplier={currentMultiplier}
 							revealedCount={revealedCount}
 							onNewGame={handleOpenGameControls}
+							onCashout={handleCashout}
+							isProcessingCashout={isProcessingCashout}
 						/>
 					) : (
 						<div className="bg-primary/10 border rounded-xl p-3">
@@ -521,6 +618,7 @@ export default function StacksSweepers({ userId }: StacksSweeperProps) {
 						onStakeAmountChange={setStakeAmount}
 						onNewGame={handleNewGame}
 						onClose={() => setShowNewGameDialog(false)}
+						isProcessing={isProcessingDeposit}
 					/>
 				)}
 			</div>

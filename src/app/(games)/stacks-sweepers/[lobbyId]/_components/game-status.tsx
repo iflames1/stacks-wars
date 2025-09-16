@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { GameState } from "@/hooks/useStacksSweepers";
+import { StacksSweeperGameState as GameState } from "@/hooks/useStacksSweepers";
 import {
 	Clock,
 	Flag,
@@ -9,6 +9,7 @@ import {
 	Skull,
 	Settings,
 	TrendingUp,
+	Coins,
 } from "lucide-react";
 
 interface GameStatusProps {
@@ -20,6 +21,8 @@ interface GameStatusProps {
 	currentMultiplier: number | null;
 	revealedCount: number;
 	onNewGame: () => void;
+	onCashout: () => void;
+	isProcessingCashout: boolean;
 }
 
 export default function GameStatus({
@@ -31,6 +34,8 @@ export default function GameStatus({
 	currentMultiplier,
 	revealedCount,
 	onNewGame,
+	onCashout,
+	isProcessingCashout,
 }: GameStatusProps) {
 	const getGameStateConfig = () => {
 		switch (gameState) {
@@ -118,15 +123,34 @@ export default function GameStatus({
 
 					{/* Current Multiplier & Cashout */}
 					{currentMultiplier !== null && revealedCount > 0 && (
-						<div className="flex items-center gap-1">
-							<TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
-							<span className="text-xs sm:text-sm font-bold text-green-600">
-								{currentMultiplier.toFixed(2)}x
-							</span>
-							<span className="text-xs text-muted-foreground">
-								({(stakeAmount * currentMultiplier).toFixed(2)}{" "}
-								STX)
-							</span>
+						<div className="flex items-center gap-2">
+							<div className="flex items-center gap-1">
+								<TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
+								<span className="text-xs sm:text-sm font-bold text-green-600">
+									{currentMultiplier.toFixed(2)}x
+								</span>
+								<span className="text-xs text-muted-foreground">
+									(
+									{(stakeAmount * currentMultiplier).toFixed(
+										2
+									)}{" "}
+									STX)
+								</span>
+							</div>
+							{gameState === "playing" && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={onCashout}
+									disabled={isProcessingCashout}
+									className="flex items-center gap-1 text-xs h-6 px-2"
+								>
+									<Coins className="h-3 w-3" />
+									{isProcessingCashout
+										? "Claiming..."
+										: "Cash Out"}
+								</Button>
+							)}
 						</div>
 					)}
 				</div>

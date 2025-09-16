@@ -1,9 +1,14 @@
+import { ClaimState } from "@/types/schema/player";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // Supporting types
-export type GameState = "playing" | "won" | "lost" | "waiting";
+export type StacksSweeperGameState = "playing" | "won" | "lost" | "waiting";
 
-export type CellState = "flagged" | "mine" | "gem" | { adjacent: { count: number } };
+export type CellState =
+	| "flagged"
+	| "mine"
+	| "gem"
+	| { adjacent: { count: number } };
 
 export interface MaskedCell {
 	x: number;
@@ -15,7 +20,7 @@ export type StacksSweeperServerMessage =
 	| {
 			type: "gameBoard";
 			cells: MaskedCell[];
-			gameState: GameState;
+			gameState: StacksSweeperGameState;
 			timeRemaining?: number;
 			mines: number;
 			boardSize: number;
@@ -23,7 +28,7 @@ export type StacksSweeperServerMessage =
 	| {
 			type: "boardCreated";
 			cells: MaskedCell[];
-			gameState: GameState;
+			gameState: StacksSweeperGameState;
 			boardSize: number;
 			mines: number;
 	  }
@@ -55,11 +60,13 @@ export type StacksSweeperServerMessage =
 			risk: number;
 	  }
 	| {
-			type: "cashout";
-			currentMultiplier: number;
-			revealedCount: number;
-			size: number;
-			risk: number;
+			type: "claimInfo";
+			claimState: ClaimState | null;
+			cashoutAmount: number | null;
+			currentMultiplier?: number;
+			revealedCount?: number;
+			size?: number;
+			risk?: number;
 	  }
 	| {
 			type: "pong";
@@ -77,6 +84,8 @@ export type StacksSweeperClientMessage =
 			size: number;
 			risk: number;
 			blind: boolean;
+			amount: number;
+			txId: string;
 	  }
 	| {
 			type: "cellReveal";
@@ -92,6 +101,10 @@ export type StacksSweeperClientMessage =
 			type: "multiplierTarget";
 			size: number;
 			risk: number;
+	  }
+	| {
+			type: "cashout";
+			txId: string;
 	  }
 	| {
 			type: "ping";

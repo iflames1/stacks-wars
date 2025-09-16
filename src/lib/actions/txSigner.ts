@@ -46,6 +46,28 @@ export const generateSignature = async (
 	});
 };
 
+export const generatePoolSignature = async (
+	depositId: number,
+	amount: number,
+	claimerAddress: string
+) => {
+	const message = tupleCV({
+		"deposit-id": uintCV(depositId),
+		amount: uintCV(amount),
+		winner: principalCV(claimerAddress),
+	});
+	const serialized = serializeCV(message); // Serializes the tuple
+	const buffer = Buffer.from(serialized, "hex");
+	const hash = createHash("sha256").update(buffer).digest(); // creates hashed clarity message
+
+	const privateKey = await getSignerPrivateKey();
+
+	return signMessageHashRsv({
+		messageHash: hash.toString("hex"),
+		privateKey,
+	});
+};
+
 export const getSignerPublicKey = async () => {
 	const publicKey = privateKeyToPublic(await getSignerPrivateKey());
 	return publicKey;

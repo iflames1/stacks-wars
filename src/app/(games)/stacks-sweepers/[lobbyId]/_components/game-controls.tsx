@@ -23,6 +23,7 @@ interface GameControlsProps {
 	onStakeAmountChange: (amount: number) => void;
 	onNewGame: () => void;
 	onClose: () => void;
+	isProcessing?: boolean;
 }
 
 export default function GameControls({
@@ -37,6 +38,7 @@ export default function GameControls({
 	onStakeAmountChange,
 	onNewGame,
 	onClose,
+	isProcessing = false,
 }: GameControlsProps) {
 	const difficultyConfig = {
 		easy: {
@@ -78,12 +80,12 @@ export default function GameControls({
 							<div className="relative flex-1">
 								<Input
 									type="number"
-									min="1"
+									min="10"
 									max="1000"
 									value={stakeAmount}
 									onChange={(e) =>
 										onStakeAmountChange(
-											Number(e.target.value)
+											Math.max(10, Number(e.target.value))
 										)
 									}
 									className="pr-12"
@@ -94,6 +96,9 @@ export default function GameControls({
 							</div>
 							<Coins className="h-5 w-5 text-primary" />
 						</div>
+						<p className="text-xs text-muted-foreground">
+							Minimum stake: 10 STX
+						</p>
 						{maxMultiplier && (
 							<div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
 								<div className="flex justify-between items-center">
@@ -101,7 +106,10 @@ export default function GameControls({
 										Max Potential:
 									</span>
 									<span className="text-sm font-bold text-primary">
-										{(stakeAmount * maxMultiplier).toFixed(2)} STX
+										{(stakeAmount * maxMultiplier).toFixed(
+											2
+										)}{" "}
+										STX
 									</span>
 								</div>
 								<div className="flex justify-between items-center mt-1">
@@ -207,15 +215,17 @@ export default function GameControls({
 							variant="outline"
 							onClick={onClose}
 							className="flex-1"
+							disabled={isProcessing}
 						>
 							Cancel
 						</Button>
 						<Button
 							onClick={onNewGame}
 							className="flex-1 flex items-center gap-2"
+							disabled={isProcessing}
 						>
 							<RotateCcw className="h-4 w-4" />
-							Start Game
+							{isProcessing ? "Processing..." : "Start Game"}
 						</Button>
 					</div>
 				</div>
