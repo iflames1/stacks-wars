@@ -9,7 +9,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { RotateCcw, Eye, EyeOff, Settings, Coins } from "lucide-react";
-import { Difficulty } from "./stacks-sweepers";
+export type Difficulty = "easy" | "medium" | "hard";
 
 interface GameControlsProps {
 	difficulty: Difficulty;

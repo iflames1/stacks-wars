@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { StacksSweeperGameState as GameState } from "@/hooks/useStacksSweepers";
+import { GameState } from "./game-over-modal";
 import {
 	Clock,
 	Flag,

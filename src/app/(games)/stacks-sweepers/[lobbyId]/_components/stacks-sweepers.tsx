@@ -3,625 +3,484 @@ import { useState, useCallback, useEffect } from "react";
 import ConnectionStatus from "@/components/connection-status";
 import GameHeader from "./game-header";
 import GameBoard from "./game-board";
-import GameStatus from "./game-status";
-import GameControls from "./game-controls";
 import BackToGames from "@/components/back-to-games";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Settings } from "lucide-react";
-import { ClaimState } from "@/types/schema/player";
+import { Play } from "lucide-react";
 import {
-	StacksSweeperGameState as GameState,
 	useStacksSweepers,
 	type StacksSweeperServerMessage,
+	type MaskedCell,
+	type EliminationReason,
 } from "@/hooks/useStacksSweepers";
+import { Player, PlayerStanding } from "@/types/schema/player";
 import { toast } from "sonner";
-import { claimFromPool, depositToPool } from "@/lib/actions/poolActions";
-// import { claimFromPool } from "@/lib/actions/poolActions"; // TODO: Re-enable when server provides claim details
-import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
-
-export type CellState = "hidden" | "revealed" | "flagged" | "mine" | "gem";
-export type Difficulty = "easy" | "medium" | "hard";
+import { useRouter } from "next/navigation";
+import { truncateAddress } from "@/lib/utils";
+// import { useChatSocketContext } from "@/contexts/ChatSocketProvider"; // TODO: Add chat integration
+import Loading from "../loading";
 
 export interface Cell {
 	id: string;
 	row: number;
 	col: number;
-	state: CellState;
+	state: "hidden" | "revealed" | "flagged" | "mine" | "gem";
 	adjacentMines: number;
 	isMine: boolean;
 	isGem: boolean;
 }
 
 interface StacksSweeperProps {
+	lobbyId: string;
 	userId: string;
 }
 
-export default function StacksSweepers({ userId }: StacksSweeperProps) {
-	const [gameState, setGameState] = useState<GameState>("waiting");
-	const [boardSize, setBoardSize] = useState<number | null>(null);
-	const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-	const [blindMode, setBlindMode] = useState(false);
-	const [timeLeft, setTimeLeft] = useState<number | null>(null);
-	const [totalMines, setTotalMines] = useState<number | null>(null);
-	const [flaggedCount, setFlaggedCount] = useState(0);
+export default function StacksSweepers({
+	lobbyId,
+	userId,
+}: StacksSweeperProps) {
+	const router = useRouter();
+	// const { sendMessage: sendChatMessage } = useChatSocketContext(); // TODO: Add chat integration
+
+	// Game state
 	const [board, setBoard] = useState<Cell[]>([]);
-	const [showNewGameDialog, setShowNewGameDialog] = useState(false);
-	const [latency, setLatency] = useState<number | null>(null);
-	const [stakeAmount, setStakeAmount] = useState(10); // Default 10 STX
-	const [maxMultiplier, setMaxMultiplier] = useState<number | null>(null);
-	const [currentMultiplier, setCurrentMultiplier] = useState<number | null>(
+	const [gameStarted, setGameStarted] = useState(false);
+	const [gameEnded, setGameEnded] = useState(false);
+	const [countdown, setCountdown] = useState<number>(15);
+
+	// Turn state
+	const [turnState, setTurnState] = useState<{
+		currentPlayer: Player | null;
+		countdown: number | null;
+	}>({
+		currentPlayer: null,
+		countdown: null,
+	});
+
+	// Results state
+	const [rank, setRank] = useState<string | null>(null);
+	const [finalStanding, setFinalStanding] = useState<PlayerStanding[] | null>(
 		null
 	);
-	const [revealedCount, setRevealedCount] = useState(0);
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const [claimState, setClaimState] = useState<ClaimState | null>(null);
-	const [cashoutAmount, setCashoutAmount] = useState<number | null>(null);
-	const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
-	const [isProcessingCashout, setIsProcessingCashout] = useState(false);
+	const [prize, setPrize] = useState<number | null>(null);
+	const [warsPoint, setWarsPoint] = useState<number | null>(null);
+	const [isEliminated, setIsEliminated] = useState(false);
+	const [eliminationReason, setEliminationReason] =
+		useState<EliminationReason | null>(null);
 
-	// TODO: Use claimState to display claim information in UI
-	// TODO: Use isProcessingDeposit to disable New Game button during deposit
+	// UI state
+	const [latency, setLatency] = useState<number | null>(null);
+	// const [showGameOverModal, setShowGameOverModal] = useState(false); // TODO: Add game over modal
+	// const [showClaimModal, setShowClaimModal] = useState(false); // TODO: Add claim modal
 
-	// Handle WebSocket messages
-	const handleMessage = useCallback((message: StacksSweeperServerMessage) => {
-		switch (message.type) {
-			case "gameBoard":
-				setBoardSize(message.boardSize);
-				setTotalMines(message.mines);
+	// Helper function to convert server cell to UI cell
+	const convertServerCellToUICell = useCallback(
+		(serverCell: MaskedCell): Cell => {
+			let cellState: "hidden" | "revealed" | "flagged" | "mine" | "gem" =
+				"hidden";
+			let adjacentMines = 0;
+			let isMine = false;
+			let isGem = false;
 
-				// Calculate flagged count from server data
-				const flagged = message.cells.filter(
-					(cell) => cell.state === "flagged"
-				).length;
-				setFlaggedCount(flagged);
-
-				const convertedBoard: Cell[] = message.cells.map((cell) => {
-					let cellState: CellState = "hidden";
-					let adjacentMines = 0;
-					let isMine = false;
-
-					if (cell.state === "flagged") {
+			if (serverCell.state) {
+				switch (serverCell.state.type) {
+					case "flagged":
 						cellState = "flagged";
-					} else if (cell.state === "mine") {
+						break;
+					case "mine":
 						cellState = "mine";
 						isMine = true;
-					} else if (cell.state === "gem") {
+						break;
+					case "gem":
 						cellState = "gem";
-					} else if (
-						cell.state &&
-						typeof cell.state === "object" &&
-						"adjacent" in cell.state
-					) {
+						isGem = true;
+						break;
+					case "adjacent":
 						cellState = "revealed";
-						adjacentMines = cell.state.adjacent.count;
-					} else if (cell.state === null) {
-						cellState = "hidden";
+						adjacentMines = serverCell.state.count;
+						break;
+				}
+			}
+
+			return {
+				id: `${serverCell.x}-${serverCell.y}`,
+				row: serverCell.y,
+				col: serverCell.x,
+				state: cellState,
+				adjacentMines,
+				isMine,
+				isGem,
+			};
+		},
+		[]
+	);
+
+	// Handle WebSocket messages
+	const handleMessage = useCallback(
+		(message: StacksSweeperServerMessage) => {
+			switch (message.type) {
+				case "turn":
+					setTurnState({
+						currentPlayer: message.currentTurn,
+						countdown: message.countdown,
+					});
+					break;
+
+				case "cellRevealed":
+					// Update the specific cell that was revealed
+					setBoard((prevBoard) =>
+						prevBoard.map((cell) => {
+							if (
+								cell.col === message.x &&
+								cell.row === message.y
+							) {
+								return convertServerCellToUICell({
+									x: message.x,
+									y: message.y,
+									state: message.cellState,
+								});
+							}
+							return cell;
+						})
+					);
+
+					// Show toast for who revealed the cell
+					if (message.revealedBy !== userId) {
+						toast.info(
+							`${truncateAddress(message.revealedBy)} revealed a cell`
+						);
+					}
+					break;
+
+				case "start":
+					if (message.started) {
+						setGameStarted(true);
+						setCountdown(0);
+						toast.success("Game started!");
+					} else {
+						setCountdown(message.time);
+					}
+					break;
+
+				case "startFailed":
+					toast.error("Failed to start game - not enough players");
+					break;
+
+				case "alreadyStarted":
+					toast.info("Game has already started");
+					setGameStarted(true);
+					break;
+
+				case "multiplayerGameOver":
+					setGameEnded(true);
+					// setShowGameOverModal(true); // TODO: Add game over modal
+					toast.info("Game Over!");
+					break;
+
+				case "finalStanding":
+					setFinalStanding(message.standing);
+					break;
+
+				case "eliminated":
+					if (message.player.id === userId) {
+						setIsEliminated(true);
+						setEliminationReason(message.reason);
+
+						const reasonText =
+							message.reason === "hitMine"
+								? "You hit a mine!"
+								: "Your turn timed out!";
+						toast.error(`Eliminated: ${reasonText}`);
+					} else {
+						const reasonText =
+							message.reason === "hitMine"
+								? "hit a mine"
+								: "timed out";
+						toast.info(
+							`${truncateAddress(message.player.user.walletAddress)} was eliminated (${reasonText})`
+						);
 					}
 
-					return {
-						id: `${cell.x}-${cell.y}`,
-						row: cell.y,
-						col: cell.x,
-						state: cellState,
-						adjacentMines,
-						isMine,
-						isGem: cellState === "gem",
-					};
+					// If there's a mine position, update the board to show it
+					if (message.minePosition) {
+						const [mineX, mineY] = message.minePosition;
+						setBoard((prevBoard) =>
+							prevBoard.map((cell) => {
+								if (cell.col === mineX && cell.row === mineY) {
+									return {
+										...cell,
+										state: "mine",
+										isMine: true,
+									};
+								}
+								return cell;
+							})
+						);
+					}
+					break;
+
+				case "rank":
+					setRank(message.rank);
+					break;
+
+				case "prize":
+					setPrize(message.amount);
+					if (message.amount > 0) {
+						// setShowClaimModal(true); // TODO: Add claim modal
+						toast.success(`You won ${message.amount} STX!`);
+					}
+					break;
+
+				case "warsPoint":
+					setWarsPoint(message.warsPoint);
+					break;
+
+				case "pong":
+					const now = Date.now();
+					setLatency(now - message.ts);
+					break;
+
+				case "error":
+					toast.error(message.message);
+					break;
+
+				default:
+					console.warn("Unknown message type:", message);
+			}
+		},
+		[userId, convertServerCellToUICell]
+	);
+
+	// Initialize WebSocket connection
+	const { sendMessage, readyState, error, reconnecting } = useStacksSweepers({
+		lobbyId,
+		userId,
+		onMessage: handleMessage,
+	});
+
+	// Handle cell click
+	const handleCellClick = useCallback(
+		async (cell: Cell) => {
+			// Only allow moves during your turn and if game is active
+			if (!gameStarted || gameEnded || isEliminated) return;
+			if (
+				!turnState.currentPlayer ||
+				turnState.currentPlayer.id !== userId
+			) {
+				toast.warning("It's not your turn!");
+				return;
+			}
+
+			// Only allow revealing hidden cells
+			if (cell.state !== "hidden") return;
+
+			try {
+				await sendMessage({
+					type: "cellReveal",
+					x: cell.col,
+					y: cell.row,
 				});
-				setBoard(convertedBoard);
-				setGameState(message.gameState);
-				setTimeLeft(message.timeRemaining || null);
-				break;
-			case "boardCreated":
-				setBoardSize(message.boardSize);
-				setTotalMines(message.mines);
+			} catch (error) {
+				console.error("Failed to send cell reveal:", error);
+				toast.error("Failed to reveal cell");
+			}
+		},
+		[gameStarted, gameEnded, isEliminated, turnState, userId, sendMessage]
+	);
 
-				// Reset multiplier states for new game
-				setCurrentMultiplier(null);
-				setRevealedCount(0);
-
-				// Convert and set initial board
-				const initialBoard: Cell[] = message.cells.map((cell) => ({
-					id: `${cell.x}-${cell.y}`,
-					row: cell.y,
-					col: cell.x,
+	// Initialize empty board (will be populated by server messages)
+	useEffect(() => {
+		// Create a default 10x10 board - will be updated by server
+		const initialBoard: Cell[] = [];
+		for (let row = 0; row < 10; row++) {
+			for (let col = 0; col < 10; col++) {
+				initialBoard.push({
+					id: `${col}-${row}`,
+					row,
+					col,
 					state: "hidden",
 					adjacentMines: 0,
 					isMine: false,
 					isGem: false,
-				}));
-				setBoard(initialBoard);
-				setGameState(message.gameState);
-				toast.success("New board created! Start playing!");
-				break;
-			case "noBoard":
-				toast.info(message.message);
-				// Just open the dialog, don't auto-create board
-				handleOpenGameControls();
-				break;
-			case "gameOver":
-				setGameState(message.won ? "won" : "lost");
-				setTimeLeft(0);
-
-				setBoardSize(message.boardSize);
-				setTotalMines(message.mines);
-
-				// Calculate flagged count from server data
-				const gameOverFlagged = message.cells.filter(
-					(cell) => cell.state === "flagged"
-				).length;
-				setFlaggedCount(gameOverFlagged);
-
-				// Update final board state with unmasked data
-				const finalBoard: Cell[] = message.cells.map((cell) => {
-					let cellState: CellState = "revealed";
-					let adjacentMines = 0;
-					let isMine = false;
-
-					if (cell.state === "flagged") {
-						cellState = "flagged";
-					} else if (cell.state === "mine") {
-						cellState = "mine";
-						isMine = true;
-					} else if (cell.state === "gem") {
-						cellState = "gem";
-					} else if (
-						cell.state &&
-						typeof cell.state === "object" &&
-						"adjacent" in cell.state
-					) {
-						cellState = "revealed";
-						adjacentMines = cell.state.adjacent.count;
-					}
-
-					return {
-						id: `${cell.x}-${cell.y}`,
-						row: cell.y,
-						col: cell.x,
-						state: cellState,
-						adjacentMines,
-						isMine,
-						isGem: cellState === "gem",
-					};
 				});
-				setBoard(finalBoard);
-				toast.info(message.won ? "🎉 You won!" : "💥 Game over!");
-				break;
-			case "countdown":
-				setTimeLeft(message.timeRemaining);
-				break;
-			case "multiplierTarget":
-				setMaxMultiplier(message.maxMultiplier);
-				break;
-			case "claimInfo":
-				setClaimState(message.claimState);
-				setCashoutAmount(message.cashoutAmount);
-				if (message.currentMultiplier) {
-					setCurrentMultiplier(message.currentMultiplier);
-				}
-				if (message.revealedCount) {
-					setRevealedCount(message.revealedCount);
-				}
-				break;
-			case "timeUp":
-				setGameState("lost");
-				setTimeLeft(0);
-
-				setBoardSize(message.boardSize);
-				setTotalMines(message.mines);
-
-				// Calculate flagged count from server data
-				const timeUpFlagged = message.cells.filter(
-					(cell) => cell.state === "flagged"
-				).length;
-				setFlaggedCount(timeUpFlagged);
-
-				// Update board with revealed mines (unmasked data)
-				const timeUpBoard: Cell[] = message.cells.map((cell) => {
-					let cellState: CellState = "revealed";
-					let adjacentMines = 0;
-					let isMine = false;
-
-					if (cell.state === "flagged") {
-						cellState = "flagged";
-					} else if (cell.state === "mine") {
-						cellState = "mine";
-						isMine = true;
-					} else if (cell.state === "gem") {
-						cellState = "gem";
-					} else if (
-						cell.state &&
-						typeof cell.state === "object" &&
-						"adjacent" in cell.state
-					) {
-						cellState = "revealed";
-						adjacentMines = cell.state.adjacent.count;
-					}
-
-					return {
-						id: `${cell.x}-${cell.y}`,
-						row: cell.y,
-						col: cell.x,
-						state: cellState,
-						adjacentMines,
-						isMine,
-						isGem: cellState === "gem",
-					};
-				});
-				setBoard(timeUpBoard);
-				toast.error("⏰ Time's up!");
-				break;
-			case "error":
-				toast.error("Game Error", { description: message.message });
-				break;
-			case "pong":
-				setLatency(message.pong);
-				break;
+			}
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		setBoard(initialBoard);
 	}, []);
 
-	// WebSocket connection
-	const { sendMessage, readyState, reconnecting, forceReconnect } =
-		useStacksSweepers({
-			userId,
-			onMessage: handleMessage,
-		});
+	// Loading state
+	if (readyState === WebSocket.CONNECTING || reconnecting) {
+		return <Loading />;
+	}
 
-	const handleCellClick = useCallback(
-		(x: number, y: number, isRightClick: boolean = false) => {
-			console.log(
-				"called with x:",
-				x,
-				"y:",
-				y,
-				"isRightClick:",
-				isRightClick
-			);
-			console.log("gameState:", gameState, "readyState:", readyState);
+	// Connection error state
+	if (error) {
+		return (
+			<div className="container mx-auto p-4 space-y-4">
+				<BackToGames />
+				<div className="text-center space-y-4">
+					<h1 className="text-2xl font-bold text-red-500">
+						Connection Error
+					</h1>
+					<p>Failed to connect to game server. Please try again.</p>
+					<Button onClick={() => router.refresh()}>Retry</Button>
+				</div>
+			</div>
+		);
+	}
 
-			if (isRightClick) {
-				console.log("Sending flag message");
-				sendMessage({
-					type: "cellFlag",
-					x,
-					y,
-				});
-			} else {
-				console.log("Sending reveal message");
-				sendMessage({
-					type: "cellReveal",
-					x,
-					y,
-				});
-			}
-		},
-		[gameState, readyState, sendMessage]
-	);
-
-	const handleNewGame = useCallback(async () => {
-		setShowNewGameDialog(false);
-		setIsProcessingDeposit(true);
-
-		try {
-			// Use default board size if not set
-			const currentBoardSize = boardSize || 5;
-
-			// Convert difficulty to risk value (0-100)
-			const riskMap = {
-				easy: 0.2,
-				medium: 0.3,
-				hard: 0.4,
-			};
-
-			const riskValue = riskMap[difficulty];
-
-			// Make deposit to pool contract
-			const txId = await depositToPool(stakeAmount);
-
-			// Wait for transaction confirmation
-			toast.info("Waiting for transaction confirmation...");
-			await waitForTxConfirmed(txId);
-
-			// First request the multiplier target
-			sendMessage({
-				type: "multiplierTarget",
-				size: currentBoardSize,
-				risk: riskValue,
-			});
-
-			sendMessage({
-				type: "createBoard",
-				size: currentBoardSize,
-				risk: riskValue,
-				blind: blindMode,
-				amount: stakeAmount,
-				txId: txId,
-			});
-
-			toast.success(
-				`Transaction confirmed! ${stakeAmount} STX deposited to start game`
-			);
-		} catch (error) {
-			console.error("Failed to deposit:", error);
-			if (error instanceof Error) {
-				if (error.message.includes("User rejected")) {
-					toast.error("Transaction was rejected by user");
-				} else if (error.message.includes("Transaction failed")) {
-					toast.error("Transaction failed. Please try again.");
-				} else {
-					toast.error("Failed to deposit STX. Please try again.");
-				}
-			} else {
-				toast.error("Failed to deposit STX. Please try again.");
-			}
-		} finally {
-			setIsProcessingDeposit(false);
-		}
-	}, [boardSize, difficulty, blindMode, stakeAmount, sendMessage]);
-
-	const handleCashout = useCallback(async () => {
-		if (!cashoutAmount) {
-			toast.error("No cashout amount available");
-			return;
-		}
-
-		setIsProcessingCashout(true);
-		try {
-			const depositId = 1;
-			const claimTxId = await claimFromPool(depositId, cashoutAmount);
-
-			toast.info("Waiting for transaction confirmation...");
-			await waitForTxConfirmed(claimTxId);
-
-			sendMessage({
-				type: "cashout",
-				txId: claimTxId,
-			});
-
-			toast.success(
-				`Transaction confirmed! ${cashoutAmount / 1000000} STX claimed successfully`
-			);
-
-			toast.success(
-				"Cashout request sent - server will process the claim"
-			);
-		} catch (error) {
-			console.error("Failed to cashout:", error);
-			if (error instanceof Error) {
-				if (error.message.includes("User rejected")) {
-					toast.error("Cashout was rejected by user");
-				} else if (error.message.includes("Transaction failed")) {
-					toast.error(
-						"Cashout transaction failed. Please try again."
-					);
-				} else {
-					toast.error("Failed to process cashout. Please try again.");
-				}
-			} else {
-				toast.error("Failed to process cashout. Please try again.");
-			}
-		} finally {
-			setIsProcessingCashout(false);
-		}
-	}, [cashoutAmount, sendMessage]);
-
-	const handleDifficultyChange = useCallback(
-		(newDifficulty: Difficulty) => {
-			setDifficulty(newDifficulty);
-
-			const currentBoardSize = boardSize || 5;
-
-			const mineCount = {
-				easy: Math.floor(currentBoardSize * currentBoardSize * 0.2),
-				medium: Math.floor(currentBoardSize * currentBoardSize * 0.3),
-				hard: Math.floor(currentBoardSize * currentBoardSize * 0.4),
-			};
-			setTotalMines(mineCount[newDifficulty]);
-
-			// Always request new multiplier target when difficulty changes
-			const riskMap = {
-				easy: 0.2,
-				medium: 0.3,
-				hard: 0.4,
-			};
-
-			console.log(
-				"🎯 Requesting multiplier target on difficulty change:",
-				{
-					size: currentBoardSize,
-					risk: riskMap[newDifficulty],
-					difficulty: newDifficulty,
-				}
-			);
-
-			sendMessage({
-				type: "multiplierTarget",
-				size: currentBoardSize,
-				risk: riskMap[newDifficulty],
-			});
-		},
-		[boardSize, sendMessage]
-	);
-
-	const handleBoardSizeChange = useCallback(
-		(newSize: number) => {
-			setBoardSize(newSize);
-
-			// Request new multiplier target when board size changes
-			const riskMap = {
-				easy: 0.2,
-				medium: 0.3,
-				hard: 0.4,
-			};
-
-			console.log(
-				"🎯 Requesting multiplier target on board size change:",
-				{
-					size: newSize,
-					risk: riskMap[difficulty],
-					difficulty,
-				}
-			);
-
-			sendMessage({
-				type: "multiplierTarget",
-				size: newSize,
-				risk: riskMap[difficulty],
-			});
-		},
-		[difficulty, sendMessage]
-	);
-
-	const handleOpenGameControls = useCallback(() => {
-		setShowNewGameDialog(true);
-
-		// Request multiplier target for current settings when dialog opens
-		const currentBoardSize = boardSize || 5;
-		const riskMap = {
-			easy: 0.2,
-			medium: 0.3,
-			hard: 0.4,
-		};
-		const riskValue = riskMap[difficulty];
-
-		console.log("🎯 Requesting multiplier target on dialog open:", {
-			size: currentBoardSize,
-			risk: riskValue,
-			difficulty,
-		});
-
-		sendMessage({
-			type: "multiplierTarget",
-			size: currentBoardSize,
-			risk: riskValue,
-		});
-	}, [boardSize, difficulty, sendMessage]);
-
-	// Request multiplier target when dialog opens
-	useEffect(() => {
-		if (showNewGameDialog && sendMessage) {
-			const currentBoardSize = boardSize || 5;
-			const riskMap = {
-				easy: 0.2,
-				medium: 0.3,
-				hard: 0.4,
-			};
-			const riskValue = riskMap[difficulty];
-
-			console.log(
-				"🎯 Requesting multiplier target on dialog open (effect):",
-				{
-					size: currentBoardSize,
-					risk: riskValue,
-					difficulty,
-				}
-			);
-
-			sendMessage({
-				type: "multiplierTarget",
-				size: currentBoardSize,
-				risk: riskValue,
-			});
-		}
-	}, [showNewGameDialog, boardSize, difficulty, sendMessage]);
+	const isMyTurn = turnState.currentPlayer?.id === userId;
+	const canPlay = gameStarted && !gameEnded && !isEliminated && isMyTurn;
 
 	return (
-		<main className="min-h-screen bg-gradient-to-b from-background to-primary/30 flex flex-col">
-			<div className="max-w-4xl mx-auto w-full p-3 sm:p-4 flex flex-col min-h-screen">
-				{/* Header - Fixed at top */}
-				<div className="flex justify-between items-center mb-3">
-					<BackToGames />
-					{/*<Back onBack={handleDisconnect} />*/}
-					<ConnectionStatus
-						readyState={readyState}
-						latency={latency}
-						reconnecting={reconnecting}
-						onReconnect={forceReconnect}
-						className="mb-0"
-					/>
-				</div>
+		<div className="container mx-auto p-4 space-y-4">
+			<BackToGames />
 
-				{/* Game Content - Flexible */}
-				<div className="flex-1 flex flex-col space-y-3">
-					<GameHeader />
+			<div className="flex items-center justify-between">
+				<GameHeader lobbyId={lobbyId} />
+				<ConnectionStatus readyState={readyState} latency={latency} />
+			</div>
 
-					{totalMines !== null ? (
-						<GameStatus
-							gameState={gameState}
-							timeLeft={timeLeft}
-							totalMines={totalMines}
-							flaggedCount={flaggedCount}
-							stakeAmount={stakeAmount}
-							currentMultiplier={currentMultiplier}
-							revealedCount={revealedCount}
-							onNewGame={handleOpenGameControls}
-							onCashout={handleCashout}
-							isProcessingCashout={isProcessingCashout}
-						/>
-					) : (
-						<div className="bg-primary/10 border rounded-xl p-3">
-							<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-								<div className="flex items-center gap-2">
-									<div className="size-5 sm:size-6 rounded-full bg-primary/10 flex items-center justify-center text-blue-500">
-										<Play className="h-4 w-4" />
-									</div>
-									<Badge
-										variant="secondary"
-										className="text-xs whitespace-nowrap"
-									>
-										No active game
-									</Badge>
-								</div>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={handleOpenGameControls}
-									className="flex items-center gap-1 self-start sm:self-auto"
-								>
-									<Settings className="h-3 w-3" />
-									<span className="text-xs">New Game</span>
-								</Button>
-							</div>
-						</div>
-					)}
+			{/* Game Status */}
+			<div className="flex flex-wrap gap-2 items-center justify-center">
+				{!gameStarted && (
+					<Badge variant="outline" className="text-yellow-600">
+						Waiting to start... ({countdown}s)
+					</Badge>
+				)}
 
-					<div className="flex-1 flex items-center justify-center">
-						{boardSize !== null && board.length > 0 ? (
-							<GameBoard
-								board={board}
-								boardSize={boardSize}
-								blindMode={blindMode}
-								onCellClick={handleCellClick}
-								gameState={gameState}
-							/>
-						) : (
-							<div className="text-center text-muted-foreground">
-								<p>Connecting to game...</p>
-							</div>
+				{gameStarted && !gameEnded && !isEliminated && (
+					<>
+						<Badge variant={isMyTurn ? "default" : "outline"}>
+							{isMyTurn
+								? "Your Turn"
+								: `${truncateAddress(turnState.currentPlayer?.user?.walletAddress || "")}'s Turn`}
+						</Badge>
+						{turnState.countdown && (
+							<Badge variant="outline">
+								{turnState.countdown}s remaining
+							</Badge>
 						)}
-					</div>
-				</div>
+					</>
+				)}
 
-				{/* New Game Settings Dialog */}
-				{showNewGameDialog && (
-					<GameControls
-						difficulty={difficulty}
-						blindMode={blindMode}
-						boardSize={boardSize || 5}
-						stakeAmount={stakeAmount}
-						maxMultiplier={maxMultiplier}
-						onDifficultyChange={handleDifficultyChange}
-						onBlindModeToggle={setBlindMode}
-						onBoardSizeChange={handleBoardSizeChange}
-						onStakeAmountChange={setStakeAmount}
-						onNewGame={handleNewGame}
-						onClose={() => setShowNewGameDialog(false)}
-						isProcessing={isProcessingDeposit}
-					/>
+				{isEliminated && (
+					<Badge variant="destructive">
+						Eliminated (
+						{eliminationReason === "hitMine"
+							? "Hit mine"
+							: "Timeout"}
+						)
+					</Badge>
+				)}
+
+				{gameEnded && (
+					<Badge variant="outline" className="text-green-600">
+						Game Finished
+					</Badge>
 				)}
 			</div>
-		</main>
+
+			{/* Turn indicator */}
+			{gameStarted && !gameEnded && turnState.currentPlayer && (
+				<div className="text-center">
+					<p className="text-sm text-muted-foreground">
+						Current Turn:{" "}
+						<span className="font-medium">
+							{truncateAddress(
+								turnState.currentPlayer.user.walletAddress
+							)}
+						</span>
+						{turnState.countdown &&
+							` (${turnState.countdown}s remaining)`}
+					</p>
+				</div>
+			)}
+
+			{/* Game Board */}
+			<div className="flex justify-center">
+				<GameBoard
+					board={board}
+					onCellClick={handleCellClick}
+					disabled={!canPlay}
+				/>
+			</div>
+
+			{/* Game controls - only show before game starts */}
+			{!gameStarted && (
+				<div className="flex justify-center">
+					<Button
+						onClick={() => {
+							// In multiplayer, games are started by the server/lobby system
+							toast.info("Waiting for game to start...");
+						}}
+						disabled={true}
+						className="flex items-center gap-2"
+					>
+						<Play className="w-4 h-4" />
+						Waiting for Players...
+					</Button>
+				</div>
+			)}
+
+			{/* Results Display */}
+			{(rank || prize !== null || warsPoint !== null) && (
+				<div className="bg-muted/50 rounded-lg p-4 space-y-2">
+					<h3 className="font-semibold text-center">Your Results</h3>
+					{rank && (
+						<p className="text-center">
+							<strong>Rank:</strong> {rank}
+						</p>
+					)}
+					{prize !== null && (
+						<p className="text-center">
+							<strong>Prize:</strong> {prize} STX
+						</p>
+					)}
+					{warsPoint !== null && (
+						<p className="text-center">
+							<strong>Wars Points:</strong> {warsPoint}
+						</p>
+					)}
+				</div>
+			)}
+
+			{/* Final Standing */}
+			{finalStanding && (
+				<div className="bg-muted/50 rounded-lg p-4">
+					<h3 className="font-semibold text-center mb-3">
+						Final Standing
+					</h3>
+					<div className="space-y-1">
+						{finalStanding.map((standing) => (
+							<div
+								key={standing.player.id}
+								className={`flex justify-between items-center p-2 rounded ${
+									standing.player.id === userId
+										? "bg-primary/10"
+										: ""
+								}`}
+							>
+								<span className="font-medium">
+									#{standing.rank}
+								</span>
+								<span>
+									{truncateAddress(
+										standing.player.user.walletAddress
+									)}
+								</span>
+								{standing.player.prize && (
+									<span className="text-green-600">
+										{standing.player.prize} STX
+									</span>
+								)}
+							</div>
+						))}
+					</div>
+				</div>
+			)}
+
+			{/* Modals would go here - GameOverModal, ClaimRewardModal etc. */}
+		</div>
 	);
 }

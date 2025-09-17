@@ -1,115 +1,57 @@
-import { ClaimState } from "@/types/schema/player";
+import { Player, PlayerStanding } from "@/types/schema/player";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // Supporting types
-export type StacksSweeperGameState = "playing" | "won" | "lost" | "waiting";
-
 export type CellState =
-	| "flagged"
-	| "mine"
-	| "gem"
-	| { adjacent: { count: number } };
+	| { type: "flagged" } // Cell is flagged by a player
+	| { type: "mine" } // Cell contains a mine (revealed)
+	| { type: "gem" } // Cell is safe with no adjacent mines
+	| { type: "adjacent"; count: number }; // Cell is safe with adjacent mine count
 
-export interface MaskedCell {
+export type MaskedCell = {
 	x: number;
 	y: number;
-	state: CellState | null; // null if not revealed and not flagged
-}
+	state?: CellState; // undefined if cell is unrevealed and unflagged
+};
+
+export type EliminationReason =
+	| "hitMine" // Player revealed a mine
+	| "timeout"; // Player's turn timed out
 
 export type StacksSweeperServerMessage =
+	// Core multiplayer game flow messages
+	| { type: "turn"; currentTurn: Player; countdown: number } // Indicates whose turn it is and remaining time
 	| {
-			type: "gameBoard";
-			cells: MaskedCell[];
-			gameState: StacksSweeperGameState;
-			timeRemaining?: number;
-			mines: number;
-			boardSize: number;
-	  }
+			type: "cellRevealed";
+			x: number;
+			y: number;
+			cellState: CellState;
+			revealedBy: string;
+	  } // Broadcasts a cell reveal to all players
+	| { type: "start"; time: number; started: boolean } // Game start countdown or confirmation that game has started
+	| { type: "startFailed" } // Game failed to start (not enough players, etc.)
+	| { type: "alreadyStarted" } // Sent when trying to start an already running game
+
+	// Game ending and results messages
+	| { type: "multiplayerGameOver" } // Game has ended
+	| { type: "finalStanding"; standing: PlayerStanding[] } // Final rankings of all players
 	| {
-			type: "boardCreated";
-			cells: MaskedCell[];
-			gameState: StacksSweeperGameState;
-			boardSize: number;
-			mines: number;
-	  }
-	| {
-			type: "noBoard";
-			message: string;
-	  }
-	| {
-			type: "gameOver";
-			won: boolean;
-			cells: MaskedCell[];
-			boardSize: number;
-			mines: number;
-	  }
-	| {
-			type: "countdown";
-			timeRemaining: number;
-	  }
-	| {
-			type: "timeUp";
-			cells: MaskedCell[];
-			boardSize: number;
-			mines: number;
-	  }
-	| {
-			type: "multiplierTarget";
-			maxMultiplier: number;
-			size: number;
-			risk: number;
-	  }
-	| {
-			type: "claimInfo";
-			claimState: ClaimState | null;
-			cashoutAmount: number | null;
-			currentMultiplier?: number;
-			revealedCount?: number;
-			size?: number;
-			risk?: number;
-	  }
-	| {
-			type: "pong";
-			ts: number;
-			pong: number;
-	  }
-	| {
-			type: "error";
-			message: string;
-	  };
+			type: "eliminated";
+			player: Player;
+			reason: EliminationReason;
+			minePosition?: [number, number];
+	  } // Player eliminated from game
+	| { type: "rank"; rank: string } // Individual player's final rank
+	| { type: "prize"; amount: number } // Prize amount awarded to player
+	| { type: "warsPoint"; warsPoint: number } // Wars points earned by player
+
+	// Utility messages
+	| { type: "pong"; ts: number; pong: number } // Response to ping for latency measurement
+	| { type: "error"; message: string }; // Error message for invalid actions
 
 export type StacksSweeperClientMessage =
-	| {
-			type: "createBoard";
-			size: number;
-			risk: number;
-			blind: boolean;
-			amount: number;
-			txId: string;
-	  }
-	| {
-			type: "cellReveal";
-			x: number;
-			y: number;
-	  }
-	| {
-			type: "cellFlag";
-			x: number;
-			y: number;
-	  }
-	| {
-			type: "multiplierTarget";
-			size: number;
-			risk: number;
-	  }
-	| {
-			type: "cashout";
-			txId: string;
-	  }
-	| {
-			type: "ping";
-			ts: number;
-	  };
+	| { type: "cellReveal"; x: number; y: number } // Player attempts to reveal a cell on their turn
+	| { type: "ping"; ts: number }; // Ping for latency measurement
 
 interface QueuedMessage {
 	data: StacksSweeperClientMessage;
@@ -118,13 +60,13 @@ interface QueuedMessage {
 }
 
 interface UseStacksSweeperProps {
-	//lobbyId: string;
+	lobbyId: string;
 	userId: string;
 	onMessage?: (msg: StacksSweeperServerMessage) => void;
 }
 
 export function useStacksSweepers({
-	//lobbyId,
+	lobbyId,
 	userId,
 	onMessage,
 }: UseStacksSweeperProps) {
@@ -211,13 +153,13 @@ export function useStacksSweepers({
 	}, [sendMessage]);
 
 	const connectSocket = useCallback(() => {
-		if (!userId) return;
+		if (!lobbyId || !userId) return;
 		if (socketRef.current) return;
 
 		console.log("🟢 Connecting StacksSweeperSocket...");
 
 		const ws = new WebSocket(
-			`${process.env.NEXT_PUBLIC_WS_URL}/ws/stacks-sweepers-single?user_id=${userId}`
+			`${process.env.NEXT_PUBLIC_WS_URL}/ws/stacks-sweepers?lobby_id=${lobbyId}?user_id=${userId}`
 		);
 
 		socketRef.current = ws;
@@ -308,7 +250,7 @@ export function useStacksSweepers({
 				socketRef.current = null;
 			}
 		};
-	}, [userId, processMessageQueue, schedulePing]);
+	}, [lobbyId, userId, processMessageQueue, schedulePing]);
 
 	useEffect(() => {
 		connectSocket();

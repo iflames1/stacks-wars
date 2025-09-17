@@ -14,7 +14,5 @@ export default async function StacksSweepersPage({
 		return <RequireAuth />;
 	}
 
-	console.log(lobbyId);
-
-	return <StacksSweepers userId={userId} />;
+	return <StacksSweepers lobbyId={lobbyId} userId={userId} />;
 }
