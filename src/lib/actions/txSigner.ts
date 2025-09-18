@@ -48,5 +48,5 @@ export const generateSignature = async (
 
 export const getSignerPublicKey = async () => {
 	const publicKey = privateKeyToPublic(await getSignerPrivateKey());
-	return publicKey;
+	return `0x${publicKey}`;
 };
