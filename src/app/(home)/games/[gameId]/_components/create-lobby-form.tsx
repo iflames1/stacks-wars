@@ -364,13 +364,7 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 					revalidatePath: "/lobby",
 				};
 			} else {
-				const feeWallet = process.env.NEXT_PUBLIC_FEE_WALLET;
-				if (!feeWallet) {
-					throw new Error("Fee wallet address not configured");
-				}
-
-				// Transfer 0.2 STX fee
-				const feeTransferTx = await transferFee(feeWallet);
+				const feeTransferTx = await transferFee();
 
 				if (!feeTransferTx.txid) {
 					throw new Error(

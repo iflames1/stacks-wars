@@ -61,7 +61,15 @@ We welcome contributions! Feel free to fork the repo and submit a pull request.
 
 ## License
 
-MIT License
+**All Rights Reserved - Proprietary Software**
+
+This software and its source code are the exclusive property of the Stacks Wars development team. Unauthorized copying, distribution, modification, or use of this software is strictly prohibited and may result in severe legal action including but not limited to:
+
+- Civil lawsuits for copyright infringement
+- Monetary damages and legal fees
+- Criminal prosecution where applicable
+
+This software is protected by copyright law and international treaties. Any unauthorized use, reproduction, or distribution may result in significant financial penalties and legal consequences.
 
 ## Contact
 

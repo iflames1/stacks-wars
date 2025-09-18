@@ -2,7 +2,9 @@ export const getSponsoredFtClarityCode = (
 	tokenContract: `'${string}.${string}`,
 	tokenName: string,
 	poolSize: number,
-	deployer: string
+	deployer: string,
+	feeAddress: string,
+	publicKey: string
 ) => {
 	return `
 
@@ -22,8 +24,8 @@ export const getSponsoredFtClarityCode = (
 ;; CONSTANTS
 ;; ----------------------
 
-(define-constant STACKS_WARS_FEE_WALLET 'SP39V8Q7KATNA4B0ZKD6QNTMHDNH5VJXRBG7PB8G2)
-(define-constant TRUSTED_PUBLIC_KEY 0x03ffe7c30724197e226ddc09b6340c078e7f42e3751c3d0654d067798850d22d09)
+(define-constant STACKS_WARS_FEE_WALLET '${feeAddress})
+(define-constant TRUSTED_PUBLIC_KEY ${publicKey})
 (define-constant DEPLOYER '${deployer})
 (define-constant POOL_SIZE u${poolSize}000000)
 (define-constant FEE_PERCENTAGE u2)
