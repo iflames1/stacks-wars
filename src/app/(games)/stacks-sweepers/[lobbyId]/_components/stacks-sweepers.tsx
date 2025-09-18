@@ -82,24 +82,25 @@ export default function StacksSweepers({
 			let isMine = false;
 			let isGem = false;
 
-			if (serverCell.state) {
-				switch (serverCell.state.type) {
-					case "flagged":
-						cellState = "flagged";
-						break;
-					case "mine":
-						cellState = "mine";
-						isMine = true;
-						break;
-					case "gem":
-						cellState = "gem";
-						isGem = true;
-						break;
-					case "adjacent":
-						cellState = "revealed";
-						adjacentMines = serverCell.state.count;
-						break;
-				}
+			switch (serverCell.state) {
+				case "hidden":
+					cellState = "hidden";
+					break;
+				case "flagged":
+					cellState = "flagged";
+					break;
+				case "mine":
+					cellState = "mine";
+					isMine = true;
+					break;
+				case "gem":
+					cellState = "gem";
+					isGem = true;
+					break;
+				case "adjacent":
+					cellState = "revealed";
+					adjacentMines = serverCell.count || 0;
+					break;
 			}
 
 			return {
@@ -134,11 +135,14 @@ export default function StacksSweepers({
 								cell.col === message.x &&
 								cell.row === message.y
 							) {
-								return convertServerCellToUICell({
+								// Create a MaskedCell from the message
+								const maskedCell: MaskedCell = {
 									x: message.x,
 									y: message.y,
 									state: message.cellState,
-								});
+									count: message.count, // Include count for adjacent cells
+								};
+								return convertServerCellToUICell(maskedCell);
 							}
 							return cell;
 						})

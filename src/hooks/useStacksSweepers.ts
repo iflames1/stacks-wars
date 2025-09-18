@@ -3,15 +3,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // Supporting types
 export type CellState =
-	| { type: "flagged" } // Cell is flagged by a player
-	| { type: "mine" } // Cell contains a mine (revealed)
-	| { type: "gem" } // Cell is safe with no adjacent mines
-	| { type: "adjacent"; count: number }; // Cell is safe with adjacent mine count
+	| "hidden" // Cell is unrevealed and unflagged
+	| "flagged" // Cell is flagged by a player
+	| "mine" // Cell contains a mine (revealed)
+	| "gem" // Cell is safe with no adjacent mines
+	| "adjacent"; // Cell is safe with adjacent mines (count provided separately)
 
 export type MaskedCell = {
 	x: number;
 	y: number;
-	state?: CellState; // undefined if cell is unrevealed and unflagged
+	state: CellState; // Now always has a state (including "hidden")
+	count?: number; // Only present when state is "adjacent"
 };
 
 export type EliminationReason =
@@ -26,6 +28,7 @@ export type StacksSweeperServerMessage =
 			x: number;
 			y: number;
 			cellState: CellState;
+			count?: number; // Only present when cellState is "adjacent"
 			revealedBy: string;
 	  } // Broadcasts a cell reveal to all players
 	| { type: "start"; time: number; started: boolean } // Game start countdown or confirmation that game has started
@@ -159,7 +162,7 @@ export function useStacksSweepers({
 		console.log("🟢 Connecting StacksSweeperSocket...");
 
 		const ws = new WebSocket(
-			`${process.env.NEXT_PUBLIC_WS_URL}/ws/stacks-sweepers?lobby_id=${lobbyId}?user_id=${userId}`
+			`${process.env.NEXT_PUBLIC_WS_URL}/ws/stacks-sweepers/${lobbyId}?user_id=${userId}`
 		);
 
 		socketRef.current = ws;
