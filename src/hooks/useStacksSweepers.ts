@@ -162,7 +162,7 @@ export function useStacksSweepers({
 		console.log("🟢 Connecting StacksSweeperSocket...");
 
 		const ws = new WebSocket(
-			`${process.env.NEXT_PUBLIC_WS_URL}/ws/stacks-sweepers/${lobbyId}?user_id=${userId}`
+			`${process.env.NEXT_PUBLIC_WS_URL}/ws/stacks-sweepers?lobby_id=${lobbyId}?user_id=${userId}`
 		);
 
 		socketRef.current = ws;

@@ -59,6 +59,10 @@ export default function Lobby({
 
 	const isParticipant = participantList.some((p) => p.id === userId);
 
+	const getGamePath = useCallback((gameName: string) => {
+		return gameName.toLowerCase().replace(/\s+/g, "-");
+	}, []);
+
 	const handleMessage = useCallback(
 		(message: LobbyServerMessage) => {
 			if (!(message.type === "pong")) {
@@ -195,19 +199,21 @@ export default function Lobby({
 
 	useEffect(() => {
 		if (countdown !== null && countdown < 15 && !prefetched) {
+			const gamePath = getGamePath(game.name);
 			console.log(
-				`🚀 Prefetching /lexi-wars/${lobbyId} at countdown: ${countdown}`
+				`🚀 Prefetching /${gamePath}/${lobbyId} at countdown: ${countdown}`
 			);
-			router.prefetch(`/lexi-wars/${lobbyId}`);
+			router.prefetch(`/${gamePath}/${lobbyId}`);
 			setPrefetched(true);
 		}
-	}, [countdown, lobbyId, prefetched, router]);
+	}, [countdown, lobbyId, prefetched, router, game.name, getGamePath]);
 
 	useEffect(() => {
 		if (lobbyState === "inProgress" && !started) {
 			disconnect();
 			if (isParticipant) {
-				router.push(`/lexi-wars/${lobbyId}`);
+				const gamePath = getGamePath(game.name);
+				router.push(`/${gamePath}/${lobbyId}`);
 			} else {
 				//router.replace(`/lobby`);
 			}
@@ -243,6 +249,8 @@ export default function Lobby({
 		disconnect,
 		disconnectChat,
 		handleLeaveCheck,
+		game.name,
+		getGamePath,
 	]);
 
 	//if (lobbyState === "starting" && countdown === 0) {
