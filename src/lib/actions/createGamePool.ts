@@ -2,9 +2,9 @@ import { request } from "@stacks/connect";
 import { getClarityCode } from "@/contracts/poolClarityCode";
 import { getSponsoredClarityCode } from "../../contracts/sponsoredPoolClarityCode";
 import { getSponsoredFtClarityCode } from "../../contracts/sponsoredFtPoolClarityCode";
+import { getSignerPublicKey } from "./txSigner";
 
 const feeAddress = process.env.NEXT_PUBLIC_FEE_WALLET;
-const publicKey = process.env.NEXT_PUBLIC_TRUSTED_PUBLIC_KEY;
 
 export const transferFee = async () => {
 	if (!feeAddress) {
@@ -31,6 +31,8 @@ export const createGamePool = async (
 	name: string,
 	deployer: string
 ) => {
+	const publicKey = await getSignerPublicKey();
+
 	if (!feeAddress || !publicKey) {
 		throw new Error("fee wallet address or public key not configured");
 	}
@@ -52,6 +54,8 @@ export const createSponsoredGamePool = async (
 	name: string,
 	deployer: string
 ) => {
+	const publicKey = await getSignerPublicKey();
+
 	if (!feeAddress || !publicKey) {
 		throw new Error("fee wallet address or public key not configured");
 	}
@@ -80,6 +84,8 @@ export const createSponsoredFtGamePool = async (
 	contractName: string,
 	deployer: string
 ) => {
+	const publicKey = await getSignerPublicKey();
+
 	if (!feeAddress || !publicKey) {
 		throw new Error("fee wallet address or public key not configured");
 	}
