@@ -1,8 +1,8 @@
 import { request } from "@stacks/connect";
-import { getClarityCode } from "@/contracts/poolClarityCode";
-import { getSponsoredClarityCode } from "../../contracts/sponsoredPoolClarityCode";
-import { getSponsoredFtClarityCode } from "../../contracts/sponsoredFtPoolClarityCode";
 import { getSignerPublicKey } from "./txSigner";
+import { getClarityCode } from "@/contracts/poolClarityCode";
+import { getSponsoredClarityCode } from "@/contracts/sponsoredPoolClarityCode";
+import { getSponsoredFtClarityCode } from "@/contracts/sponsoredFtPoolClarityCode";
 
 const feeAddress = process.env.NEXT_PUBLIC_FEE_WALLET;
 
