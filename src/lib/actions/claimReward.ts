@@ -2,6 +2,8 @@ import { ClarityType, StxPostCondition } from "@stacks/transactions";
 import { generateSignature } from "./txSigner";
 import { request } from "@stacks/connect";
 
+const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
+
 export const claimPoolReward = async (
 	walletAddress: string,
 	contract: `${string}.${string}`,
@@ -30,7 +32,7 @@ export const claimPoolReward = async (
 				{ type: ClarityType.UInt, value: amount },
 				{ type: ClarityType.Buffer, value: signature },
 			],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions: [stxPostCondition],
 		});

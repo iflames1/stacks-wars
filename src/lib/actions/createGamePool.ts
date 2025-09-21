@@ -5,6 +5,7 @@ import { getSponsoredClarityCode } from "@/contracts/sponsoredPoolClarityCode";
 import { getSponsoredFtClarityCode } from "@/contracts/sponsoredFtPoolClarityCode";
 
 const feeAddress = process.env.NEXT_PUBLIC_FEE_WALLET;
+const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
 
 export const transferFee = async () => {
 	if (!feeAddress) {
@@ -18,7 +19,7 @@ export const transferFee = async () => {
 		return await request("stx_transferStx", {
 			recipient: feeAddress,
 			amount: feeAmount,
-			network: "testnet",
+			network,
 		});
 	} catch (error) {
 		console.error("Failed to transfer fee", error);
@@ -41,7 +42,7 @@ export const createGamePool = async (
 		return await request("stx_deployContract", {
 			name,
 			clarityCode,
-			network: "testnet",
+			network,
 		});
 	} catch (error) {
 		console.error("Failed to deploy contract", error);
@@ -69,7 +70,7 @@ export const createSponsoredGamePool = async (
 		return await request("stx_deployContract", {
 			name,
 			clarityCode,
-			network: "testnet",
+			network,
 		});
 	} catch (error) {
 		console.error("Failed to deploy contract", error);
@@ -101,7 +102,7 @@ export const createSponsoredFtGamePool = async (
 		return await request("stx_deployContract", {
 			name: contractName,
 			clarityCode,
-			network: "testnet",
+			network,
 		});
 	} catch (error) {
 		console.error("Failed to deploy FT sponsored contract", error);

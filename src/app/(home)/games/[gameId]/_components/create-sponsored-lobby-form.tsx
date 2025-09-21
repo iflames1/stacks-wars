@@ -106,6 +106,7 @@ export default function CreateSponsoredLobbyForm({
 	const recoveryIdRef = useRef<string | null>(null);
 	const prevPoolSizeRef = useRef<number | undefined>(undefined);
 	const prevTokenRef = useRef<string | undefined>(undefined);
+	const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
 
 	const formSchema = z.object({
 		name: z.string().min(3, {
@@ -149,6 +150,7 @@ export default function CreateSponsoredLobbyForm({
 		if (isConnected && user?.walletAddress) {
 			fetchAvailableTokens(user.walletAddress);
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isConnected, user?.walletAddress]);
 
 	// Check for recovery data on component mount
@@ -294,10 +296,18 @@ export default function CreateSponsoredLobbyForm({
 		async (contract_id: string) => {
 			try {
 				console.log("Fetch meta data");
-				const metadata = await apiRequest<TokenMetadata>({
-					path: `/token_info/testnet/${contract_id}`,
-					method: "GET",
-				});
+				let metadata: TokenMetadata;
+				if (network === "mainnet") {
+					metadata = await apiRequest<TokenMetadata>({
+						path: `/token_info/${contract_id}`,
+						method: "GET",
+					});
+				} else {
+					metadata = await apiRequest<TokenMetadata>({
+						path: `/token_info/testnet/${contract_id}`,
+						method: "GET",
+					});
+				}
 
 				setSelectedTokenMetadata(metadata);
 				setMinPoolSize(metadata.minimumAmount);
@@ -309,7 +319,7 @@ export default function CreateSponsoredLobbyForm({
 				toast.error("Failed to load token information");
 			}
 		},
-		[updateTokenInfo]
+		[network, updateTokenInfo]
 	);
 
 	// Fetch token metadata and calculate minimum pool size
@@ -325,7 +335,7 @@ export default function CreateSponsoredLobbyForm({
 		setLoadingTokens(true);
 		try {
 			const response = await fetch(
-				`https://api.testnet.hiro.so/extended/v1/address/${walletAddress}/balances?unanchored=true`
+				`https://api.${network}.hiro.so/extended/v1/address/${walletAddress}/balances?unanchored=true`
 			);
 			const data = await response.json();
 
