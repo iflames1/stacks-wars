@@ -38,6 +38,7 @@ export default function LobbyDetails({
 	const [loading, setLoading] = useState<boolean>(false);
 	const [connectionCheckLoading, setConnectionCheckLoading] =
 		useState<boolean>(false);
+	const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
 
 	const handleLobbyState = async (state: lobbyState) => {
 		setLoading(true);
@@ -148,7 +149,7 @@ export default function LobbyDetails({
 									className="text-xs"
 								>
 									<Link
-										href={`${EXPLORER_BASE_URL}txid/${lobby.contractAddress}?chain=testnet`}
+										href={`${EXPLORER_BASE_URL}txid/${lobby.contractAddress}?chain=${network}`}
 										target="_blank"
 										className="truncate max-w-[100px] sm:max-w-none"
 									>

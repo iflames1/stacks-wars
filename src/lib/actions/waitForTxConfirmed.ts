@@ -1,5 +1,7 @@
 import { connectWebSocketClient } from "@stacks/blockchain-api-client";
 
+const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
+
 export const waitForTxConfirmed = async (txId: string): Promise<void> => {
 	console.log("waitForTxConfirmed → starting");
 	const controller = new AbortController();
@@ -34,7 +36,7 @@ export const waitForTxConfirmed = async (txId: string): Promise<void> => {
 	const pollTx = async () => {
 		const check = async () => {
 			const res = await fetch(
-				`https://api.testnet.hiro.so/extended/v1/tx/${txId}`,
+				`https://api.${network}.hiro.so/extended/v1/tx/${txId}`,
 				{ signal: controller.signal }
 			);
 			if (!res.ok) throw new Error("Failed to fetch tx status");
@@ -95,7 +97,7 @@ export const waitForTxConfirmed = async (txId: string): Promise<void> => {
 
 	const listenWebSocket = async () => {
 		const client = await connectWebSocketClient(
-			"wss://api.testnet.hiro.so/"
+			`wss://api.${network}.hiro.so/`
 		);
 		const sub = await client.subscribeTxUpdates(txId, (event) => {
 			console.log("📡 [Tx Event]", event);
