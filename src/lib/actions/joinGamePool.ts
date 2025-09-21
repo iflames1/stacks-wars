@@ -6,6 +6,8 @@ import {
 import { request } from "@stacks/connect";
 import { getClaimFromJwt } from "../getClaimFromJwt";
 
+const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
+
 export const joinGamePool = async (
 	contract: `${string}.${string}`,
 	amount: number
@@ -26,7 +28,7 @@ export const joinGamePool = async (
 			contract,
 			functionName: "join",
 			functionArgs: [],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions: [stxPostCondition],
 		});
@@ -66,7 +68,7 @@ export const joinSponsoredGamePool = async (
 			contract,
 			functionName: "join",
 			functionArgs: [],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions,
 		});
@@ -106,7 +108,7 @@ export const joinSponsoredFtGamePool = async (
 			contract,
 			functionName: "join",
 			functionArgs: [],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions,
 		});

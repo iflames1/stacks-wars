@@ -8,6 +8,8 @@ import { request } from "@stacks/connect";
 import { generateSignature } from "./txSigner";
 import { getClaimFromJwt } from "../getClaimFromJwt";
 
+const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
+
 export const leaveGamePool = async (
 	contract: `${string}.${string}`,
 	amount: number
@@ -36,7 +38,7 @@ export const leaveGamePool = async (
 			contract,
 			functionName: "leave",
 			functionArgs: [{ type: ClarityType.Buffer, value: signature }],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions: [stxPostCondition],
 		});
@@ -81,7 +83,7 @@ export const leaveSponsoredGamePool = async (
 			contract,
 			functionName: "leave",
 			functionArgs: [{ type: ClarityType.Buffer, value: signature }],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions,
 		});
@@ -128,7 +130,7 @@ export const leaveSponsoredFtGamePool = async (
 			contract,
 			functionName: "leave",
 			functionArgs: [{ type: ClarityType.Buffer, value: signature }],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions,
 		});

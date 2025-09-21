@@ -6,6 +6,8 @@ import {
 } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 
+const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
+
 export const kickFromPool = async (
 	contract: `${string}.${string}`,
 	playerAddress: string,
@@ -29,7 +31,7 @@ export const kickFromPool = async (
 			functionArgs: [
 				{ type: ClarityType.PrincipalStandard, value: playerAddress },
 			],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions: [stxPostCondition],
 		});
@@ -65,7 +67,7 @@ export const kickFromFtPool = async (
 			functionArgs: [
 				{ type: ClarityType.PrincipalStandard, value: playerAddress },
 			],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions: [ftPostCondition],
 		});

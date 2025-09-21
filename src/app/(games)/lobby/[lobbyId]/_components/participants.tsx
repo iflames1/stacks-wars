@@ -38,6 +38,7 @@ export default function Participants({
 	//const isReady = currentPlayer?.state === "ready";
 	//const [isUpdating, setIsUpdating] = useState(false);
 	const [isHandlingJoin, setIsHandlingJoin] = useState(false);
+	const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
 
 	const handleKickPlayer = async (
 		playerId: string,
@@ -255,7 +256,7 @@ export default function Participants({
 															className="!p-0 text-right h-auto text-xs"
 														>
 															<Link
-																href={`${EXPLORER_BASE_URL}txid/${player.txId}?chain=testnet`}
+																href={`${EXPLORER_BASE_URL}txid/${player.txId}?chain=${network}`}
 																target="_blank"
 																className="truncate max-w-[80px] sm:max-w-none"
 															>
