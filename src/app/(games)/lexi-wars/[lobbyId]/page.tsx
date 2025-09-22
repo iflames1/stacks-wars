@@ -28,6 +28,7 @@ export default async function LexiWarsPage({
 			userId={userId}
 			contract={lobby.contractAddress}
 			entryAmount={lobby.entryAmount}
+			tokenSymbol={lobby.tokenSymbol}
 		/>
 	);
 }

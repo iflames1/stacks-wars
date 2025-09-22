@@ -253,10 +253,6 @@ export default function Lobby({
 		getGamePath,
 	]);
 
-	//if (lobbyState === "starting" && countdown === 0) {
-	//	return <Loading />;
-	//}
-
 	return (
 		<section className="bg-gradient-to-b from-primary/10 to-primary/30">
 			<div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-6 ">

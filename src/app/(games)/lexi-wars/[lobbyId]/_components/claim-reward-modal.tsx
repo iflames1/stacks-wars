@@ -13,6 +13,7 @@ import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { toast } from "sonner";
 import { apiRequest } from "@/lib/api";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
+import { formatNumber } from "@/lib/utils";
 
 interface ClaimRewardModalProps {
 	showPrizeModal: boolean;
@@ -23,6 +24,7 @@ interface ClaimRewardModalProps {
 	lobbyId: string;
 	contractAddress: string | null;
 	warsPoint: number | null;
+	tokenSymbol: string;
 }
 
 export default function ClaimRewardModal({
@@ -34,6 +36,7 @@ export default function ClaimRewardModal({
 	lobbyId,
 	contractAddress,
 	warsPoint,
+	tokenSymbol,
 }: ClaimRewardModalProps) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [countdown, setCountdown] = useState(10);
@@ -139,7 +142,11 @@ export default function ClaimRewardModal({
 						)}
 						{hasPrize && (
 							<div className="text-green-600 font-semibold">
-								🎉 You won <strong>{prizeAmount} STX</strong>!
+								🎉 You won{" "}
+								<strong>
+									{formatNumber(prizeAmount)} {tokenSymbol}
+								</strong>
+								!
 							</div>
 						)}
 						{warsPoint !== null && (
