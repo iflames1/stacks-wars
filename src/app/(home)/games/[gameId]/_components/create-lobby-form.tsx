@@ -200,7 +200,11 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 			setTimeout(() => {
 				form.handleSubmit(onSubmit)();
 			}, 100);
-		} else if (recoveryData.status === "joined" && recoveryData.deployedContract && recoveryData.joinedContract) {
+		} else if (
+			recoveryData.status === "joined" &&
+			recoveryData.deployedContract &&
+			recoveryData.joinedContract
+		) {
 			// Set both deployed and joined contract states for completed recovery
 			const contractInfo = {
 				contractName: recoveryData.deployedContract.contractName,
