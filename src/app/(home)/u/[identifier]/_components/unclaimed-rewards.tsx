@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/api";
 import { toast } from "sonner";
-import { claimPoolReward } from "@/lib/actions/claimReward";
+import { claimFtPoolReward, claimPoolReward } from "@/lib/actions/claimReward";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
-import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { Gift, Clock, Trophy, Loader2 } from "lucide-react";
 import { PlayerLobbyInfo } from "@/types/schema/lobby";
+import { formatNumber } from "@/lib/utils";
 
 export default function UnclaimedRewards({ userId }: { userId: string }) {
 	const [unclaimedLobbies, setUnclaimedLobbies] = useState<PlayerLobbyInfo[]>(
@@ -46,17 +46,17 @@ export default function UnclaimedRewards({ userId }: { userId: string }) {
 
 		setClaimingLobby(lobby.id);
 		try {
-			const walletAddress = await getClaimFromJwt<string>("wallet");
-			if (!walletAddress) {
-				throw new Error("User not logged in");
-			}
-
 			const contract = lobby.contractAddress as `${string}.${string}`;
-			const claimTxId = await claimPoolReward(
-				walletAddress,
-				contract,
-				lobby.prizeAmount
-			);
+			let claimTxId: string | undefined;
+			if (lobby.tokenSymbol !== "STX" && lobby.tokenId) {
+				claimTxId = await claimFtPoolReward(
+					contract,
+					lobby.tokenId,
+					lobby.prizeAmount
+				);
+			} else {
+				claimTxId = await claimPoolReward(contract, lobby.prizeAmount);
+			}
 
 			if (!claimTxId) {
 				throw new Error(
@@ -191,7 +191,11 @@ export default function UnclaimedRewards({ userId }: { userId: string }) {
 											{formatDate(lobby.createdAt)}
 										</div>
 										<div className="text-green-600 font-medium">
-											+{lobby.prizeAmount} STX
+											+
+											{formatNumber(
+												lobby.prizeAmount || 0
+											)}{" "}
+											{lobby.tokenSymbol}
 										</div>
 									</div>
 								</div>

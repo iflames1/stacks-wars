@@ -101,6 +101,7 @@ export const joinSponsoredFtGamePool = async (
 				asset: tokenId,
 				amount: amount * 1_000_000,
 			};
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			postConditions = [ftPostCondition];
 		}
 
@@ -109,8 +110,8 @@ export const joinSponsoredFtGamePool = async (
 			functionName: "join",
 			functionArgs: [],
 			network,
-			postConditionMode: "deny",
-			postConditions,
+			postConditionMode: "allow",
+			//postConditions,
 		});
 		return response.txid;
 	} catch (error) {
