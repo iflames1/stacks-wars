@@ -25,6 +25,7 @@ interface LexiWarsProps {
 	userId: string;
 	contract: string | null;
 	entryAmount: number | null;
+	tokenSymbol: string;
 }
 
 export default function LexiWars({
@@ -32,6 +33,7 @@ export default function LexiWars({
 	userId,
 	contract,
 	entryAmount,
+	tokenSymbol,
 }: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
 
@@ -299,6 +301,7 @@ export default function LexiWars({
 						lobbyId={lobbyId}
 						contractAddress={contract}
 						warsPoint={warsPoint}
+						tokenSymbol={tokenSymbol}
 					/>
 				)}
 

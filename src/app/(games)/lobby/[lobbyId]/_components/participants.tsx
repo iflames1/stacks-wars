@@ -2,7 +2,7 @@ import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { Loader2, User as UserIcon, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { truncateAddress } from "@/lib/utils";
+import { formatNumber, truncateAddress } from "@/lib/utils";
 import { LobbyClientMessage } from "@/hooks/useLobbySocket";
 import { useState } from "react";
 import { EXPLORER_BASE_URL } from "@/lib/constants";
@@ -243,12 +243,16 @@ export default function Participants({
 												lobby.entryAmount !== null && (
 													<div className="flex flex-col items-end gap-1">
 														<span className="text-sm sm:text-base font-bold whitespace-nowrap">
-															{isCreator &&
-															lobby.entryAmount ===
-																0
-																? lobby.currentAmount
-																: lobby.entryAmount}{" "}
-															STX
+															{formatNumber(
+																isCreator &&
+																	lobby.entryAmount ===
+																		0
+																	? lobby.currentAmount ||
+																			0
+																	: lobby.entryAmount ||
+																			0
+															)}{" "}
+															{lobby.tokenSymbol}
 														</span>
 														<Button
 															variant={"link"}
