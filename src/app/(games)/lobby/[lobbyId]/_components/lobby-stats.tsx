@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Lobby } from "@/types/schema/lobby";
 import { Player } from "@/types/schema/player";
+import { formatNumber } from "@/lib/utils";
 import { Gamepad2, Trophy, Users } from "lucide-react";
 
 interface LobbyStatsProps {
@@ -23,10 +24,12 @@ export default function LobbyStats({ lobby, players }: LobbyStatsProps) {
 									Pool Size
 								</p>
 								<p className="text-base sm:text-xl md:text-2xl font-bold truncate">
-									{lobby.entryAmount !== 0
-										? lobby.entryAmount * players.length
-										: lobby.currentAmount}{" "}
-									STX
+									{formatNumber(
+										lobby.entryAmount !== 0
+											? lobby.entryAmount * players.length
+											: lobby.currentAmount || 0
+									)}{" "}
+									{lobby.tokenSymbol}
 								</p>
 							</div>
 						</div>

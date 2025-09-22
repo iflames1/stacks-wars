@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatNumber } from "@/lib/utils";
 import { LeaderBoard } from "@/types/schema/leaderboard";
 import { Trophy, Target, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
@@ -8,7 +9,7 @@ interface ProfileStatsProps {
 
 function formatPnL(pnl: number): string {
 	const sign = pnl > 0 ? "+" : "";
-	return `${sign}${pnl.toFixed(2)} STX`;
+	return `${sign}${formatNumber(pnl)} STX`;
 }
 
 function getPnLIcon(pnl: number) {

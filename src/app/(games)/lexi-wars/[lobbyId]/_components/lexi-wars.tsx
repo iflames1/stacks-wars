@@ -19,20 +19,15 @@ import Loading from "../loading";
 import Back from "./back";
 import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
 import { Player, PlayerStanding } from "@/types/schema/player";
+import { Lobby } from "@/types/schema/lobby";
 
 interface LexiWarsProps {
 	lobbyId: string;
 	userId: string;
-	contract: string | null;
-	entryAmount: number | null;
+	lobby: Lobby;
 }
 
-export default function LexiWars({
-	lobbyId,
-	userId,
-	contract,
-	entryAmount,
-}: LexiWarsProps) {
+export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
 
 	const [turnState, setTurnState] = useState<{
@@ -123,7 +118,7 @@ export default function LexiWars({
 				case "warsPoint":
 					setWarsPoint(message.warsPoint);
 					setShowPrizeModal(true);
-					if (!contract) {
+					if (!lobby.contractAddress) {
 						setPrizeAmount(0);
 					}
 					break;
@@ -144,7 +139,7 @@ export default function LexiWars({
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[userId, contract]
+		[userId, lobby.contractAddress]
 	);
 
 	const {
@@ -163,7 +158,11 @@ export default function LexiWars({
 		if (alreadyStarted) {
 			disconnect();
 
-			if (contract && entryAmount !== null && entryAmount > 0) {
+			if (
+				lobby.contractAddress &&
+				lobby.entryAmount !== null &&
+				lobby.entryAmount > 0
+			) {
 				toast.error("Failed to join game: Game already started", {
 					description: "Leave the lobby to withdraw your entry fee.",
 				});
@@ -172,7 +171,14 @@ export default function LexiWars({
 			}
 			router.replace(`/lobby/${lobbyId}`);
 		}
-	}, [alreadyStarted, disconnect, contract, entryAmount, lobbyId, router]);
+	}, [
+		alreadyStarted,
+		disconnect,
+		lobbyId,
+		router,
+		lobby.contractAddress,
+		lobby.entryAmount,
+	]);
 
 	useEffect(() => {
 		if (startFailed) {
@@ -190,7 +196,7 @@ export default function LexiWars({
 		const shouldDisconnect =
 			finalStanding &&
 			gameOver &&
-			(contract ? prizeAmount !== null : true);
+			(lobby.contractAddress ? prizeAmount !== null : true);
 
 		console.log(
 			"finalStanding:",
@@ -200,7 +206,7 @@ export default function LexiWars({
 			"prizeAmount:",
 			prizeAmount,
 			"contract:",
-			contract
+			lobby.contractAddress
 		);
 
 		if (shouldDisconnect) {
@@ -212,9 +218,9 @@ export default function LexiWars({
 		finalStanding,
 		gameOver,
 		prizeAmount,
-		contract,
 		disconnect,
 		disconnectChat,
+		lobby.contractAddress,
 	]);
 
 	const handleSubmit = async (e?: FormEvent) => {
@@ -297,8 +303,8 @@ export default function LexiWars({
 						rank={rank}
 						prizeAmount={prizeAmount}
 						lobbyId={lobbyId}
-						contractAddress={contract}
 						warsPoint={warsPoint}
+						lobby={lobby}
 					/>
 				)}
 
@@ -306,7 +312,7 @@ export default function LexiWars({
 					<GameOverModal
 						standing={finalStanding}
 						userId={userId}
-						contractAddress={contract}
+						contractAddress={lobby.contractAddress}
 						isClaimed={isClaimed}
 					/>
 				)}

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { PlayerLobbyInfo } from "@/types/schema/lobby";
 import Link from "next/link";
+import { formatNumber } from "@/lib/utils";
 
 interface ActiveLobbiesProps {
 	identifier: string;
@@ -177,7 +178,8 @@ export default function ActiveLobbies({ identifier }: ActiveLobbiesProps) {
 								</div>
 								{lobby.entryAmount && (
 									<div className="text-green-600 font-medium">
-										{lobby.entryAmount} STX
+										{formatNumber(lobby.entryAmount)}{" "}
+										{lobby.tokenSymbol}
 									</div>
 								)}
 							</div>
