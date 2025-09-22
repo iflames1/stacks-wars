@@ -8,12 +8,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useState } from "react";
-import { claimPoolReward } from "@/lib/actions/claimReward";
+import { claimFtPoolReward, claimPoolReward } from "@/lib/actions/claimReward";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { toast } from "sonner";
 import { apiRequest } from "@/lib/api";
-import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { formatNumber } from "@/lib/utils";
+import { Lobby } from "@/types/schema/lobby";
 
 interface ClaimRewardModalProps {
 	showPrizeModal: boolean;
@@ -22,9 +22,8 @@ interface ClaimRewardModalProps {
 	rank: string | null;
 	prizeAmount: number | null;
 	lobbyId: string;
-	contractAddress: string | null;
 	warsPoint: number | null;
-	tokenSymbol: string;
+	lobby: Lobby;
 }
 
 export default function ClaimRewardModal({
@@ -34,15 +33,14 @@ export default function ClaimRewardModal({
 	rank,
 	prizeAmount,
 	lobbyId,
-	contractAddress,
 	warsPoint,
-	tokenSymbol,
+	lobby,
 }: ClaimRewardModalProps) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [countdown, setCountdown] = useState(10);
 
 	// Determine if user has a prize to claim
-	const hasPrize = contractAddress && prizeAmount && prizeAmount > 0;
+	const hasPrize = lobby.contractAddress && prizeAmount && prizeAmount > 0;
 
 	const handleOkay = useCallback(() => {
 		setIsClaimed(true);
@@ -78,19 +76,20 @@ export default function ClaimRewardModal({
 				return;
 			}
 			setIsLoading(true);
-			const walletAddress = await getClaimFromJwt<string>("wallet");
-			if (!walletAddress) {
-				throw new Error("User not logged in");
-			}
-			if (!contractAddress) {
+			if (!lobby.contractAddress) {
 				throw new Error("Contract address is missing");
 			}
-			const contract = contractAddress as `${string}.${string}`;
-			const claimTxId = await claimPoolReward(
-				walletAddress,
-				contract,
-				prizeAmount
-			);
+			const contract = lobby.contractAddress as `${string}.${string}`;
+			let claimTxId: string | undefined;
+			if (lobby.tokenSymbol !== "STX" && lobby.tokenId) {
+				claimTxId = await claimFtPoolReward(
+					contract,
+					lobby.tokenId,
+					prizeAmount
+				);
+			} else {
+				claimTxId = await claimPoolReward(contract, prizeAmount);
+			}
 			if (!claimTxId) {
 				throw new Error(
 					"Failed to join game pool: missing transaction ID"
@@ -144,7 +143,8 @@ export default function ClaimRewardModal({
 							<div className="text-green-600 font-semibold">
 								🎉 You won{" "}
 								<strong>
-									{formatNumber(prizeAmount)} {tokenSymbol}
+									{formatNumber(prizeAmount)}{" "}
+									{lobby.tokenSymbol}
 								</strong>
 								!
 							</div>
