@@ -6,6 +6,8 @@ import {
 import { request } from "@stacks/connect";
 import { getClaimFromJwt } from "../getClaimFromJwt";
 
+const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
+
 export const joinGamePool = async (
 	contract: `${string}.${string}`,
 	amount: number
@@ -26,7 +28,7 @@ export const joinGamePool = async (
 			contract,
 			functionName: "join",
 			functionArgs: [],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions: [stxPostCondition],
 		});
@@ -66,7 +68,7 @@ export const joinSponsoredGamePool = async (
 			contract,
 			functionName: "join",
 			functionArgs: [],
-			network: "testnet",
+			network,
 			postConditionMode: "deny",
 			postConditions,
 		});
@@ -99,6 +101,7 @@ export const joinSponsoredFtGamePool = async (
 				asset: tokenId,
 				amount: amount * 1_000_000,
 			};
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			postConditions = [ftPostCondition];
 		}
 
@@ -106,9 +109,9 @@ export const joinSponsoredFtGamePool = async (
 			contract,
 			functionName: "join",
 			functionArgs: [],
-			network: "testnet",
-			postConditionMode: "deny",
-			postConditions,
+			network,
+			postConditionMode: "allow",
+			//postConditions,
 		});
 		return response.txid;
 	} catch (error) {

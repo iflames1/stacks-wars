@@ -3,6 +3,7 @@ import { Users } from "lucide-react";
 import OpenLobby from "./open-lobby";
 import ActiveLobbyHeader from "./active-lobby-header";
 import { LobbyExtended } from "@/types/schema/lobby";
+import { formatNumber } from "@/lib/utils";
 
 export default function ActiveLobbies({
 	lobbies,
@@ -34,7 +35,10 @@ export default function ActiveLobbies({
 											Pool size:
 										</span>
 										<span className="font-medium">
-											{lobby.lobby.currentAmount} STX
+											{formatNumber(
+												lobby.lobby.currentAmount
+											)}{" "}
+											{lobby.lobby.tokenSymbol}
 										</span>
 									</div>
 								)}
@@ -44,7 +48,10 @@ export default function ActiveLobbies({
 											Entry fee:
 										</span>
 										<span className="font-medium">
-											{lobby.lobby.entryAmount} STX
+											{formatNumber(
+												lobby.lobby.entryAmount
+											)}{" "}
+											{lobby.lobby.tokenSymbol}
 										</span>
 									</div>
 								)}
