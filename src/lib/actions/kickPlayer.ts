@@ -16,8 +16,6 @@ export const kickFromPool = async (
 	try {
 		amount = amount * 1_000_000;
 
-		console.log(contract);
-
 		const stxPostCondition: StxPostCondition = {
 			type: "stx-postcondition",
 			address: contract,
@@ -50,8 +48,6 @@ export const kickFromFtPool = async (
 ) => {
 	try {
 		amount = amount * 1_000_000;
-
-		console.log(contract);
 
 		const ftPostCondition: FungiblePostCondition = {
 			type: "ft-postcondition",

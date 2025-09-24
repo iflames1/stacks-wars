@@ -110,6 +110,7 @@ export default function Participants({
 			});
 		} catch (error) {
 			console.error("Error handling join request:", error);
+			toast.error("Failed to handle join request");
 		} finally {
 			setIsHandlingJoin(false);
 		}

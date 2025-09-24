@@ -121,7 +121,7 @@ export default function JoinLobbyForm({
 			}
 		} catch (error) {
 			console.error("An error occurred:", error);
-			toast.error("Failed. Please try again.");
+			toast.error("Failed to leave. Please try again.");
 			setLoading(false);
 			setPendingLeaveCheck(false);
 			setShowLeaveConfirmation(false);
@@ -188,7 +188,6 @@ export default function JoinLobbyForm({
 			}
 		} catch (error) {
 			console.error("An error occurred:", error);
-			toast.error("Failed. Please try again.");
 		} finally {
 			setLoading(false);
 			setPendingLeaveCheck(false);
