@@ -200,6 +200,31 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 			setTimeout(() => {
 				form.handleSubmit(onSubmit)();
 			}, 100);
+		} else if (
+			recoveryData.status === "joined" &&
+			recoveryData.deployedContract &&
+			recoveryData.joinedContract
+		) {
+			// Set both deployed and joined contract states for completed recovery
+			const contractInfo = {
+				contractName: recoveryData.deployedContract.contractName,
+				contractAddress: recoveryData.deployedContract.contractAddress,
+				entryAmount: recoveryData.deployedContract.entryAmount,
+				txId: recoveryData.deployedContract.txId,
+			};
+			setDeployedContract(contractInfo);
+
+			const joinInfo = {
+				contractAddress: recoveryData.joinedContract.contractAddress,
+				txId: recoveryData.joinedContract.txId,
+				entryAmount: recoveryData.joinedContract.entryAmount,
+			};
+			setJoined(joinInfo);
+
+			// Continue to lobby creation
+			setTimeout(() => {
+				form.handleSubmit(onSubmit)();
+			}, 100);
 		} else if (recoveryData.status === "pending") {
 			setTimeout(() => {
 				form.handleSubmit(onSubmit)();

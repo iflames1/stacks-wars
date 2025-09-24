@@ -256,6 +256,33 @@ export default function CreateSponsoredLobbyForm({
 			setTimeout(() => {
 				form.handleSubmit(onSubmit)();
 			}, 100);
+		} else if (
+			recoveryData.status === "joined" &&
+			recoveryData.deployedContract &&
+			recoveryData.joinedContract
+		) {
+			// Set both deployed and joined contract states for completed recovery
+			const contractInfo = {
+				contractName: recoveryData.deployedContract.contractName,
+				contractAddress: recoveryData.deployedContract.contractAddress,
+				poolSize: recoveryData.deployedContract.poolSize,
+				txId: recoveryData.deployedContract.txId,
+				token: recoveryData.deployedContract.token,
+			};
+			setDeployedContract(contractInfo);
+
+			const joinInfo = {
+				contractAddress: recoveryData.joinedContract.contractAddress,
+				txId: recoveryData.joinedContract.txId,
+				poolSize: recoveryData.joinedContract.poolSize,
+				token: recoveryData.joinedContract.token,
+			};
+			setJoined(joinInfo);
+
+			// Continue to lobby creation
+			setTimeout(() => {
+				form.handleSubmit(onSubmit)();
+			}, 100);
 		} else if (recoveryData.status === "pending") {
 			setTimeout(() => {
 				form.handleSubmit(onSubmit)();
