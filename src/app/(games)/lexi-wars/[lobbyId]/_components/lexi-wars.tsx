@@ -198,19 +198,7 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 			gameOver &&
 			(lobby.contractAddress ? prizeAmount !== null : true);
 
-		console.log(
-			"finalStanding:",
-			finalStanding,
-			"gameOver:",
-			gameOver,
-			"prizeAmount:",
-			prizeAmount,
-			"contract:",
-			lobby.contractAddress
-		);
-
 		if (shouldDisconnect) {
-			console.log("🔌 Game completed with prizes, disconnecting...");
 			disconnect();
 			disconnectChat();
 		}

@@ -211,7 +211,7 @@ export default function CreateSponsoredLobbyForm({
 			selectedToken !== prevTokenRef.current;
 
 		if (deployedContract && (poolSizeChanged || tokenChanged)) {
-			console.log(
+			console.warn(
 				"⚠️ Pool configuration changed, resetting deployed contract"
 			);
 			setDeployedContract(null);
@@ -322,7 +322,6 @@ export default function CreateSponsoredLobbyForm({
 	const fetchTokenMetadata = useCallback(
 		async (contract_id: string) => {
 			try {
-				console.log("Fetch meta data");
 				let metadata: TokenMetadata;
 				if (network === "mainnet") {
 					metadata = await apiRequest<TokenMetadata>({
@@ -504,8 +503,6 @@ export default function CreateSponsoredLobbyForm({
 							}
 						);
 					}
-
-					console.log("✅ Sponsored Deploy Transaction confirmed!");
 				} catch (err) {
 					console.error("❌ TX failed or aborted:", err);
 					throw err;
@@ -519,7 +516,6 @@ export default function CreateSponsoredLobbyForm({
 				joinInfo &&
 				joinInfo.contractAddress === contractInfo.contractAddress
 			) {
-				console.log("✅ Using existing sponsored join transaction");
 				tx_id = joinInfo.txId;
 			} else {
 				let joinTxId;
@@ -551,7 +547,6 @@ export default function CreateSponsoredLobbyForm({
 
 				try {
 					await waitForTxConfirmed(joinTxId);
-					console.log("✅ Sponsored Join Transaction confirmed!");
 					joinInfo = {
 						contractAddress: contractInfo.contractAddress,
 						txId: joinTxId,

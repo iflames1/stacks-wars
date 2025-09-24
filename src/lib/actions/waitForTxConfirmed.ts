@@ -3,7 +3,7 @@ import { connectWebSocketClient } from "@stacks/blockchain-api-client";
 const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
 
 export const waitForTxConfirmed = async (txId: string): Promise<void> => {
-	console.log("waitForTxConfirmed → starting");
+	console.log("waiting for tx to confirm → starting");
 	const controller = new AbortController();
 
 	let resolvePromise: () => void;
@@ -64,7 +64,7 @@ export const waitForTxConfirmed = async (txId: string): Promise<void> => {
 					);
 					resolvePromise(); // Treat as success
 				} else {
-					console.log("❌ Unexpected transaction failure");
+					console.error("❌ Unexpected transaction failure");
 					rejectPromise(
 						new Error(
 							`Transaction failed or was aborted: ${reason || "unknown reason"}`
@@ -124,7 +124,9 @@ export const waitForTxConfirmed = async (txId: string): Promise<void> => {
 					);
 					resolvePromise(); // Don't reject, allow flow to pass
 				} else {
-					console.log("❌ WebSocket: Unexpected transaction failure");
+					console.error(
+						"❌ WebSocket: Unexpected transaction failure"
+					);
 					rejectPromise(
 						new Error(
 							`Transaction failed or was aborted: ${reason || "unknown reason"}`

@@ -134,8 +134,6 @@ export function useChatSocket({
 		if (!lobbyId || !userId) return;
 		if (socketRef.current) return; // already connecting or connected
 
-		console.log("🟢 Connecting ChatSocket...");
-
 		const ws = new WebSocket(
 			`${process.env.NEXT_PUBLIC_WS_URL}/ws/chat/${lobbyId}?user_id=${userId}`
 		);
@@ -143,7 +141,6 @@ export function useChatSocket({
 		socketRef.current = ws;
 
 		ws.onopen = () => {
-			console.log("✅ Chat connected");
 			setReadyState(ws.readyState);
 			setError(null);
 			setReconnecting(false);
@@ -210,18 +207,11 @@ export function useChatSocket({
 			) {
 				reconnectAttempts.current++;
 				const timeout = Math.pow(2, reconnectAttempts.current) * 1000;
-				console.log(`♻️ Chat Reconnecting in ${timeout / 1000}s...`);
-
 				setReconnecting(true);
 				reconnectTimeoutRef.current = setTimeout(() => {
 					connectSocket();
 				}, timeout);
 			} else {
-				if (isGameFinished) {
-					console.log(
-						"🏁 Game finished, not reconnecting ChatSocket"
-					);
-				}
 				// Reject all queued messages if we can't reconnect
 				while (messageQueue.current.length > 0) {
 					const queuedMessage = messageQueue.current.shift();
@@ -233,7 +223,7 @@ export function useChatSocket({
 		};
 
 		ws.onerror = (err) => {
-			console.error("⚠️ Chat error:", err);
+			//console.error("⚠️ Chat error:", err);
 			setError(err);
 			setReadyState(WebSocket.CLOSED);
 

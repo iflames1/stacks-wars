@@ -53,6 +53,7 @@ export default function LobbyDetails({
 			});
 		} catch (error) {
 			console.error("Failed to send message:", error);
+			toast.error("Failed to update lobby state. Please try again.");
 		} finally {
 			setLoading(false);
 		}

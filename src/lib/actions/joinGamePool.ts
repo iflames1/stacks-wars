@@ -62,8 +62,6 @@ export const joinSponsoredGamePool = async (
 			postConditions = [stxPostCondition];
 		}
 
-		console.log(contract, postConditions);
-
 		const response = await request("stx_callContract", {
 			contract,
 			functionName: "join",

@@ -61,10 +61,6 @@ export default function Lobby({
 
 	const handleMessage = useCallback(
 		(message: LobbyServerMessage) => {
-			if (!(message.type === "pong")) {
-				console.log("WS Lobby message received:", message);
-			}
-
 			switch (message.type) {
 				case "playerUpdated":
 					setParticipantList(message.players);
@@ -104,10 +100,6 @@ export default function Lobby({
 						(p) => p.user.id === userId
 					);
 					if (isInPending) {
-						console.log(
-							"found in pending players",
-							isInPending.state
-						);
 						setJoinState(isInPending.state);
 					}
 					break;
@@ -195,9 +187,6 @@ export default function Lobby({
 
 	useEffect(() => {
 		if (countdown !== null && countdown < 15 && !prefetched) {
-			console.log(
-				`🚀 Prefetching /lexi-wars/${lobbyId} at countdown: ${countdown}`
-			);
 			router.prefetch(`/lexi-wars/${lobbyId}`);
 			setPrefetched(true);
 		}
@@ -211,14 +200,12 @@ export default function Lobby({
 			} else {
 				//router.replace(`/lobby`);
 			}
-			console.log("🔌 Lobby in progress, disconnecting...");
 		} else if (lobbyState === "waiting") {
 			//setCountdown(15);
 		} else if (lobbyState === "finished") {
 			if (isParticipant) {
 				// Check connection status for participants before disconnecting
 				handleLeaveCheck((isConnected: boolean) => {
-					console.log("is connected", isConnected);
 					if (isConnected) {
 						// Player was connected, they can't leave - disconnect both
 						disconnect();

@@ -9,8 +9,8 @@ const network = process.env.NEXT_PUBLIC_NETWORK || "testnet";
 
 export const transferFee = async () => {
 	if (!feeAddress) {
-		console.log("missing fee wallet");
-		throw new Error("Fee wallet address not configured");
+		console.error("missing fee wallet");
+		throw new Error("Fee wallet address not configured, contact support");
 	}
 
 	const feeAmount = 0.2 * 1_000_000; // 0.2 STX in microSTX

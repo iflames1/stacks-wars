@@ -128,8 +128,6 @@ export function useLexiWarsSocket({
 		if (!lobbyId || !userId) return;
 		if (socketRef.current) return; // already connecting or connected
 
-		console.log("🟢 Connecting LexiWarsSocket...");
-
 		const ws = new WebSocket(
 			`${process.env.NEXT_PUBLIC_WS_URL}/ws/lexiwars/${lobbyId}?user_id=${userId}`
 		);
@@ -137,7 +135,6 @@ export function useLexiWarsSocket({
 		socketRef.current = ws;
 
 		ws.onopen = () => {
-			console.log("✅ LexiWarsSocket connected");
 			setReadyState(ws.readyState);
 			setError(null);
 			setReconnecting(false);
@@ -176,9 +173,6 @@ export function useLexiWarsSocket({
 			) {
 				reconnectAttempts.current++;
 				const timeout = Math.pow(2, reconnectAttempts.current) * 1000;
-				console.log(
-					`♻️ LexiWars Reconnecting in ${timeout / 1000}s...`
-				);
 
 				setReconnecting(true);
 				reconnectTimeoutRef.current = setTimeout(() => {
@@ -196,7 +190,7 @@ export function useLexiWarsSocket({
 		};
 
 		ws.onerror = (err) => {
-			console.error("⚠️ LexiWarsSocket error:", err);
+			//console.error("⚠️ LexiWarsSocket error:", err);
 			setError(err);
 			setReadyState(WebSocket.CLOSED);
 
