@@ -247,6 +247,21 @@ export default function LobbyDetails({
 								This lobby has been closed
 							</span>
 						</div>
+						<div className="text-center space-y-2">
+							<span className="text-xs sm:text-sm text-muted-foreground block">
+								You can view the final results of this game.
+							</span>
+							<Button
+								asChild
+								variant="default"
+								size="sm"
+								className="text-xs"
+							>
+								<Link href={`/lexi-wars/${lobby.id}`}>
+									View Results
+								</Link>
+							</Button>
+						</div>
 						{isParticipant &&
 							lobby.entryAmount !== null &&
 							lobby.entryAmount > 0 && (

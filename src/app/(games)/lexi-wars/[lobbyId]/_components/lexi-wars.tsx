@@ -200,7 +200,7 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 		}
 	};
 
-	if (!gameStarted) {
+	if (!gameStarted && lobby.state !== "finished") {
 		return (
 			<Loading
 				startCountdown={startCountdown}
@@ -222,6 +222,7 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 								? true
 								: false
 						}
+						isSpectator={isSpectator}
 						disconnect={disconnect}
 						disconnectChat={disconnectChat}
 					/>
@@ -278,6 +279,7 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 						userId={userId}
 						contractAddress={lobby.contractAddress}
 						isClaimed={isClaimed}
+						creatorId={lobby.creator.id}
 					/>
 				)}
 

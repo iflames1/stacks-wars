@@ -14,17 +14,23 @@ import { useRouter } from "next/navigation";
 
 interface BackProps {
 	isOut: boolean;
+	isSpectator: boolean;
 	disconnect: () => void;
 	disconnectChat: () => void;
 }
 
-export default function Back({ isOut, disconnect, disconnectChat }: BackProps) {
+export default function Back({
+	isOut,
+	disconnect,
+	disconnectChat,
+	isSpectator,
+}: BackProps) {
 	const [open, setOpen] = useState(false);
 	const router = useRouter();
 
 	return (
 		<>
-			{isOut ? (
+			{isOut || isSpectator ? (
 				<Button
 					variant={"link"}
 					className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4 sm:mb-6"

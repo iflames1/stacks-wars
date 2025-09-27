@@ -7,6 +7,7 @@ import {
 	DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 import { truncateAddress } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -18,6 +19,7 @@ interface GameOverModalProps {
 	userId: string;
 	contractAddress: string | null;
 	isClaimed: boolean;
+	creatorId: string;
 }
 
 export default function GameOverModal({
@@ -25,6 +27,7 @@ export default function GameOverModal({
 	userId,
 	contractAddress,
 	isClaimed,
+	creatorId,
 }: GameOverModalProps) {
 	const [open, setOpen] = useState(false);
 	const [countdown, setCountdown] = useState(30);
@@ -70,35 +73,62 @@ export default function GameOverModal({
 				</DialogHeader>
 
 				<div className="mt-6 space-y-3">
-					{standing?.map((s, i) => (
-						<div
-							key={s.player.id}
-							className={`flex items-center justify-between rounded-lg px-4 py-3 transition-all ${
-								s.player.id === userId
-									? "bg-white/20 shadow-lg"
-									: "bg-white/10"
-							}`}
-						>
-							<div className="flex items-center space-x-3">
-								<span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-sm font-medium">
-									{i + 1}
-								</span>
-								<span className="font-medium">
-									{s.player.user.displayName ||
-										s.player.user.username ||
-										truncateAddress(
-											s.player.user.walletAddress
-										)}
-								</span>
+					{standing?.map((s) => {
+						const isCurrentUser = s.player.id === userId;
+						const isCreator = s.player.id === creatorId;
+
+						return (
+							<div
+								key={s.player.id}
+								className={`flex items-center justify-between rounded-lg px-4 py-3 transition-all ${
+									isCurrentUser
+										? "bg-white/20 shadow-lg"
+										: "bg-white/10"
+								}`}
+							>
+								<div className="flex items-center space-x-3 flex-1 min-w-0">
+									<span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-sm font-medium shrink-0">
+										{s.rank}
+									</span>
+									<div className="flex items-center gap-2 min-w-0 flex-1">
+										<span className="font-medium truncate">
+											{s.player.user.displayName ||
+												s.player.user.username ||
+												truncateAddress(
+													s.player.user.walletAddress
+												)}
+										</span>
+										<div className="flex gap-1 shrink-0">
+											{isCurrentUser && (
+												<Badge
+													variant="secondary"
+													className="text-xs bg-white/30 text-white hover:bg-white/40 px-2 py-0.5"
+												>
+													You
+												</Badge>
+											)}
+											{isCreator && (
+												<Badge
+													variant="default"
+													className="text-xs bg-yellow-500/80 text-white hover:bg-yellow-600/80 px-2 py-0.5"
+												>
+													Creator
+												</Badge>
+											)}
+										</div>
+									</div>
+								</div>
+								<div className="flex items-center space-x-2 shrink-0">
+									<span className="text-sm text-white/70">
+										Rank
+									</span>
+									<span className="font-bold">
+										{s.player.rank}
+									</span>
+								</div>
 							</div>
-							<div className="flex items-center space-x-2">
-								<span className="text-sm text-white/70">
-									Rank
-								</span>
-								<span className="font-bold">{s.rank}</span>
-							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 
 				<DialogFooter className="mt-8">
