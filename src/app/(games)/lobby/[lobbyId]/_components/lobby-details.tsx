@@ -18,7 +18,6 @@ interface LobbyDetailsProps {
 	sendMessage: (msg: LobbyClientMessage) => Promise<void>;
 	userId: string;
 	isKicking: boolean;
-	started: boolean;
 	onLeaveCheck?: (callback: (isConnected: boolean) => void) => void;
 	cachedPlayerConnectionStatus?: boolean | null;
 }
@@ -31,7 +30,6 @@ export default function LobbyDetails({
 	sendMessage,
 	userId,
 	isKicking,
-	started,
 	onLeaveCheck,
 	cachedPlayerConnectionStatus,
 }: LobbyDetailsProps) {
@@ -179,13 +177,28 @@ export default function LobbyDetails({
 					</div>
 				)}
 
-				{started && (
+				{lobbyState === "inProgress" && (
 					<div className="mt-6 p-4 rounded-md bg-muted/40 border border-muted space-y-3">
 						<div className="flex items-center justify-center gap-2 text-center">
 							<Info className="h-5 w-5 text-muted-foreground shrink-0" />
 							<span className="text-sm sm:text-lg md:text-xl font-semibold text-primary">
 								This game has already started.
 							</span>
+						</div>
+						<div className="text-center space-y-2">
+							<span className="text-xs sm:text-sm text-muted-foreground block">
+								You can spectate this ongoing game.
+							</span>
+							<Button
+								asChild
+								variant="default"
+								size="sm"
+								className="text-xs"
+							>
+								<Link href={`/lexi-wars/${lobby.id}`}>
+									Spectate Game
+								</Link>
+							</Button>
 						</div>
 						{isParticipant &&
 							lobby.entryAmount !== null &&

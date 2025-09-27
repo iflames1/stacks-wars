@@ -53,7 +53,7 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 	const [gameStarted, setGameStarted] = useState<boolean>(false);
 	const [startCountdown, setStartCountdown] = useState<number>(15);
 	const [gameOver, setGameOver] = useState<boolean>(false);
-	const [alreadyStarted, setAlreadyStarted] = useState<boolean>(false);
+	const [isSpectator, setIsSpectator] = useState<boolean>(false);
 	const [warsPoint, setWarsPoint] = useState<number | null>(null);
 	const [startFailed, setStartFailed] = useState<boolean>(false);
 
@@ -132,8 +132,9 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 				case "startFailed":
 					setStartFailed(true);
 					break;
-				case "alreadyStarted":
-					setAlreadyStarted(true);
+				case "spectator":
+					setIsSpectator(true);
+					toast.info("You are spectating this game");
 					break;
 				default:
 					console.warn("Unknown WS message type", message);
@@ -153,32 +154,6 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 		userId,
 		onMessage: handleMessage,
 	});
-
-	useEffect(() => {
-		if (alreadyStarted) {
-			disconnect();
-
-			if (
-				lobby.contractAddress &&
-				lobby.entryAmount !== null &&
-				lobby.entryAmount > 0
-			) {
-				toast.error("Failed to join game: Game already started", {
-					description: "Leave the lobby to withdraw your entry fee.",
-				});
-			} else {
-				toast.error("Failed to join game: Game already started");
-			}
-			router.replace(`/lobby/${lobbyId}`);
-		}
-	}, [
-		alreadyStarted,
-		disconnect,
-		lobbyId,
-		router,
-		lobby.contractAddress,
-		lobby.entryAmount,
-	]);
 
 	useEffect(() => {
 		if (startFailed) {
@@ -279,6 +254,7 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 							setWord={setWord}
 							handleSubmit={handleSubmit}
 							isLoading={isLoading}
+							disabled={isSpectator}
 						/>
 					</div>
 				</div>

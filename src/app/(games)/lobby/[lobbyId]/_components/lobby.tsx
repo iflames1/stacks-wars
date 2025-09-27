@@ -269,7 +269,6 @@ export default function Lobby({
 							sendMessage={sendMessage}
 							userId={userId}
 							isKicking={isKicking}
-							started={started}
 							onLeaveCheck={handleLeaveCheck}
 							cachedPlayerConnectionStatus={
 								cachedPlayerConnectionStatus

@@ -8,6 +8,7 @@ interface LexiInputFormProps {
 	setWord: (word: string) => void;
 	handleSubmit: (e?: React.FormEvent) => void;
 	isLoading: boolean;
+	disabled?: boolean;
 }
 
 export default function LexiInputForm({
@@ -15,6 +16,7 @@ export default function LexiInputForm({
 	setWord,
 	handleSubmit,
 	isLoading,
+	disabled = false,
 }: LexiInputFormProps) {
 	const handlePaste = (e: React.ClipboardEvent) => {
 		e.preventDefault();
@@ -41,7 +43,7 @@ export default function LexiInputForm({
 		>
 			<Input
 				type="text"
-				placeholder={"Type your word here..."}
+				placeholder={disabled ? "You are spectating this game" : "Type your word here..."}
 				value={word}
 				onChange={(e) => setWord(e.target.value)}
 				onPaste={handlePaste}
@@ -54,7 +56,8 @@ export default function LexiInputForm({
 				autoCorrect="off"
 				spellCheck={false}
 				autoCapitalize="off"
-				autoFocus
+				autoFocus={!disabled}
+				disabled={disabled}
 				//disabled={!isPlaying || timeLeft === 0}
 				//className="absolute opacity-0 pointer-events-none h-0 w-0"
 				//aria-hidden={isTouchDevice}
@@ -64,14 +67,14 @@ export default function LexiInputForm({
 			<div className="flex justify-end">
 				<Button
 					type="submit"
-					disabled={isLoading}
+					disabled={isLoading || disabled}
 					size="lg"
 					className="w-full md:w-fit"
 				>
 					{isLoading && (
 						<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 					)}
-					Submit
+					{disabled ? "Spectating" : "Submit"}
 				</Button>
 			</div>
 		</form>
