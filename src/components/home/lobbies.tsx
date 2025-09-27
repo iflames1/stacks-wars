@@ -5,11 +5,7 @@ import ActiveLobbyHeader from "./active-lobby-header";
 import { LobbyExtended } from "@/types/schema/lobby";
 import { formatNumber } from "@/lib/utils";
 
-export default function ActiveLobbies({
-	lobbies,
-}: {
-	lobbies: LobbyExtended[];
-}) {
+export default function Lobbies({ lobbies }: { lobbies: LobbyExtended[] }) {
 	return (
 		<>
 			{lobbies.map((lobby) => (
