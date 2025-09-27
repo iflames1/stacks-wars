@@ -25,8 +25,10 @@ export default function OpenLobby({ lobby }: OpenLobbyProps) {
 						: lobby.state === "starting"
 							? "Starting"
 							: lobby.state === "inProgress"
-								? "In Progress"
-								: "Finished"}
+								? "In progress (Spectate)"
+								: lobby.state === "finished"
+									? "Finished (View Results)"
+									: "Loading"}
 				</Button>
 			) : (
 				<Button
