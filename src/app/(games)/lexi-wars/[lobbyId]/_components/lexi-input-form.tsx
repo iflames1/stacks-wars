@@ -43,7 +43,11 @@ export default function LexiInputForm({
 		>
 			<Input
 				type="text"
-				placeholder={disabled ? "You are spectating this game" : "Type your word here..."}
+				placeholder={
+					disabled
+						? "You are spectating this game"
+						: "Type your word here..."
+				}
 				value={word}
 				onChange={(e) => setWord(e.target.value)}
 				onPaste={handlePaste}
@@ -74,7 +78,7 @@ export default function LexiInputForm({
 					{isLoading && (
 						<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 					)}
-					{disabled ? "Spectating" : "Submit"}
+					{disabled ? "You're Spectating" : "Submit"}
 				</Button>
 			</div>
 		</form>

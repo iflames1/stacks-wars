@@ -52,13 +52,13 @@ export type LobbyServerMessage =
 			type: "lobbyState";
 			state: lobbyState;
 			started: boolean;
-			readyPlayers: string[] | null;
+			joinedPlayers: string[] | null;
 	  }
 	| {
 			type: "pendingPlayers";
 			pendingPlayers: PendingJoin[];
 	  }
-	| { type: "playersNotReady"; players: Player[] }
+	| { type: "playersNotJoined"; players: Player[] }
 	| { type: "allowed" }
 	| { type: "rejected" }
 	| { type: "pending" }

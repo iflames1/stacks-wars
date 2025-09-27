@@ -7,7 +7,7 @@ export interface ClaimState {
 	data: txId | null;
 }
 
-export type PlayerStatus = "ready" | "notReady";
+export type PlayerStatus = "joined" | "notJoined";
 
 export interface Player {
 	id: string;

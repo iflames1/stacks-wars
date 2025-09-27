@@ -37,9 +37,7 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 		currentPlayer: null,
 		countdown: null,
 	});
-	const [rule, setRule] = useState<string>(
-		"Word must be at least 4 characters!"
-	);
+	const [rule, setRule] = useState<string>("");
 	const [countdown, setCountdown] = useState<number>(15);
 	const [rank, setRank] = useState<string | null>(null);
 	const [finalStanding, setFinalStanding] = useState<PlayerStanding[] | null>(
@@ -134,6 +132,7 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 					break;
 				case "spectator":
 					setIsSpectator(true);
+					console.log("Ya spectating");
 					toast.info("You are spectating this game");
 					break;
 				default:
@@ -239,10 +238,9 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 
 					<GameTimer timeLeft={countdown} />
 
-					{turnState.currentPlayer &&
-						turnState.currentPlayer.id === userId && (
-							<GameRule currentRule={rule} />
-						)}
+					{((turnState.currentPlayer &&
+						turnState.currentPlayer.id === userId) ||
+						isSpectator) && <GameRule currentRule={rule} />}
 
 					<div className="border border-primary/10 p-3 sm:p-4 bg-primary/10 rounded-xl shadow-sm space-y-4 sm:space-y-5">
 						<TurnIndicator

@@ -19,7 +19,7 @@ export default async function LobbyDetailPage({
 	}
 
 	const lobbyExtended = await apiRequest<LobbyExtended>({
-		path: `/lobby/extended/${lobbyId}?player_state=ready`,
+		path: `/lobby/extended/${lobbyId}?player_state=joined`,
 		tag: "lobbyExtended",
 	});
 
