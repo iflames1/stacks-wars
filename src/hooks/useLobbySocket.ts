@@ -52,13 +52,13 @@ export type LobbyServerMessage =
 			type: "lobbyState";
 			state: lobbyState;
 			started: boolean;
-			readyPlayers: string[] | null;
+			joinedPlayers: string[] | null;
 	  }
 	| {
 			type: "pendingPlayers";
 			pendingPlayers: PendingJoin[];
 	  }
-	| { type: "playersNotReady"; players: Player[] }
+	| { type: "playersNotJoined"; players: Player[] }
 	| { type: "allowed" }
 	| { type: "rejected" }
 	| { type: "pending" }
@@ -198,8 +198,6 @@ export function useLobbySocket({
 		if (!lobbyId || !userId) return;
 		if (socketRef.current) return; // already connecting or connected
 
-		console.log("🟢 Connecting LobbySocket...");
-
 		const ws = new WebSocket(
 			`${process.env.NEXT_PUBLIC_WS_URL}/ws/lobby/${lobbyId}?user_id=${userId}`
 		);
@@ -207,7 +205,6 @@ export function useLobbySocket({
 		socketRef.current = ws;
 
 		ws.onopen = () => {
-			console.log("✅ LobbySocket connected");
 			setReadyState(ws.readyState);
 			setError(null);
 			setReconnecting(false);
@@ -263,15 +260,6 @@ export function useLobbySocket({
 					event.reason.toLowerCase().includes("finished")) ||
 				event.code === 1000; // Normal closure often indicates game end
 
-			console.log(
-				"game finished? ",
-				isGameFinished,
-				"event reason",
-				event.reason,
-				"event code",
-				event.code
-			);
-
 			if (
 				!manuallyDisconnectedRef.current &&
 				!isGameFinished &&
@@ -279,18 +267,12 @@ export function useLobbySocket({
 			) {
 				reconnectAttempts.current++;
 				const timeout = Math.pow(2, reconnectAttempts.current) * 1000;
-				console.log(`♻️ Reconnecting in ${timeout / 1000}s...`);
 
 				setReconnecting(true);
 				reconnectTimeoutRef.current = setTimeout(() => {
 					connectSocket();
 				}, timeout);
 			} else {
-				if (isGameFinished) {
-					console.log(
-						"🏁 Game finished, not reconnecting LobbySocket"
-					);
-				}
 				// Reject all queued messages if we can't reconnect
 				while (messageQueue.current.length > 0) {
 					const queuedMessage = messageQueue.current.shift();
@@ -302,7 +284,7 @@ export function useLobbySocket({
 		};
 
 		ws.onerror = (err) => {
-			console.error("⚠️ LobbySocket error:", err);
+			//console.error("⚠️ LobbySocket error:", err);
 			setError(err);
 			setReadyState(WebSocket.CLOSED);
 

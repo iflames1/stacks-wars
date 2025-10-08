@@ -19,20 +19,15 @@ import Loading from "../loading";
 import Back from "./back";
 import { useChatSocketContext } from "@/contexts/ChatSocketProvider";
 import { Player, PlayerStanding } from "@/types/schema/player";
+import { Lobby } from "@/types/schema/lobby";
 
 interface LexiWarsProps {
 	lobbyId: string;
 	userId: string;
-	contract: string | null;
-	entryAmount: number | null;
+	lobby: Lobby;
 }
 
-export default function LexiWars({
-	lobbyId,
-	userId,
-	contract,
-	entryAmount,
-}: LexiWarsProps) {
+export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 	const [word, setWord] = useState<string>("");
 
 	const [turnState, setTurnState] = useState<{
@@ -42,9 +37,7 @@ export default function LexiWars({
 		currentPlayer: null,
 		countdown: null,
 	});
-	const [rule, setRule] = useState<string>(
-		"Word must be at least 4 characters!"
-	);
+	const [rule, setRule] = useState<string>("");
 	const [countdown, setCountdown] = useState<number>(15);
 	const [rank, setRank] = useState<string | null>(null);
 	const [finalStanding, setFinalStanding] = useState<PlayerStanding[] | null>(
@@ -58,7 +51,7 @@ export default function LexiWars({
 	const [gameStarted, setGameStarted] = useState<boolean>(false);
 	const [startCountdown, setStartCountdown] = useState<number>(15);
 	const [gameOver, setGameOver] = useState<boolean>(false);
-	const [alreadyStarted, setAlreadyStarted] = useState<boolean>(false);
+	const [isSpectator, setIsSpectator] = useState<boolean>(false);
 	const [warsPoint, setWarsPoint] = useState<number | null>(null);
 	const [startFailed, setStartFailed] = useState<boolean>(false);
 
@@ -123,7 +116,7 @@ export default function LexiWars({
 				case "warsPoint":
 					setWarsPoint(message.warsPoint);
 					setShowPrizeModal(true);
-					if (!contract) {
+					if (!lobby.contractAddress) {
 						setPrizeAmount(0);
 					}
 					break;
@@ -137,14 +130,16 @@ export default function LexiWars({
 				case "startFailed":
 					setStartFailed(true);
 					break;
-				case "alreadyStarted":
-					setAlreadyStarted(true);
+				case "spectator":
+					setIsSpectator(true);
+					console.log("Ya spectating");
+					toast.info("You are spectating this game");
 					break;
 				default:
 					console.warn("Unknown WS message type", message);
 			}
 		},
-		[userId, contract]
+		[userId, lobby.contractAddress]
 	);
 
 	const {
@@ -158,21 +153,6 @@ export default function LexiWars({
 		userId,
 		onMessage: handleMessage,
 	});
-
-	useEffect(() => {
-		if (alreadyStarted) {
-			disconnect();
-
-			if (contract && entryAmount !== null && entryAmount > 0) {
-				toast.error("Failed to join game: Game already started", {
-					description: "Leave the lobby to withdraw your entry fee.",
-				});
-			} else {
-				toast.error("Failed to join game: Game already started");
-			}
-			router.replace(`/lobby/${lobbyId}`);
-		}
-	}, [alreadyStarted, disconnect, contract, entryAmount, lobbyId, router]);
 
 	useEffect(() => {
 		if (startFailed) {
@@ -190,21 +170,9 @@ export default function LexiWars({
 		const shouldDisconnect =
 			finalStanding &&
 			gameOver &&
-			(contract ? prizeAmount !== null : true);
-
-		console.log(
-			"finalStanding:",
-			finalStanding,
-			"gameOver:",
-			gameOver,
-			"prizeAmount:",
-			prizeAmount,
-			"contract:",
-			contract
-		);
+			(lobby.contractAddress ? prizeAmount !== null : true);
 
 		if (shouldDisconnect) {
-			console.log("🔌 Game completed with prizes, disconnecting...");
 			disconnect();
 			disconnectChat();
 		}
@@ -212,9 +180,9 @@ export default function LexiWars({
 		finalStanding,
 		gameOver,
 		prizeAmount,
-		contract,
 		disconnect,
 		disconnectChat,
+		lobby.contractAddress,
 	]);
 
 	const handleSubmit = async (e?: FormEvent) => {
@@ -231,7 +199,7 @@ export default function LexiWars({
 		}
 	};
 
-	if (!gameStarted) {
+	if (!gameStarted && lobby.state !== "finished") {
 		return (
 			<Loading
 				startCountdown={startCountdown}
@@ -253,6 +221,7 @@ export default function LexiWars({
 								? true
 								: false
 						}
+						isSpectator={isSpectator}
 						disconnect={disconnect}
 						disconnectChat={disconnectChat}
 					/>
@@ -269,10 +238,9 @@ export default function LexiWars({
 
 					<GameTimer timeLeft={countdown} />
 
-					{turnState.currentPlayer &&
-						turnState.currentPlayer.id === userId && (
-							<GameRule currentRule={rule} />
-						)}
+					{((turnState.currentPlayer &&
+						turnState.currentPlayer.id === userId) ||
+						isSpectator) && <GameRule currentRule={rule} />}
 
 					<div className="border border-primary/10 p-3 sm:p-4 bg-primary/10 rounded-xl shadow-sm space-y-4 sm:space-y-5">
 						<TurnIndicator
@@ -285,6 +253,7 @@ export default function LexiWars({
 							setWord={setWord}
 							handleSubmit={handleSubmit}
 							isLoading={isLoading}
+							disabled={isSpectator}
 						/>
 					</div>
 				</div>
@@ -297,8 +266,8 @@ export default function LexiWars({
 						rank={rank}
 						prizeAmount={prizeAmount}
 						lobbyId={lobbyId}
-						contractAddress={contract}
 						warsPoint={warsPoint}
+						lobby={lobby}
 					/>
 				)}
 
@@ -306,8 +275,9 @@ export default function LexiWars({
 					<GameOverModal
 						standing={finalStanding}
 						userId={userId}
-						contractAddress={contract}
+						contractAddress={lobby.contractAddress}
 						isClaimed={isClaimed}
+						creatorId={lobby.creator.id}
 					/>
 				)}
 

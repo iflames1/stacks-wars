@@ -42,8 +42,6 @@ export async function connectOrCreateUser(walletAddress: string) {
 export async function logoutUser() {
 	const cookieStore = await cookies();
 
-	console.log("disconnect called");
-
 	try {
 		disconnect();
 		cookieStore.delete("jwt");

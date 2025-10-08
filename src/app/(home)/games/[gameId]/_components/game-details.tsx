@@ -32,9 +32,6 @@ export default function GameDetails({ game }: { game: GameType | null }) {
 					<span className="text-sm text-muted-foreground">
 						Total Prize Pool:
 					</span>
-					{/*<span className="font-medium">
-						{game.totalPrize} STX
-					</span>*/}
 				</div>
 			</CardContent>
 		</Card>

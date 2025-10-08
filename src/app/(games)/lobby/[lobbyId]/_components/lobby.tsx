@@ -45,7 +45,6 @@ export default function Lobby({
 	const [pendingPlayers, setPendingPlayers] = useState<PendingJoin[]>([]);
 	const [joinState, setJoinState] = useState<JoinState | null>(null);
 	const [latency, setLatency] = useState<number | null>(null);
-	//const [readyPlayers, setReadyPlayers] = useState<string[] | null>(null);
 	const [prefetched, setPrefetched] = useState(false);
 	const [isKicking, setIsKicking] = useState(false);
 	const [started, setStarted] = useState(false);
@@ -65,10 +64,6 @@ export default function Lobby({
 
 	const handleMessage = useCallback(
 		(message: LobbyServerMessage) => {
-			if (!(message.type === "pong")) {
-				console.log("WS Lobby message received:", message);
-			}
-
 			switch (message.type) {
 				case "playerUpdated":
 					setParticipantList(message.players);
@@ -96,7 +91,6 @@ export default function Lobby({
 				case "lobbyState":
 					setLobbyState(message.state);
 					setStarted(message.started);
-					//setReadyPlayers(message.readyPlayers);
 					break;
 				case "pendingPlayers":
 					setPendingPlayers(
@@ -108,16 +102,12 @@ export default function Lobby({
 						(p) => p.user.id === userId
 					);
 					if (isInPending) {
-						console.log(
-							"found in pending players",
-							isInPending.state
-						);
 						setJoinState(isInPending.state);
 					}
 					break;
-				case "playersNotReady":
-					const notReadyPlayers = message.players;
-					notReadyPlayers.forEach((p) => {
+				case "playersNotJoined":
+					const notJoinedPlayers = message.players;
+					notJoinedPlayers.forEach((p) => {
 						toast.error(
 							`${p.user.displayName || p.user.username || truncateAddress(p.user.walletAddress)} is not ready`
 						);
@@ -199,11 +189,7 @@ export default function Lobby({
 
 	useEffect(() => {
 		if (countdown !== null && countdown < 15 && !prefetched) {
-			const gamePath = getGamePath(game.name);
-			console.log(
-				`🚀 Prefetching /${gamePath}/${lobbyId} at countdown: ${countdown}`
-			);
-			router.prefetch(`/${gamePath}/${lobbyId}`);
+			router.prefetch(`/lexi-wars/${lobbyId}`);
 			setPrefetched(true);
 		}
 	}, [countdown, lobbyId, prefetched, router, game.name, getGamePath]);
@@ -217,14 +203,12 @@ export default function Lobby({
 			} else {
 				//router.replace(`/lobby`);
 			}
-			console.log("🔌 Lobby in progress, disconnecting...");
 		} else if (lobbyState === "waiting") {
 			//setCountdown(15);
 		} else if (lobbyState === "finished") {
 			if (isParticipant) {
 				// Check connection status for participants before disconnecting
 				handleLeaveCheck((isConnected: boolean) => {
-					console.log("is connected", isConnected);
 					if (isConnected) {
 						// Player was connected, they can't leave - disconnect both
 						disconnect();
@@ -252,10 +236,6 @@ export default function Lobby({
 		game.name,
 		getGamePath,
 	]);
-
-	//if (lobbyState === "starting" && countdown === 0) {
-	//	return <Loading />;
-	//}
 
 	return (
 		<section className="bg-gradient-to-b from-primary/10 to-primary/30">
@@ -294,7 +274,6 @@ export default function Lobby({
 							sendMessage={sendMessage}
 							userId={userId}
 							isKicking={isKicking}
-							started={started}
 							onLeaveCheck={handleLeaveCheck}
 							cachedPlayerConnectionStatus={
 								cachedPlayerConnectionStatus

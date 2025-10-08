@@ -37,7 +37,7 @@ export default function Loading({
 							<h2 className="text-2xl sm:text-3xl font-bold text-foreground">
 								Preparing Battle Arena
 							</h2>
-							{startCountdown && (
+							{startCountdown !== undefined && (
 								<p className="text-lg sm:text-xl text-muted-foreground">
 									Game starting in{" "}
 									<span className="font-semibold text-primary">

@@ -157,7 +157,7 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 			amount !== prevAmountRef.current;
 
 		if (deployedContract && amountChanged) {
-			console.log("⚠️ Amount changed, resetting deployed contract");
+			console.warn("⚠️ Amount changed, resetting deployed contract");
 			setDeployedContract(null);
 			setJoined(null);
 		}
@@ -197,6 +197,31 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 			setDeployedContract(contractInfo);
 
 			// Trigger the join process
+			setTimeout(() => {
+				form.handleSubmit(onSubmit)();
+			}, 100);
+		} else if (
+			recoveryData.status === "joined" &&
+			recoveryData.deployedContract &&
+			recoveryData.joinedContract
+		) {
+			// Set both deployed and joined contract states for completed recovery
+			const contractInfo = {
+				contractName: recoveryData.deployedContract.contractName,
+				contractAddress: recoveryData.deployedContract.contractAddress,
+				entryAmount: recoveryData.deployedContract.entryAmount,
+				txId: recoveryData.deployedContract.txId,
+			};
+			setDeployedContract(contractInfo);
+
+			const joinInfo = {
+				contractAddress: recoveryData.joinedContract.contractAddress,
+				txId: recoveryData.joinedContract.txId,
+				entryAmount: recoveryData.joinedContract.entryAmount,
+			};
+			setJoined(joinInfo);
+
+			// Continue to lobby creation
 			setTimeout(() => {
 				form.handleSubmit(onSubmit)();
 			}, 100);
@@ -268,7 +293,6 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 
 					try {
 						await waitForTxConfirmed(deployTx.txid);
-						console.log("✅ Deploy Transaction confirmed!");
 					} catch (err) {
 						console.error("❌ TX failed or aborted:", err);
 						throw err;
@@ -303,7 +327,6 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 					joinInfo &&
 					joinInfo.contractAddress === contractInfo.contractAddress
 				) {
-					console.log("✅ Using existing join transaction");
 					tx_id = joinInfo.txId;
 				} else {
 					const joinTxId = await joinGamePool(
@@ -319,7 +342,6 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 
 					try {
 						await waitForTxConfirmed(joinTxId);
-						console.log("✅ Join Transaction confirmed!");
 					} catch (err) {
 						console.error("❌ TX failed or aborted:", err);
 						throw err;
@@ -374,7 +396,6 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 
 				try {
 					await waitForTxConfirmed(feeTransferTx.txid);
-					console.log("✅ Fee transfer confirmed!");
 				} catch (err) {
 					console.error("❌ Fee transfer failed or aborted:", err);
 					throw err;

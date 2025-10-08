@@ -7,7 +7,10 @@ import {
 	CardContent,
 	CardFooter,
 } from "@/components/ui/card";
-import { Trophy, ArrowRight } from "lucide-react";
+import {
+	//Trophy,
+	ArrowRight,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
@@ -36,17 +39,17 @@ export default function GameCard({ game }: { game: GameType }) {
 					<CardContent>
 						<p className="mb-4">{game.description}</p>
 
-						<div className="flex items-center gap-2">
+						{/*<div className="flex items-center gap-2">
 							<Trophy className="h-5 w-5 text-muted-foreground" />
 							<div>
 								<p className="text-sm font-medium">
 									Total Volume
 								</p>
-								{/*<p className="text-lg font-bold">
+								<p className="text-lg font-bold">
 									{game.totalPrize} STX
-								</p>*/}
+								</p>
 							</div>
-						</div>
+						</div>*/}
 					</CardContent>
 					<CardFooter className="mt-3">
 						<div className="flex gap-4">
