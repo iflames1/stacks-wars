@@ -37,7 +37,9 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 		currentPlayer: null,
 		countdown: null,
 	});
-	const [rule, setRule] = useState<string>("");
+	const [rule, setRule] = useState<string>(
+		"Word must be at least 4 characters!"
+	);
 	const [countdown, setCountdown] = useState<number>(15);
 	const [rank, setRank] = useState<string | null>(null);
 	const [finalStanding, setFinalStanding] = useState<PlayerStanding[] | null>(
