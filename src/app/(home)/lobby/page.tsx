@@ -10,7 +10,7 @@ import {
 	DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import Loading from "@/app/loading";
-import { Plus, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Filter, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api";
 import { LobbyExtended, lobbyState } from "@/types/schema/lobby";
@@ -27,6 +27,7 @@ export default function LobbyPage() {
 		"starting",
 		"inProgress",
 	]);
+	const [isRefetching, setIsRefetching] = useState(false);
 
 	const filterOptions = [
 		{ value: "waiting" as lobbyState, label: "Active" },
@@ -47,6 +48,7 @@ export default function LobbyPage() {
 	};
 
 	const fetchLobbies = useCallback(async () => {
+		setIsRefetching(true);
 		try {
 			const statesQuery =
 				selectedStates.length > 0
@@ -64,6 +66,7 @@ export default function LobbyPage() {
 			console.error("Failed to fetch lobbies:", error);
 		} finally {
 			setIsLoading(false);
+			setIsRefetching(false);
 		}
 	}, [selectedStates, currentPage]);
 
@@ -99,8 +102,6 @@ export default function LobbyPage() {
 		return <Loading />;
 	}
 
-	console.log("selected States", selectedStates);
-
 	return (
 		<>
 			<section className="w-full py-12 md:py-24 lg:py-32">
@@ -131,8 +132,13 @@ export default function LobbyPage() {
 									<Button
 										variant="outline"
 										className="gap-1.5"
+										disabled={isRefetching}
 									>
-										<Filter className="h-4 w-4" />
+										{isRefetching ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<Filter className="h-4 w-4" />
+										)}
 										Filter ({selectedStates.length})
 									</Button>
 								</DropdownMenuTrigger>
@@ -162,6 +168,7 @@ export default function LobbyPage() {
 														!!checked
 													)
 												}
+												disabled={isRefetching}
 											/>
 											<label
 												htmlFor={option.value}
@@ -181,9 +188,20 @@ export default function LobbyPage() {
 							Check back soon for updates!
 						</p>
 					</div>*/}
-					<div className="grid gap-6 pt-8 md:grid-cols-2 lg:grid-cols-3">
-						<Lobbies lobbies={lobbies} />
-					</div>
+					{isRefetching ? (
+						<div className="flex items-center justify-center py-16">
+							<div className="flex flex-col items-center gap-2">
+								<Loader2 className="h-8 w-8 animate-spin text-primary" />
+								<p className="text-sm text-muted-foreground font-medium">
+									Updating lobbies...
+								</p>
+							</div>
+						</div>
+					) : (
+						<div className="grid gap-6 pt-8 md:grid-cols-2 lg:grid-cols-3">
+							<Lobbies lobbies={lobbies} />
+						</div>
+					)}
 
 					{showPagination && (
 						<div className="flex justify-center items-center gap-4 mt-8">
