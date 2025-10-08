@@ -28,7 +28,6 @@ import { FiMessageCircle } from "react-icons/fi";
 export default function Chat() {
 	const [open, setOpen] = useState(false);
 	const [input, setInput] = useState("");
-	const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const {
@@ -60,76 +59,6 @@ export default function Chat() {
 		if (open && inputRef.current) {
 			inputRef.current.focus();
 		}
-	}, [open]);
-
-	// Detect mobile keyboard
-	useEffect(() => {
-		if (!open) return;
-
-		const handleResize = () => {
-			// Method 1: Using visualViewport (most reliable)
-			if (window.visualViewport) {
-				const keyboardHeight =
-					window.innerHeight - window.visualViewport.height;
-				setIsKeyboardOpen(keyboardHeight > 100); // Reduced threshold
-				return;
-			}
-
-			// Method 2: Fallback for browsers without visualViewport
-			// Check if window height is significantly smaller than screen height
-			// Note: This is less reliable as it can't distinguish keyboard from other resizes
-			const isMobile =
-				/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-					navigator.userAgent
-				);
-			const currentHeight = window.innerHeight;
-			const isPortrait = window.innerHeight > window.innerWidth;
-
-			// Only apply this check on mobile devices in portrait mode
-			if (isMobile && isPortrait) {
-				// Compare to stored initial height if available
-				const isLikelyKeyboard =
-					currentHeight <
-					(window as typeof window & { initialHeight?: number })
-						.initialHeight! *
-						0.7;
-				setIsKeyboardOpen(isLikelyKeyboard);
-			} else {
-				setIsKeyboardOpen(false);
-			}
-		};
-		if (
-			open &&
-			!(window as typeof window & { initialHeight?: number })
-				.initialHeight
-		) {
-			(
-				window as typeof window & { initialHeight?: number }
-			).initialHeight = window.innerHeight;
-		}
-
-		// Set up event listeners
-		if (window.visualViewport) {
-			window.visualViewport.addEventListener("resize", handleResize);
-		}
-		window.addEventListener("resize", handleResize);
-
-		return () => {
-			if (window.visualViewport) {
-				window.visualViewport.removeEventListener(
-					"resize",
-					handleResize
-				);
-			}
-			delete (window as typeof window & { initialHeight?: number })
-				.initialHeight;
-			window.removeEventListener("resize", handleResize);
-			// Remove window.initialHeight if it exists
-			if ("initialHeight" in window) {
-				delete (window as typeof window & { initialHeight?: number })
-					.initialHeight;
-			}
-		};
 	}, [open]);
 
 	const handleSend = async () => {
@@ -196,10 +125,7 @@ export default function Chat() {
 
 					<DialogContent
 						className={cn(
-							"p-0 gap-0 rounded-xl overflow-hidden border-primary/30 transition-all duration-300",
-							isKeyboardOpen
-								? "fixed inset-x-0 bottom-0 w-full rounded-b-none"
-								: "sm:max-w-lg w-full max-h-[85vh]"
+							"p-0 gap-0 rounded-xl overflow-hidden border-primary/30 transition-all duration-300 sm:max-w-lg w-full max-h-[85vh]"
 						)}
 						hideClose
 					>
@@ -254,21 +180,13 @@ export default function Chat() {
 
 						<div className="flex flex-col bg-background/95 backdrop-blur-sm h-full">
 							<ScrollArea
-								className={cn(
-									"w-full px-4 py-3",
-									isKeyboardOpen
-										? "h-[calc(100vh-220px)]"
-										: "h-[400px]"
-								)}
+								className={cn("w-full px-4 py-3 h-[400px]")}
 								ref={viewportRef}
 							>
 								{!chatPermitted ? (
 									<div
 										className={cn(
-											"flex flex-col items-center justify-center h-full gap-4",
-											isKeyboardOpen
-												? "min-h-[120px]"
-												: "min-h-72"
+											"flex flex-col items-center justify-center h-full gap-4 min-h-72"
 										)}
 									>
 										<div className="bg-primary/10 p-6 rounded-full">
@@ -276,7 +194,7 @@ export default function Chat() {
 										</div>
 										<div className="text-center space-y-1">
 											<h3 className="text-lg font-medium">
-												Chat Restricted
+												Chat is not availble
 											</h3>
 											<p className="text-muted-foreground max-w-md">
 												You need to join the lobby to
@@ -287,10 +205,7 @@ export default function Chat() {
 								) : messages.length === 0 ? (
 									<div
 										className={cn(
-											"flex flex-col items-center justify-center h-full gap-4",
-											isKeyboardOpen
-												? "min-h-[120px]"
-												: "min-h-72"
+											"flex flex-col items-center justify-center h-full gap-4 min-h-72"
 										)}
 									>
 										<div className="bg-primary/10 p-6 rounded-full">
@@ -374,7 +289,7 @@ export default function Chat() {
 															isOwnMessage
 																? "items-end"
 																: "items-start",
-															"max-w-[85%]"
+															"max-w-[75%] min-w-0"
 														)}
 													>
 														{showSenderInfo &&
@@ -389,7 +304,8 @@ export default function Chat() {
 														<div
 															className={cn(
 																"rounded-xl px-4 py-2 text-sm shadow-sm",
-																"break-words whitespace-pre-wrap",
+																"break-words hyphens-auto overflow-wrap-anywhere whitespace-pre-wrap",
+																"max-w-full",
 																isOwnMessage
 																	? "bg-primary text-primary-foreground rounded-br-none"
 																	: "bg-muted text-foreground rounded-bl-none border border-muted-foreground/10"
@@ -423,10 +339,7 @@ export default function Chat() {
 							{chatPermitted && (
 								<div
 									className={cn(
-										"border-t border-primary/20 bg-background p-4",
-										isKeyboardOpen
-											? "pb-[env(safe-area-inset-bottom)]"
-											: ""
+										"border-t border-primary/20 bg-background p-4"
 									)}
 								>
 									<form
@@ -436,7 +349,7 @@ export default function Chat() {
 										}}
 										className="flex items-end gap-3"
 									>
-										<div className="flex-1 relative">
+										<div className="flex-1 relative min-w-0">
 											<Input
 												ref={inputRef}
 												value={input}
@@ -453,7 +366,7 @@ export default function Chat() {
 													readyState !==
 													WebSocket.OPEN
 												}
-												className="pr-12 bg-background border-primary/30 focus:border-primary/50 focus:ring-primary/20"
+												className="pr-12 bg-background border-primary/30 focus:border-primary/50 focus:ring-primary/20 break-all"
 												maxLength={500}
 												onKeyDown={(e) => {
 													if (
@@ -496,15 +409,6 @@ export default function Chat() {
 											</TooltipContent>
 										</Tooltip>
 									</form>
-
-									{!isKeyboardOpen && (
-										<div className="text-xs text-muted-foreground/60 mt-2 flex justify-between">
-											<span>Press Enter to send</span>
-											<span>
-												Shift+Enter for new line
-											</span>
-										</div>
-									)}
 								</div>
 							)}
 						</div>
