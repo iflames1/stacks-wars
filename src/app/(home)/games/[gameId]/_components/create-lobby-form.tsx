@@ -29,7 +29,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getClaimFromJwt } from "@/lib/getClaimFromJwt";
 import { nanoid } from "nanoid";
-import { createGamePool, transferFee } from "@/lib/actions/createGamePool";
+import { createGamePool } from "@/lib/actions/createGamePool";
 import { joinGamePool } from "@/lib/actions/joinGamePool";
 import { waitForTxConfirmed } from "@/lib/actions/waitForTxConfirmed";
 import { useConnectUser } from "@/contexts/ConnectWalletContext";
@@ -386,21 +386,6 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 					revalidatePath: "/lobby",
 				};
 			} else {
-				const feeTransferTx = await transferFee();
-
-				if (!feeTransferTx.txid) {
-					throw new Error(
-						"Failed to transfer fee: missing transaction ID"
-					);
-				}
-
-				try {
-					await waitForTxConfirmed(feeTransferTx.txid);
-				} catch (err) {
-					console.error("❌ Fee transfer failed or aborted:", err);
-					throw err;
-				}
-
 				apiParams = {
 					path: "/lobby",
 					method: "POST",
@@ -408,7 +393,7 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 						name: values.name,
 						description: values.description || null,
 						game_id: gameId,
-						tx_id: feeTransferTx.txid,
+						tx_id: "0x576b991e7261f06534c1c84396290d16b03c90eba3fcb91d99edc7befafa7b5e", // Hardcoded tx ID for testnet
 					},
 					tag: "lobby",
 					revalidateTag: "lobby",
