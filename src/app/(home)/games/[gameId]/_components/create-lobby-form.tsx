@@ -393,7 +393,8 @@ export default function CreateLobbyForm({ gameId }: CreateLobbyFormProps) {
 						name: values.name,
 						description: values.description || null,
 						game_id: gameId,
-						tx_id: "0x576b991e7261f06534c1c84396290d16b03c90eba3fcb91d99edc7befafa7b5e", // Hardcoded tx ID for testnet
+						tx_id: "0x470532c3a90176c01387209f701b79296c728398b609173a6683c37d59fe4bad", // Hardcoded tx ID for testnet
+						//tx_id: "0x576b991e7261f06534c1c84396290d16b03c90eba3fcb91d99edc7befafa7b5e",
 					},
 					tag: "lobby",
 					revalidateTag: "lobby",
