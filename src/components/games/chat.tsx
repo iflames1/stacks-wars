@@ -304,7 +304,7 @@ export default function Chat() {
 														<div
 															className={cn(
 																"rounded-xl px-4 py-2 text-sm shadow-sm",
-																"break-words hyphens-auto overflow-wrap-anywhere whitespace-pre-wrap",
+																"break-words break-all hyphens-auto overflow-wrap-anywhere whitespace-pre-wrap",
 																"max-w-full",
 																isOwnMessage
 																	? "bg-primary text-primary-foreground rounded-br-none"
