@@ -37,7 +37,9 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 		currentPlayer: null,
 		countdown: null,
 	});
-	const [rule, setRule] = useState<string>("");
+	const [rule, setRule] = useState<string>(
+		"Word must be at least 4 characters!"
+	);
 	const [countdown, setCountdown] = useState<number>(15);
 	const [rank, setRank] = useState<string | null>(null);
 	const [finalStanding, setFinalStanding] = useState<PlayerStanding[] | null>(
@@ -54,6 +56,10 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 	const [isSpectator, setIsSpectator] = useState<boolean>(false);
 	const [warsPoint, setWarsPoint] = useState<number | null>(null);
 	const [startFailed, setStartFailed] = useState<boolean>(false);
+	const [playersCount, setPlayersCount] = useState<{
+		connectedPlayers: number;
+		remainingPlayers: number;
+	} | null>(null);
 
 	const router = useRouter();
 
@@ -132,8 +138,15 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 					break;
 				case "spectator":
 					setIsSpectator(true);
+					setCountdown(15);
 					console.log("Ya spectating");
 					toast.info("You are spectating this game");
+					break;
+				case "playersCount":
+					setPlayersCount({
+						connectedPlayers: message.connectedPlayers,
+						remainingPlayers: message.remainingPlayers,
+					});
 					break;
 				default:
 					console.warn("Unknown WS message type", message);
@@ -235,13 +248,10 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 				</div>
 				<div className="space-y-3 sm:space-y-4">
 					<GameHeader />
-
 					<GameTimer timeLeft={countdown} />
-
 					{((turnState.currentPlayer &&
 						turnState.currentPlayer.id === userId) ||
 						isSpectator) && <GameRule currentRule={rule} />}
-
 					<div className="border border-primary/10 p-3 sm:p-4 bg-primary/10 rounded-xl shadow-sm space-y-4 sm:space-y-5">
 						<TurnIndicator
 							currentPlayer={turnState.currentPlayer}
@@ -257,6 +267,25 @@ export default function LexiWars({ lobbyId, userId, lobby }: LexiWarsProps) {
 						/>
 					</div>
 				</div>
+
+				{playersCount && (
+					<div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-10 max-w-3xl w-full px-4">
+						<div className="flex items-center justify-around gap-4 p-3 bg-primary/10 border border-primary/30 rounded-lg shadow-lg">
+							<span className="text-sm font-medium text-muted-foreground">
+								Total Players:{" "}
+								<span className="text-foreground font-bold">
+									{playersCount.connectedPlayers}
+								</span>
+							</span>
+							<span className="text-sm font-medium text-muted-foreground">
+								Still Playing:{" "}
+								<span className="text-foreground font-bold">
+									{playersCount.remainingPlayers}
+								</span>
+							</span>
+						</div>
+					</div>
+				)}
 
 				{showPrizeModal && (
 					<ClaimRewardModal
