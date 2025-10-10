@@ -16,6 +16,11 @@ export type LexiWarsServerMessage =
 	| { type: "pong"; ts: number; pong: number }
 	| { type: "start"; time: number; started: boolean }
 	| { type: "startFailed" }
+	| {
+			type: "playersCount";
+			connectedPlayers: number;
+			remainingPlayers: number;
+	  }
 	| { type: "spectator" };
 
 export type LexiWarsClientMessage =
