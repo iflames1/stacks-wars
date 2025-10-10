@@ -86,7 +86,7 @@ export default function CreateSponsoredLobbyForm({
 	const [availableTokens, setAvailableTokens] = useState<TokenBalance[]>([]);
 	const [selectedTokenMetadata, setSelectedTokenMetadata] =
 		useState<TokenMetadata | null>(null);
-	const [minPoolSize, setMinPoolSize] = useState<number>(50);
+	const [minPoolSize, setMinPoolSize] = useState<number>(20);
 	const [deployedContract, setDeployedContract] = useState<{
 		contractName: string;
 		contractAddress: `${string}.${string}`;
@@ -121,7 +121,7 @@ export default function CreateSponsoredLobbyForm({
 		token: z.string().min(1, {
 			message: "Please select a token.",
 		}),
-		poolSize: z.number().min(selectedTokenMetadata?.priceUsd || 50, {
+		poolSize: z.number().min(selectedTokenMetadata?.priceUsd || 20, {
 			message: `Pool size must be greater than ${selectedTokenMetadata?.minimumAmount || 0}`,
 		}),
 	});
@@ -863,7 +863,7 @@ export default function CreateSponsoredLobbyForm({
 											<span className="font-medium">
 												Minimum: {minPoolSize}{" "}
 												{selectedTokenMetadata.symbol}{" "}
-												(≈$ 30 USD)
+												(≈$ 10 USD)
 											</span>
 										</>
 									)}
@@ -873,7 +873,7 @@ export default function CreateSponsoredLobbyForm({
 												<br />
 												<span className="font-medium">
 													Minimum: {minPoolSize}{" "}
-													{selectedToken} (≈$30 USD)
+													{selectedToken} (≈$10 USD)
 												</span>
 											</>
 										)}
